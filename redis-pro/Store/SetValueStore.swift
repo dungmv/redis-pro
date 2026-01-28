@@ -7,16 +7,17 @@
 
 import Logging
 import Foundation
-import SwiftyJSON
 import ComposableArchitecture
 
 private let logger = Logger(label: "set-value-store")
 
-
+@Reducer
 struct SetValueStore: Reducer {
+    
+    @ObservableState
     struct State: Equatable {
-        @BindingState var editModalVisible:Bool = false
-        @BindingState var editValue:String = ""
+        var editModalVisible:Bool = false
+        var editValue:String = ""
         // 1: LPUSH, 2: RPUSH
         var pushType:Int = 0
         var editIndex:Int = -1
@@ -62,10 +63,10 @@ struct SetValueStore: Reducer {
     
     var body: some Reducer<State, Action> {
         BindingReducer()
-        Scope(state: \.tableState, action: /Action.tableAction) {
+        Scope(state: \.tableState, action: \.tableAction) {
             TableStore()
         }
-        Scope(state: \.pageState, action: /Action.pageAction) {
+        Scope(state: \.pageState, action: \.pageAction) {
             PageStore()
         }
         Reduce { state, action in
@@ -154,7 +155,7 @@ struct SetValueStore: Reducer {
                 }
             
             // 提交成功， 刷新列表
-            case let .submitSuccess(isNewKey):
+            case .submitSuccess(_):
                 let editValue = state.editValue
                 // 修改，刷新单个值
                 if state.isNew {

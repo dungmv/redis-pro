@@ -12,35 +12,26 @@ import ComposableArchitecture
 
 private let logger = Logger(label: "app-store")
 
-
-struct AppStore: Reducer {
+@Reducer
+struct AppStore {
     
-    struct State: Equatable {
+    @ObservableState
+    struct State: Equatable, Identifiable {
         var id:String = UUID().uuidString
         // app title
         var title:String = ""
         // 是否已经连接 redis server
         var isConnect: Bool = false
-        var globalState: AppContextStore.State = AppContextStore.State()
-        var loadingState: LoadingStore.State = LoadingStore.State()
-        private var _favoriteState: FavoriteStore.State = FavoriteStore.State()
-        var favoriteState: FavoriteStore.State {
-            get {
-                var state = _favoriteState
-                state.globalState = globalState
-                return state
-            }
-            set {
-                _favoriteState = newValue
-                globalState = newValue.globalState!
-            }
-        }
-        var settingsState: SettingsStore.State = SettingsStore.State()
-        var redisKeysState: RedisKeysStore.State = RedisKeysStore.State()
+        @Shared(.inMemory("appContext")) var appContext = AppContextStore.State()
+        var globalState = AppContextStore.State()
+        var loadingState = LoadingStore.State()
+        var favoriteState = FavoriteStore.State()
+        var settingsState = SettingsStore.State()
+        var redisKeysState = RedisKeysStore.State()
 
-        init() {
+        init(id: String = UUID().uuidString) {
+            self.id = id
             logger.info("app state init ...")
-            
         }
     }
 
@@ -48,7 +39,10 @@ struct AppStore: Reducer {
         case initial
         case onStart
         case onClose
+        case onConnect
+        case onDisconnect
         case globalAction(AppContextStore.Action)
+        case appContextAction(AppContextStore.Action)
         case loadingAction(LoadingStore.Action)
         case favoriteAction(FavoriteStore.Action)
         case settingsAction(SettingsStore.Action)
@@ -56,24 +50,25 @@ struct AppStore: Reducer {
     }
 
     @Dependency(\.redisInstance) var redisInstanceModel: RedisInstanceModel
-    var mainQueue: AnySchedulerOf<DispatchQueue> = .main
-    
     
     var body: some Reducer<State, Action> {
         
-        Scope(state: \.globalState, action: /Action.globalAction) {
+        Scope(state: \.globalState, action: \.globalAction) {
             AppContextStore()
         }
-        Scope(state: \.loadingState, action: /Action.loadingAction) {
+        Scope(state: \.appContext, action: \.appContextAction) {
+            AppContextStore()
+        }
+        Scope(state: \.loadingState, action: \.loadingAction) {
             LoadingStore()
         }
-        Scope(state: \.settingsState, action: /Action.settingsAction) {
+        Scope(state: \.settingsState, action: \.settingsAction) {
             SettingsStore()
         }
-        Scope(state: \.favoriteState, action: /Action.favoriteAction) {
+        Scope(state: \.favoriteState, action: \.favoriteAction) {
             FavoriteStore()
         }
-        Scope(state: \.redisKeysState, action: /Action.redisKeysAction) {
+        Scope(state: \.redisKeysState, action: \.redisKeysAction) {
             RedisKeysStore()
         }
         
@@ -83,10 +78,20 @@ struct AppStore: Reducer {
                 logger.info("init app context complete...")
                 return .send(.redisKeysAction(.initial))
             case .onStart:
+                logger.info("app store on start...")
                 return .none
             
             case .onClose:
+                logger.info("app store on close...")
                 redisInstanceModel.close()
+                state.isConnect = false
+                return .none
+            case .onConnect:
+                logger.info("app store on connect...")
+                state.isConnect = true
+                return .none
+            case .onDisconnect:
+                logger.info("app store on disconnect...")
                 state.isConnect = false
                 return .none
             case .globalAction:
@@ -94,16 +99,56 @@ struct AppStore: Reducer {
             case .loadingAction:
                 return .none
             case let .favoriteAction(.connectSuccess(redisModel)):
-                state.isConnect = true
                 state.title = redisModel.name
-                return .none
+                return .run {send in
+                    await send(.onConnect)
+                }
             case .favoriteAction:
                 return .none
             case .settingsAction:
                 return .none
             case .redisKeysAction:
                 return .none
+            case .appContextAction:
+                return .none
             }
+        }
+    }
+}
+
+@Reducer
+struct AppRootStore {
+    @ObservableState
+    struct State {
+        var windows: IdentifiedArrayOf<AppStore.State> = []
+        var title: String = "Redis Pro"
+    }
+    
+    enum Action {
+        case windows(IdentifiedActionOf<AppStore>)
+        case addWindow(String)
+        case close
+    }
+    
+    var body: some Reducer<State, Action> {
+        Reduce { state, action in
+            switch action {
+            case let .addWindow(id):
+                logger.info("add new window: \(id)")
+                    
+                state.windows.append(AppStore.State(id: id))
+                return .none
+            case .close:
+                logger.info("close window")
+                state.windows.removeLast()
+                return .none
+            case .windows(_):
+                return .none
+            }
+        }
+        .forEach(\.windows, action: \.windows) {
+            AppStore()
+                .dependency(\.redisClient, RediStackClient(RedisModel()))
         }
     }
 }

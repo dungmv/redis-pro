@@ -14,6 +14,8 @@ private let logger = Logger(label: "app-context-store")
 
 @Reducer
 struct AppContextStore {
+    
+    @ObservableState
     struct State: Equatable {
         var loading:Bool = false
         var loadingCount:Int = 0
@@ -41,6 +43,11 @@ struct AppContextStore {
                 state.loadingCount += 1
                 return .none
             case .hide:
+                if state.loadingCount <= 0 {
+                    state.loading = false
+                    return .none
+                }
+                
                 return .run { send in
                     try await Task.sleep(nanoseconds: 100_000_000)
                     await send(._hide)

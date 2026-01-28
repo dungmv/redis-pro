@@ -9,12 +9,14 @@ import Logging
 import Foundation
 import ComposableArchitecture
 
-
+@Reducer
 struct LuaStore: Reducer {
     
+    
+    @ObservableState
     struct State: Equatable {
-        @BindingState var lua:String = "\"return {KEYS[1],KEYS[2],ARGV[1],ARGV[2]}\" 2 key1 key2 arg1 arg2"
-        @BindingState var evalResult:String = ""
+        var lua:String = "\"return {KEYS[1],KEYS[2],ARGV[1],ARGV[2]}\" 2 key1 key2 arg1 arg2"
+        var evalResult:String = ""
         var luaSHA: String = "-"
     }
 
@@ -57,7 +59,7 @@ struct LuaStore: Reducer {
                 
             case .scriptLoad:
                 
-                let lua = state.lua
+                _ = state.lua
                 return .run { send in
                     await send(.setLuaSHA(""))
                 }

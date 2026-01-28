@@ -7,18 +7,19 @@
 
 import Logging
 import Foundation
-import SwiftyJSON
 import ComposableArchitecture
 
 private let logger = Logger(label: "zset-value-store")
 
-struct ZSetValueStore: Reducer {
+@Reducer
+struct ZSetValueStore {
     
     // MARK: - state
+    @ObservableState
     struct State: Equatable {
-        @BindingState var editModalVisible:Bool = false
-        @BindingState var editValue:String = ""
-        @BindingState var editScore:Double = 0
+        var editModalVisible:Bool = false
+        var editValue:String = ""
+        var editScore:Double = 0
         
         var editIndex:Int = -1
         var isNew:Bool = false
@@ -66,10 +67,10 @@ struct ZSetValueStore: Reducer {
     
     var body: some Reducer<State, Action> {
         BindingReducer()
-        Scope(state: \.tableState, action: /Action.tableAction) {
+        Scope(state: \.tableState, action: \.tableAction) {
             TableStore()
         }
-        Scope(state: \.pageState, action: /Action.pageAction) {
+        Scope(state: \.pageState, action: \.pageAction) {
             PageStore()
         }
         Reduce { state, action in
@@ -163,7 +164,7 @@ struct ZSetValueStore: Reducer {
                 }
             
             // 提交成功， 刷新列表
-            case let .submitSuccess(isNewKey):
+            case .submitSuccess(_):
                 let editValue = state.editValue
                 let editScore = "\(state.editScore)"
                 // 修改，刷新单个值

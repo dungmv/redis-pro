@@ -7,53 +7,92 @@
 
 import Foundation
 import SwiftUI
-import AppCenter
-import AppCenterAnalytics
-import AppCenterCrashes
 import Logging
-import Cocoa
 import ComposableArchitecture
+import FirebaseCore
 
 @main
 struct redis_proApp: App {
+    private let logger = Logger(label: "app")
     
     // 会造成indexView 多次初始化
-    // @Environment(\.scenePhase) var scenePhase
+//    @Environment(\.scenePhase) var scenePhase
     @NSApplicationDelegateAdaptor(AppDelegate.self) var appDelegate
     
     // settings
-    var settingsStore:Store<SettingsStore.State, SettingsStore.Action> = Store(initialState: SettingsStore.State()) {
+    var settingsStore:StoreOf<SettingsStore> = Store(initialState: SettingsStore.State()) {
         SettingsStore()
     }
-    let logger = Logger(label: "app")
+//    private var store:StoreOf<AppStore>
+    private var rootStore = Store(initialState: AppRootStore.State()) {
+        AppRootStore()
+    }
+    private var mainWindowId = UUID().uuidString
     
     // 应用启动只初始化一次
     init() {
-        // logger
+        // logger init
         LoggerFactory().setUp()
+        rootStore.send(.addWindow(mainWindowId))
     }
     
     var body: some Scene {
-        
+       
         WindowGroup {
-            IndexView(settingStore: settingsStore)
-                .onAppear {
-                    ViewStore(settingsStore, observe: { $0 }).send(.initial)
+            IndexView(store: rootStore.scope(state: \.windows[id: self.mainWindowId]!, action: \.windows[id: self.mainWindowId]))
+        }
+        .commands {
+            CommandGroup(replacing: CommandGroupPlacement.toolbar) {
+                Button(action: openNewWindow) {
+                    Text("New Tab")
                 }
+                .keyboardShortcut("T", modifiers: [.command])
+            }
         }
         .commands {
             RedisProCommands()
         }
         
+//        WindowGroup {
+//            IndexView(settingStore: settingsStore)
+//                .onAppear {
+//                    self.settingsStore.send(.initial)
+//                }
+//        }
+//        .commands {
+//            RedisProCommands()
+//        }
+        
         WindowGroup("AboutView") {
             AboutView()
         }.handlesExternalEvents(matching: Set(arrayLiteral: "AboutView"))
         
-        
-        
         Settings {
             SettingsView(store: settingsStore)
         }
+    }
+    
+    func openNewWindow() {
+        guard let currentWindow = NSApp.keyWindow else { return }
+            
+        // 创建新窗口
+        currentWindow.windowController?.newWindowForTab(nil)
+        
+        // 获取新创建的窗口
+        guard let newWindow = NSApp.windows.last,
+              newWindow != currentWindow else { return }
+        
+        // 替换内容视图
+                        
+        let windowId = UUID().uuidString
+        rootStore.send(.addWindow(windowId))
+        let store = rootStore.scope(state: \.windows[id: windowId]!, action: \.windows[id: windowId])
+      
+        let customView = IndexView(store: store)
+        newWindow.contentViewController = NSHostingController(rootView: customView)
+        
+        // 添加到标签页
+        currentWindow.addTabbedWindow(newWindow, ordered: .above)
     }
 }
 
@@ -68,11 +107,8 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     func applicationDidFinishLaunching(_ notification: Notification) {
         logger.info("redis pro launch complete")
         
-        // appcenter
-        AppCenter.start(withAppSecret: "310d1d33-2570-46f9-a60d-8a862cdef6c7", services:[
-            Analytics.self,
-            Crashes.self
-        ])
+        // firebase
+        FirebaseApp.configure()
         
         let colorSchemeValue = UserDefaults.standard.string(forKey: UserDefaulsKeysEnum.AppColorScheme.rawValue) ?? ColorSchemeEnum.SYSTEM.rawValue
         if colorSchemeValue == ColorSchemeEnum.SYSTEM.rawValue {
