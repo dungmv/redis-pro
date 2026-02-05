@@ -41,15 +41,13 @@ struct TreeRenderNode: View {
         VStack(alignment: .leading, spacing: 0) {
             if let children = node.children {
                 // Folder node - Custom implementation for tight spacing
-                Button(action: {
-                    withAnimation(.easeInOut(duration: 0.2)) {
-                        isExpanded.toggle()
+                folderRow
+                    .padding(.leading, level * 12)
+                    .onTapGesture {
+                        withAnimation(.easeInOut(duration: 0.2)) {
+                            isExpanded.toggle()
+                        }
                     }
-                }) {
-                    folderRow
-                        .padding(.leading, level * 14)
-                }
-                .buttonStyle(PlainButtonStyle())
                 
                 if isExpanded {
                     VStack(alignment: .leading, spacing: 0) {
@@ -61,7 +59,7 @@ struct TreeRenderNode: View {
             } else {
                 // Key node
                 keyRow
-                    .padding(.leading, (level * 14) + 18) // Icon (12) + Spacing (6)
+                    .padding(.leading, (level * 12) + 16)
             }
         }
     }
@@ -78,7 +76,7 @@ struct TreeRenderNode: View {
                 .foregroundColor(.secondary)
             
             Text(node.name)
-                .font(.system(size: 12, weight: .medium))
+                .font(.system(size: 12, weight: .regular))
                 .lineLimit(1)
             
             Spacer()

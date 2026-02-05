@@ -44,7 +44,15 @@ extension RedisKeyNode {
             }
             
             func toRedisKeyNode() -> RedisKeyNode {
-                let sortedChildren = children.values.sorted { $0.name < $1.name }.map { $0.toRedisKeyNode() }
+                let sortedChildren = children.values.sorted {
+                    if !$0.children.isEmpty && $1.children.isEmpty {
+                        return true
+                    }
+                    if $0.children.isEmpty && !$1.children.isEmpty {
+                        return false
+                    }
+                    return $0.name < $1.name
+                }.map { $0.toRedisKeyNode() }
                 return RedisKeyNode(
                     id: fullName,
                     name: name,
@@ -101,6 +109,14 @@ extension RedisKeyNode {
         
         updateCounts(node: rootInternal)
         
-        return rootInternal.children.values.sorted { $0.name < $1.name }.map { $0.toRedisKeyNode() }
+        return rootInternal.children.values.sorted {
+            if !$0.children.isEmpty && $1.children.isEmpty {
+                return true
+            }
+            if $0.children.isEmpty && !$1.children.isEmpty {
+                return false
+            }
+            return $0.name < $1.name
+        }.map { $0.toRedisKeyNode() }
     }
 }
