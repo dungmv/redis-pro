@@ -31,6 +31,7 @@ struct DatabaseStore {
         case setDB(Int)
         case selectDB(Int)
         case onDBChange(Int)
+        case selectDBSuccess(Int)
         case none
         case binding(BindingAction<State>)
     }
@@ -58,16 +59,26 @@ struct DatabaseStore {
                 state.databases = databases
                 return .none
             case let .selectDB(database):
+                logger.info("selectDB: switching to database \(database)")
                 state.database = database
                 
                 return .run { send in
+                    // 1. Send onDBChange immediately to clear UI
+                    await send(.onDBChange(database))
+                    
+                    // 2. Perform the actual database switch
                     let r = await redisInstanceModel.getClient().selectDB(database)
                     if r {
-                        await send(.onDBChange(database))
+                        // 3. Notify success to trigger reload in other stores
+                        await send(.selectDBSuccess(database))
+                    } else {
+                        logger.error("Failed to switch to database \(database)")
                     }
                 }
                 
             case .onDBChange:
+                return .none
+            case .selectDBSuccess:
                 return .none
             case .none:
                 return .none

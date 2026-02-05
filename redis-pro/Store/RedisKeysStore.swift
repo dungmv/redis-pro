@@ -74,7 +74,7 @@ struct RedisKeysStore {
         case none
     }
 
-    @Dependency(\.redisClient) var redisClient:RediStackClient
+    @Dependency(\.redisInstance) var redisInstanceModel: RedisInstanceModel
     
     var body: some Reducer<State, Action> {
         Scope(state: \.tableState, action: \.tableAction) {
@@ -122,6 +122,9 @@ struct RedisKeysStore {
                 state.pageState.current = 1
                 state.pageState.total = 0
                 state.pageState.keywords = keywords
+                // Clear datasource immediately to prevent showing stale data
+                state.tableState.datasource = []
+                state.tableState.selectIndex = -1
                 
                 return .merge(
                     .send(.getKeys),
@@ -131,7 +134,7 @@ struct RedisKeysStore {
                 // dbsize
             case .dbsize:
                 return .run { send in
-                    let r = await redisClient.dbsize()
+                    let r = await redisInstanceModel.getClient().dbsize()
                     await  send(.setDBSize(r))
                 }
                 
@@ -139,7 +142,7 @@ struct RedisKeysStore {
             case .getKeys:
                 let page = state.pageState.page
                 return .run { send in
-                    let keysPage = await redisClient.pageKeys(page)
+                    let keysPage = await redisInstanceModel.getClient().pageKeys(page)
                     
                     await send(.setKeys(page, keysPage))
                 }
@@ -162,11 +165,11 @@ struct RedisKeysStore {
                 }
                 
                 // 是否开启了快速分页, 默认启用 FIXME
-//                state.pageState.fastPage = redisClient.settingViewStore?.fastPage ?? true
-//                state.pageState.fastPageMax = redisClient.settingViewStore?.fastPageMax ?? 99
+//                state.pageState.fastPage = redisInstanceModel.getClient().settingViewStore?.fastPage ?? true
+//                state.pageState.fastPageMax = redisInstanceModel.getClient().settingViewStore?.fastPageMax ?? 99
                 
                 return .run { send in
-                    let r = await redisClient.countKey(page, cursor: cursor)
+                    let r = await redisInstanceModel.getClient().countKey(page, cursor: cursor)
                     await send(.setCount(r.0, r.1, currentLockId))
                 }
                 
@@ -224,7 +227,7 @@ struct RedisKeysStore {
                 
                 return .run { send in
 
-                    let r = await redisClient.del(redisKeys.map({$0.key}))
+                    let r = await redisInstanceModel.getClient().del(redisKeys.map({$0.key}))
                     logger.info("on delete redis key: \(indexes), r:\(r)")
                     
                     return r > 0 ? await send(.deleteSuccess(indexes)) : await send(.none)
@@ -239,7 +242,10 @@ struct RedisKeysStore {
                 }
                 
             case let .onKeyChange(index):
-                guard index > -1 else { return .none }
+                guard index > -1, index < state.tableState.datasource.count else { 
+                    logger.info("onKeyChange: invalid index \(index) or empty datasource")
+                    return .none 
+                }
                 
                 state.mainViewType = .EDITOR
                 let redisKeyModel = state.tableState.datasource[index] as! RedisKeyModel
@@ -257,7 +263,7 @@ struct RedisKeysStore {
                 
             case .flushDB:
                 return .run { send in
-                    let r = await redisClient.flushDB()
+                    let r = await redisInstanceModel.getClient().flushDB()
                     if r {
                         return await  send(.initial)
                     }
@@ -335,6 +341,18 @@ struct RedisKeysStore {
             //MARK:  --------------------------- database action ---------------------------
             case let .databaseAction(.onDBChange(database)):
                 logger.info("change database, \(database)")
+                // Reset selection and value state to prevent accessing old keys in new database
+                state.tableState.selectIndex = -1
+                state.tableState.selectIndexes = []
+                state.tableState.datasource = []
+                state.valueState = ValueStore.State()
+                state.mainViewType = .EDITOR
+                state.pageState.total = 0
+                state.pageState.current = 1
+                return .none
+                
+            case let .databaseAction(.selectDBSuccess(database)):
+                logger.info("database switch success, reload keys for database \(database)")
                 return .run { send in
                     await send(.initial)
                 }

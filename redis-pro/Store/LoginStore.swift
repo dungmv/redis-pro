@@ -86,9 +86,10 @@ struct LoginStore {
         case binding(BindingAction<State>)
     }
     
-    @Dependency(\.redisClient) var redisClient: RediStackClient
+    @Dependency(\.redisInstance) var redisInstanceModel: RedisInstanceModel
     
     var body: some Reducer<State, Action> {
+        BindingReducer()
         Scope(state: \.appContext, action: \.appContextAction) {
             AppContextStore()
         }
@@ -104,10 +105,10 @@ struct LoginStore {
             case .testConnect:
                 logger.info("test connect to redis server, name: \(state.name), host: \(state.host)")
                 state.loading = true
-                redisClient.redisModel = state.redisModel
+                let redisModel = state.redisModel
                 
                 return .run { send in
-                    let r = await redisClient.testConn()
+                    let r = await redisInstanceModel.testConnect(redisModel)
                     await send(.setPingR(r))
                 }
             case let .setPingR(r):

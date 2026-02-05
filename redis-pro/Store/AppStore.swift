@@ -148,7 +148,6 @@ struct AppRootStore {
         }
         .forEach(\.windows, action: \.windows) {
             AppStore()
-                .dependency(\.redisClient, RediStackClient(RedisModel()))
         }
     }
 }
