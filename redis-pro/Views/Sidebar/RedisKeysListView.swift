@@ -81,7 +81,7 @@ struct RedisKeysListView: View {
             // header area
             sidebarHeader(store)
             
-            NTableView(store: store.scope(state: \.tableState, action: \.tableAction))
+            RedisKeysTreeView(store: store)
             
             // footer
             sidebarFoot(store)

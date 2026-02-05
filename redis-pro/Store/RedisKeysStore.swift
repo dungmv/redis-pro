@@ -35,6 +35,9 @@ struct RedisKeysStore {
         var pageState: PageStore.State = PageStore.State()
         var renameState: RenameStore.State = RenameStore.State()
         
+        var redisKeyNodes: [RedisKeyNode] = []
+        var selectedKeyId: String? = nil
+        
         init() {
             logger.info("redisKeys state init ...")
         }
@@ -71,6 +74,7 @@ struct RedisKeysStore {
         case databaseAction(DatabaseStore.Action)
         case pageAction(PageStore.Action)
         case renameAction(RenameStore.Action)
+        case selectNode(String)
         case none
     }
 
@@ -175,9 +179,18 @@ struct RedisKeysStore {
                 
                 
             case let .setKeys(_, redisKeys):
+                state.redisKeyNodes = RedisKeyNode.buildTree(from: redisKeys)
                 return .run { send in
                     await send(.tableAction(.setDatasource(redisKeys)))
                 }
+            
+            case let .selectNode(keyId):
+                state.selectedKeyId = keyId
+                // Find matching key model in datasource
+                if let redisKeyModel = state.tableState.datasource.compactMap({ $0 as? RedisKeyModel }).first(where: { $0.key == keyId }) {
+                    return .send(.valueAction(.keyChange(redisKeyModel)))
+                }
+                return .none
             
             case let .setCount(cursor, count, searchGroup):
                 if searchGroup < state.countLockId {
@@ -236,6 +249,9 @@ struct RedisKeysStore {
             case let .deleteSuccess(indexes):
                 // 降序排序后逐个删除， 必须先从最后的开始删除
                 indexes.sorted(by: >).forEach({state.tableState.datasource.remove(at: $0)})
+                state.redisKeyNodes = RedisKeyNode.buildTree(from: state.tableState.datasource.compactMap({ $0 as? RedisKeyModel })) // Update redisKeyNodes
+                state.tableState.selectIndex = -1 // Reset selection after deletion
+                state.selectedKeyId = nil // Reset selected key ID
                 
                 return .run { send in
                     await send(.refreshCount)
@@ -284,8 +300,9 @@ struct RedisKeysStore {
                 
                 if isNew {
                     // 此处直接设置 selectIndex， 不会触 selectionChange, 会在设置datasource 时一起设置
-                    state.tableState.selectIndex = 0
                     state.tableState.datasource.insert(redisKeyModel, at: 0)
+                    state.redisKeyNodes = RedisKeyNode.buildTree(from: state.tableState.datasource.compactMap({ $0 as? RedisKeyModel }))
+                    state.selectedKeyId = redisKeyModel.key
                 }
                 return .none
                 
@@ -381,6 +398,8 @@ struct RedisKeysStore {
                 let old = datasource[index]
                 datasource[index] = RedisKeyModel(newKey, type: old.type)
                 state.tableState.datasource = datasource
+                state.redisKeyNodes = RedisKeyNode.buildTree(from: datasource)
+                state.selectedKeyId = newKey
                 return .none
                 
             case .renameAction:
