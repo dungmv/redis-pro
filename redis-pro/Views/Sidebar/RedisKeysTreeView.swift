@@ -12,69 +12,114 @@ struct RedisKeysTreeView: View {
     let store: StoreOf<RedisKeysStore>
     
     var body: some View {
-        List {
-            Section(header: Text("KEYS (\(store.dbsize) SCANNED)")
-                .font(.system(size: 10, weight: .bold))
+        VStack(alignment: .leading, spacing: 0) {
+            Text("KEYS (\(store.dbsize) SCANNED)")
+                .font(.system(size: 11, weight: .bold))
                 .foregroundColor(.secondary)
-                .padding(.bottom, 4)
-            ) {
-                OutlineGroup(store.redisKeyNodes, id: \.id, children: \.children) { node in
-                    nodeRow(node)
+                .padding(.horizontal, 12)
+                .padding(.vertical, 8)
+            
+            ScrollView {
+                LazyVStack(alignment: .leading, spacing: 0) {
+                    ForEach(store.redisKeyNodes) { node in
+                        TreeRenderNode(node: node, store: store, level: 0)
+                    }
                 }
+                .padding(.horizontal, 8)
             }
         }
-        .listStyle(SidebarListStyle())
-        .padding(.top, 4)
+    }
+}
+
+struct TreeRenderNode: View {
+    let node: RedisKeyNode
+    let store: StoreOf<RedisKeysStore>
+    let level: CGFloat
+    @State private var isExpanded: Bool = false
+    
+    var body: some View {
+        VStack(alignment: .leading, spacing: 0) {
+            if let children = node.children {
+                // Folder node - Custom implementation for tight spacing
+                Button(action: {
+                    withAnimation(.easeInOut(duration: 0.2)) {
+                        isExpanded.toggle()
+                    }
+                }) {
+                    folderRow
+                        .padding(.leading, level * 14)
+                }
+                .buttonStyle(PlainButtonStyle())
+                
+                if isExpanded {
+                    VStack(alignment: .leading, spacing: 0) {
+                        ForEach(children) { child in
+                            TreeRenderNode(node: child, store: store, level: level + 1)
+                        }
+                    }
+                }
+            } else {
+                // Key node
+                keyRow
+                    .padding(.leading, (level * 14) + 18) // Icon (12) + Spacing (6)
+            }
+        }
     }
     
-    @ViewBuilder
-    private func nodeRow(_ node: RedisKeyNode) -> some View {
-        HStack(spacing: 6) {
-            if let type = node.type {
-                // Key item
-                nodeTypeBadge(type)
-                
-                Text(node.name) // Use short name for nested display
-                    .font(.system(size: 12))
-                    .lineLimit(1)
-                    .foregroundColor(store.selectedKeyId == node.id ? .white : .primary)
-            } else {
-                // Folder item
-                Image(systemName: "folder")
-                    .font(.system(size: 12))
-                    .foregroundColor(.secondary)
-                
-                Text(node.name)
-                    .font(.system(size: 12, weight: .medium))
-                
-                Spacer()
-                
-                Text("\(node.keyCount)")
-                    .font(.system(size: 10))
-                    .foregroundColor(.secondary)
-                    .padding(.horizontal, 4)
-            }
+    private var folderRow: some View {
+        HStack(spacing: 4) {
+            Image(systemName: isExpanded ? "chevron.down" : "chevron.right")
+                .font(.system(size: 8, weight: .bold))
+                .foregroundColor(.secondary)
+                .frame(width: 10)
+            
+            Image(systemName: "folder")
+                .font(.system(size: 11))
+                .foregroundColor(.secondary)
+            
+            Text(node.name)
+                .font(.system(size: 12, weight: .medium))
+                .lineLimit(1)
+            
+            Spacer()
+            
+            Text("\(node.keyCount)")
+                .font(.system(size: 10))
+                .foregroundColor(.secondary)
+                .padding(.trailing, 4)
         }
-        .frame(maxWidth: .infinity, minHeight: 20, alignment: .leading)
-        .padding(.vertical, 1)
+        .frame(height: 20)
+        .contentShape(Rectangle())
+    }
+    
+    private var keyRow: some View {
+        HStack(spacing: 6) {
+            nodeTypeBadge(node.type ?? "")
+            
+            Text(node.name)
+                .font(.system(size: 12))
+                .lineLimit(1)
+                .foregroundColor(store.selectedKeyId == node.id ? .white : .primary)
+            
+            Spacer()
+        }
+        .frame(height: 20)
         .padding(.horizontal, 4)
         .background(store.selectedKeyId == node.id ? Color.accentColor : Color.clear)
         .cornerRadius(4)
         .contentShape(Rectangle())
         .onTapGesture {
-            if node.type != nil {
-                store.send(.selectNode(node.id))
-            }
+            store.send(.selectNode(node.id))
         }
     }
     
     @ViewBuilder
     private func nodeTypeBadge(_ type: String) -> some View {
-        Text(type.uppercased())
+        Text(type.uppercased().prefix(1))
             .font(.system(size: 8, weight: .bold))
             .padding(.horizontal, 4)
             .padding(.vertical, 1)
-            .frame(width: 40)
+            .frame(width: 24) // Even narrower
             .background(typeColor(type))
             .foregroundColor(.white)
             .cornerRadius(3)
