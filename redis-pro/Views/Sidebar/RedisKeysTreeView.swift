@@ -89,10 +89,10 @@ struct TreeRenderNode: View {
         .frame(height: 20)
         .contentShape(Rectangle())
     }
-    
+
     private var keyRow: some View {
-        HStack(spacing: 6) {
-            nodeTypeBadge(node.type ?? "")
+        HStack(spacing: 2) {
+            nodeTypeBadge(node.type?.uppercased() ?? "")
             
             Text(node.name)
                 .font(.system(size: 12))
@@ -113,18 +113,18 @@ struct TreeRenderNode: View {
     
     @ViewBuilder
     private func nodeTypeBadge(_ type: String) -> some View {
-        Text(type.uppercased().prefix(1))
-            .font(.system(size: 8, weight: .bold))
-            .padding(.horizontal, 4)
+        Text(type)
+            .font(.system(size: 10, weight: .regular))
+            .padding(.horizontal, 2)
             .padding(.vertical, 1)
-            .frame(width: 24) // Even narrower
+            .frame(width: 48)
             .background(typeColor(type))
             .foregroundColor(.white)
             .cornerRadius(3)
     }
     
     private func typeColor(_ type: String) -> Color {
-        switch type.uppercased() {
+        switch type {
         case "STRING": return .green
         case "HASH": return .red
         case "LIST": return .blue
