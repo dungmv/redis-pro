@@ -14,7 +14,7 @@ struct RedisKeysTreeView: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
             Text("KEYS (\(store.dbsize) SCANNED)")
-                .font(.system(size: 11, weight: .bold))
+                .font(.system(size: 11, weight: .semibold))
                 .foregroundColor(.secondary)
                 .padding(.horizontal, 12)
                 .padding(.vertical, 8)
@@ -67,16 +67,14 @@ struct TreeRenderNode: View {
     private var folderRow: some View {
         HStack(spacing: 4) {
             Image(systemName: isExpanded ? "chevron.down" : "chevron.right")
-                .font(.system(size: 8, weight: .bold))
+                .font(.system(size: 10, weight: .semibold))
                 .foregroundColor(.secondary)
                 .frame(width: 10)
             
             Image(systemName: "folder")
-                .font(.system(size: 11))
                 .foregroundColor(.secondary)
             
             Text(node.name)
-                .font(.system(size: 12, weight: .regular))
                 .lineLimit(1)
             
             Spacer()
