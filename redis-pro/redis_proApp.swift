@@ -9,7 +9,6 @@ import Foundation
 import SwiftUI
 import Logging
 import ComposableArchitecture
-import FirebaseCore
 
 @main
 struct redis_proApp: App {
@@ -106,9 +105,6 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     
     func applicationDidFinishLaunching(_ notification: Notification) {
         logger.info("redis pro launch complete")
-        
-        // firebase
-        FirebaseApp.configure()
         
         let colorSchemeValue = UserDefaults.standard.string(forKey: UserDefaulsKeysEnum.AppColorScheme.rawValue) ?? ColorSchemeEnum.SYSTEM.rawValue
         if colorSchemeValue == ColorSchemeEnum.SYSTEM.rawValue {

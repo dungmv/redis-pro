@@ -144,9 +144,7 @@
 		628F9AA2289EA7C50003B6C0 /* SSHTunnel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 628F9AA1289EA7C50003B6C0 /* SSHTunnel.swift */; };
 		628F9AA4289EAEE90003B6C0 /* RedisClientSSH.swift in Sources */ = {isa = PBXBuildFile; fileRef = 628F9AA3289EAEE90003B6C0 /* RedisClientSSH.swift */; };
 		629E0B772CE629B1001CDC77 /* Puppy in Frameworks */ = {isa = PBXBuildFile; productRef = 629E0B762CE629B1001CDC77 /* Puppy */; };
-		629E0B792CE62AF3001CDC77 /* GoogleService-Info.plist in Resources */ = {isa = PBXBuildFile; fileRef = 629E0B782CE62AF3001CDC77 /* GoogleService-Info.plist */; };
 		629E0B7F2CE62E88001CDC77 /* ComposableArchitecture in Frameworks */ = {isa = PBXBuildFile; productRef = 629E0B7E2CE62E88001CDC77 /* ComposableArchitecture */; };
-		629E0B822CE63047001CDC77 /* FirebaseAnalyticsWithoutAdIdSupport in Frameworks */ = {isa = PBXBuildFile; productRef = 629E0B812CE63047001CDC77 /* FirebaseAnalyticsWithoutAdIdSupport */; };
 		62B399DE2C9EFC2C0092FB17 /* TestView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 62B399DD2C9EFC2C0092FB17 /* TestView.swift */; };
 		62B399E02CA011480092FB17 /* AppMain.swift in Sources */ = {isa = PBXBuildFile; fileRef = 62B399DF2CA011480092FB17 /* AppMain.swift */; };
 		62BDAB2E293B040C00ADA406 /* Tests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 62BDAB2D293B040C00ADA406 /* Tests.swift */; };
@@ -361,7 +359,6 @@
 		628F9A9F2896A3FB0003B6C0 /* RedisCommandExt.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RedisCommandExt.swift; sourceTree = "<group>"; };
 		628F9AA1289EA7C50003B6C0 /* SSHTunnel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SSHTunnel.swift; sourceTree = "<group>"; };
 		628F9AA3289EAEE90003B6C0 /* RedisClientSSH.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RedisClientSSH.swift; sourceTree = "<group>"; };
-		629E0B782CE62AF3001CDC77 /* GoogleService-Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = "GoogleService-Info.plist"; sourceTree = "<group>"; };
 		62B399DD2C9EFC2C0092FB17 /* TestView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TestView.swift; sourceTree = "<group>"; };
 		62B399DF2CA011480092FB17 /* AppMain.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppMain.swift; sourceTree = "<group>"; };
 		62BDAB2B293B040C00ADA406 /* Tests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = Tests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -422,21 +419,13 @@
 			buildActionMask = 2147483647;
 			files = (
 				CEA1EF4D277C56DD00D300E9 /* NIO in Frameworks */,
-				CEA1EF55277C56DD00D300E9 /* NIOFoundationCompat in Frameworks */,
 				62FD85D62A7E6020005DE558 /* RediStack in Frameworks */,
 				629E0B772CE629B1001CDC77 /* Puppy in Frameworks */,
-				437499582CE875D600869391 /* SwiftSyntax in Frameworks */,
-				CEA1EF53277C56DD00D300E9 /* NIOEmbedded in Frameworks */,
 				629E0B7F2CE62E88001CDC77 /* ComposableArchitecture in Frameworks */,
-				CEA1EF59277C56DD00D300E9 /* NIOTLS in Frameworks */,
-				629E0B822CE63047001CDC77 /* FirebaseAnalyticsWithoutAdIdSupport in Frameworks */,
 				CEA1EF4A277C56B100D300E9 /* NIOSSH in Frameworks */,
-				CEA1EF57277C56DD00D300E9 /* NIOPosix in Frameworks */,
 				6237D032275C954A000ACD6A /* Logging in Frameworks */,
-				62FD85D82A7E6020005DE558 /* RedisTypes in Frameworks */,
 				CEA1EF51277C56DD00D300E9 /* NIOCore in Frameworks */,
 				CEA1EF4F277C56DD00D300E9 /* NIOConcurrencyHelpers in Frameworks */,
-				CEA1EF5B277C56DD00D300E9 /* _NIOConcurrency in Frameworks */,
 				623E46BA2B663E5700C28904 /* SwiftJSONFormatter in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -527,7 +516,6 @@
 				62B399DF2CA011480092FB17 /* AppMain.swift */,
 				4320AAF725B6740A00A8E214 /* Assets.xcassets */,
 				4320AAFC25B6740A00A8E214 /* Info.plist */,
-				629E0B782CE62AF3001CDC77 /* GoogleService-Info.plist */,
 				4320AAFD25B6740A00A8E214 /* redis_pro.entitlements */,
 				4382203C26564D6900DA7F9E /* redis-proRelease.entitlements */,
 				4320AAF925B6740A00A8E214 /* Preview Content */,
@@ -911,18 +899,10 @@
 				CEA1EF4C277C56DD00D300E9 /* NIO */,
 				CEA1EF4E277C56DD00D300E9 /* NIOConcurrencyHelpers */,
 				CEA1EF50277C56DD00D300E9 /* NIOCore */,
-				CEA1EF52277C56DD00D300E9 /* NIOEmbedded */,
-				CEA1EF54277C56DD00D300E9 /* NIOFoundationCompat */,
-				CEA1EF56277C56DD00D300E9 /* NIOPosix */,
-				CEA1EF58277C56DD00D300E9 /* NIOTLS */,
-				CEA1EF5A277C56DD00D300E9 /* _NIOConcurrency */,
 				62FD85D52A7E6020005DE558 /* RediStack */,
-				62FD85D72A7E6020005DE558 /* RedisTypes */,
 				623E46B92B663E5700C28904 /* SwiftJSONFormatter */,
 				629E0B762CE629B1001CDC77 /* Puppy */,
 				629E0B7E2CE62E88001CDC77 /* ComposableArchitecture */,
-				629E0B812CE63047001CDC77 /* FirebaseAnalyticsWithoutAdIdSupport */,
-				437499572CE875D600869391 /* SwiftSyntax */,
 			);
 			productName = "redis-pro";
 			productReference = 4320AAF025B6740900A8E214 /* redis-pro.app */;
@@ -983,7 +963,6 @@
 				623E46B82B663E5700C28904 /* XCRemoteSwiftPackageReference "SwiftJSONFormatter" */,
 				629E0B752CE629B1001CDC77 /* XCRemoteSwiftPackageReference "Puppy" */,
 				629E0B7D2CE62E88001CDC77 /* XCRemoteSwiftPackageReference "swift-composable-architecture" */,
-				629E0B802CE63047001CDC77 /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */,
 				437499562CE875D600869391 /* XCRemoteSwiftPackageReference "swift-syntax" */,
 			);
 			productRefGroup = 4320AAF125B6740900A8E214 /* Products */;
@@ -1002,7 +981,6 @@
 			buildActionMask = 2147483647;
 			files = (
 				6215320027775260009F0F41 /* .gitignore in Resources */,
-				629E0B792CE62AF3001CDC77 /* GoogleService-Info.plist in Resources */,
 				4320AAFB25B6740A00A8E214 /* Preview Assets.xcassets in Resources */,
 				431FD84326BD2F1200151934 /* CHANGELOG.md in Resources */,
 				43CD289E26732F4C00E11876 /* Localizable.strings in Resources */,
@@ -1521,7 +1499,7 @@
 			repositoryURL = "https://github.com/apple/swift-log.git";
 			requirement = {
 				kind = upToNextMajorVersion;
-				minimumVersion = 1.5.2;
+				minimumVersion = 1.6.3;
 			};
 		};
 		623E46B82B663E5700C28904 /* XCRemoteSwiftPackageReference "SwiftJSONFormatter" */ = {
@@ -1537,7 +1515,7 @@
 			repositoryURL = "https://github.com/sushichop/Puppy.git";
 			requirement = {
 				kind = upToNextMajorVersion;
-				minimumVersion = 0.7.0;
+				minimumVersion = 0.9.0;
 			};
 		};
 		629E0B7D2CE62E88001CDC77 /* XCRemoteSwiftPackageReference "swift-composable-architecture" */ = {
@@ -1546,14 +1524,6 @@
 			requirement = {
 				kind = upToNextMajorVersion;
 				minimumVersion = 1.25.5;
-			};
-		};
-		629E0B802CE63047001CDC77 /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */ = {
-			isa = XCRemoteSwiftPackageReference;
-			repositoryURL = "https://github.com/firebase/firebase-ios-sdk";
-			requirement = {
-				kind = upToNextMajorVersion;
-				minimumVersion = 11.5.0;
 			};
 		};
 		62FD85D42A7E6020005DE558 /* XCRemoteSwiftPackageReference "RediStack" */ = {
@@ -1569,7 +1539,7 @@
 			repositoryURL = "https://github.com/apple/swift-nio-ssh";
 			requirement = {
 				kind = upToNextMajorVersion;
-				minimumVersion = 0.8.0;
+				minimumVersion = 0.12.0;
 			};
 		};
 		CEA1EF4B277C56DD00D300E9 /* XCRemoteSwiftPackageReference "swift-nio" */ = {
@@ -1577,7 +1547,7 @@
 			repositoryURL = "https://github.com/apple/swift-nio.git";
 			requirement = {
 				kind = upToNextMajorVersion;
-				minimumVersion = 2.62.0;
+				minimumVersion = 2.97.1;
 			};
 		};
 /* End XCRemoteSwiftPackageReference section */
@@ -1607,11 +1577,6 @@
 			isa = XCSwiftPackageProductDependency;
 			package = 629E0B7D2CE62E88001CDC77 /* XCRemoteSwiftPackageReference "swift-composable-architecture" */;
 			productName = ComposableArchitecture;
-		};
-		629E0B812CE63047001CDC77 /* FirebaseAnalyticsWithoutAdIdSupport */ = {
-			isa = XCSwiftPackageProductDependency;
-			package = 629E0B802CE63047001CDC77 /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */;
-			productName = FirebaseAnalyticsWithoutAdIdSupport;
 		};
 		62FD85D52A7E6020005DE558 /* RediStack */ = {
 			isa = XCSwiftPackageProductDependency;
