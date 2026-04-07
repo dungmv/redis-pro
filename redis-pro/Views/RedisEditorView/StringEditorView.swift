@@ -11,7 +11,7 @@ import ComposableArchitecture
 
 
 struct StringEditorView: View {
-    @Perception.Bindable var store: StoreOf<StringValueStore>
+    @Bindable var store: StoreOf<StringValueStore>
     var keyObjectStore: StoreOf<KeyObjectStore>
     private let logger = Logger(label: "string-editor")
     

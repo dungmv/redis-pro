@@ -59,7 +59,7 @@ class RedisInstanceModel: Identifiable {
             
             return r
         } catch {
-            Messages.show(error)
+            Task { @MainActor in Messages.show(error) }
             return false
         }
     }

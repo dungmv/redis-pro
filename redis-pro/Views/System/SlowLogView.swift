@@ -10,7 +10,7 @@ import Logging
 import ComposableArchitecture
 
 struct SlowLogView: View {
-    @Perception.Bindable var store:StoreOf<SlowLogStore>
+    @Bindable var store:StoreOf<SlowLogStore>
     let logger = Logger(label: "slow-log-view")
     
     var body: some View {

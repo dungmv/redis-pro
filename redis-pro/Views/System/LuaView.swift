@@ -11,7 +11,7 @@ import ComposableArchitecture
 
 
 struct LuaView: View {
-    @Perception.Bindable var store:StoreOf<LuaStore>
+    @Bindable var store:StoreOf<LuaStore>
     let logger = Logger(label: "lua-view")
     
     var body: some View {

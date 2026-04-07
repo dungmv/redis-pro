@@ -1,8 +1,8 @@
 //
-//  RedisInstanceList.swift
+//  RedisListView.swift
 //  redis-pro
 //
-//  Created by chengpanwang on 2021/1/25.
+//  Liquid Glass connection list + login form split view.
 //
 
 import SwiftUI
@@ -10,44 +10,67 @@ import Logging
 import ComposableArchitecture
 
 struct RedisListView: View {
-    let logger = Logger(label: "redis-login")
-    
-    var store:StoreOf<FavoriteStore>
-    
+
+    private static let logger = Logger(label: "redis-list-view")
+
+    var store: StoreOf<FavoriteStore>
+
     var body: some View {
         WithPerceptionTracking {
             HSplitView {
+                // ── Connection list (left sidebar) ────────────────────────
                 VStack(alignment: .leading, spacing: 0) {
-                    // left navigation
-                    NTableView(
-                        store: store.scope(state: \.tableState, action: \.tableAction)
-                    )
-                    
-                    // footer
-                    HStack(alignment: .center) {
-                        MIcon(icon: "plus", fontSize: 13, action: {
-                            store.send(.addNew)
-                        })
-                        MIcon(icon: "minus", fontSize: 13, disabled: store.tableState.selectIndex < 0, action: {
-                            store.send(.deleteConfirm(store.tableState.selectIndex))
-                        })
+                    // Sidebar header
+                    HStack {
+                        Text("FAVORITES")
+                            .font(.system(size: 10, weight: .bold))
+                            .foregroundStyle(.secondary)
+                            .kerning(0.8)
+                        Spacer()
                     }
-                    .padding(EdgeInsets(top: 4, leading: 8, bottom: 4, trailing: 8))
+                    .padding(.horizontal, 12)
+                    .padding(.vertical, 10)
+                    .glassToolbar()
+
+                    Divider()
+
+                    // Connections table
+                    NTableView(store: store.scope(state: \.tableState, action: \.tableAction))
+                        .frame(maxWidth: .infinity, maxHeight: .infinity)
+
+                    Divider()
+
+                    // Footer controls
+                    HStack(alignment: .center, spacing: 2) {
+                        MIcon(icon: "plus", fontSize: 13) { store.send(.addNew) }
+                            .help("Add new connection")
+                        MIcon(
+                            icon: "minus",
+                            fontSize: 13,
+                            disabled: store.tableState.selectIndex < 0
+                        ) {
+                            store.send(.deleteConfirm(store.tableState.selectIndex))
+                        }
+                        .help("Remove connection")
+                        Spacer()
+                    }
+                    .padding(.horizontal, 10)
+                    .padding(.vertical, 6)
+                    .glassToolbar()
                 }
-                .padding(0)
-                .frame(minWidth:200)
+                .frame(minWidth: 200, idealWidth: 220)
                 .layoutPriority(0)
-                .onAppear{
-                    onLoad()
-                }
+                .onAppear { onLoad() }
+
+                // ── Login form (right panel) ───────────────────────────────
                 LoginForm(store: store.scope(state: \.loginState, action: \.loginAction))
                     .frame(minWidth: 800, maxWidth: .infinity, minHeight: 520, maxHeight: .infinity)
             }
         }
     }
-    
-    func onLoad() {
-        self.store.send(.getAll)
-        self.store.send(.initDefaultSelection)
+
+    private func onLoad() {
+        store.send(.getAll)
+        store.send(.initDefaultSelection)
     }
 }

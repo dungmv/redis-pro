@@ -11,7 +11,7 @@ import ComposableArchitecture
 
 struct ZSetEditorView: View {
     
-    @Perception.Bindable var store:StoreOf<ZSetValueStore>
+    @Bindable var store:StoreOf<ZSetValueStore>
     var keyObjectStore: StoreOf<KeyObjectStore>
     let logger = Logger(label: "redis-set-editor")
     

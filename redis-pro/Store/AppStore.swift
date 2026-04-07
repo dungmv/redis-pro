@@ -17,13 +17,10 @@ struct AppStore {
     
     @ObservableState
     struct State: Equatable, Identifiable {
-        var id:String = UUID().uuidString
-        // app title
-        var title:String = ""
-        // 是否已经连接 redis server
+        var id: String = UUID().uuidString
+        var title: String = ""
         var isConnect: Bool = false
         @Shared(.inMemory("appContext")) var appContext = AppContextStore.State()
-        var globalState = AppContextStore.State()
         var loadingState = LoadingStore.State()
         var favoriteState = FavoriteStore.State()
         var settingsState = SettingsStore.State()
@@ -35,13 +32,12 @@ struct AppStore {
         }
     }
 
-    enum Action:Equatable {
+    enum Action: Equatable {
         case initial
         case onStart
         case onClose
         case onConnect
         case onDisconnect
-        case globalAction(AppContextStore.Action)
         case appContextAction(AppContextStore.Action)
         case loadingAction(LoadingStore.Action)
         case favoriteAction(FavoriteStore.Action)
@@ -52,10 +48,6 @@ struct AppStore {
     @Dependency(\.redisInstance) var redisInstanceModel: RedisInstanceModel
     
     var body: some Reducer<State, Action> {
-        
-        Scope(state: \.globalState, action: \.globalAction) {
-            AppContextStore()
-        }
         Scope(state: \.appContext, action: \.appContextAction) {
             AppContextStore()
         }
@@ -80,7 +72,6 @@ struct AppStore {
             case .onStart:
                 logger.info("app store on start...")
                 return .none
-            
             case .onClose:
                 logger.info("app store on close...")
                 redisInstanceModel.close()
@@ -94,13 +85,11 @@ struct AppStore {
                 logger.info("app store on disconnect...")
                 state.isConnect = false
                 return .none
-            case .globalAction:
-                return .none
             case .loadingAction:
                 return .none
             case let .favoriteAction(.connectSuccess(redisModel)):
                 state.title = redisModel.name
-                return .run {send in
+                return .run { send in
                     await send(.onConnect)
                 }
             case .favoriteAction:

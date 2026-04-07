@@ -152,7 +152,7 @@ struct ListValueStore: Reducer {
                         let _ = await redisInstanceModel.getClient().lset(key, index: item!.index, value: editValue)
                         logger.info("redis list set success, update list")
                     } else {
-                        Messages.show("System error!!!")
+                        Task { @MainActor in Messages.show("System error!!!") }
                         return
                     }
                     

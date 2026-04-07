@@ -54,7 +54,7 @@ extension RediStackClient {
             
             return try await _send(conn, .ping) == "PONG"
         } catch {
-            Messages.show(error)
+            Task { @MainActor in Messages.show(error) }
             return false
         }
     }

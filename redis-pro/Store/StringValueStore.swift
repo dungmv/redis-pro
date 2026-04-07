@@ -130,7 +130,7 @@ struct StringValueStore {
                 
             case .jsonPretty:
                 if state.text.count < 2 {
-                    Messages.show(BizError("Invalid json format!"))
+                    Task { @MainActor in Messages.show(BizError("Invalid json format!")) }
                     return .none
                 }
                 
@@ -139,7 +139,7 @@ struct StringValueStore {
                 
             case .jsonMinify:
                 if state.text.count < 2 {
-                    Messages.show(BizError("Invalid json format!"))
+                    Task { @MainActor in Messages.show(BizError("Invalid json format!")) }
                     return .none
                 }
                 

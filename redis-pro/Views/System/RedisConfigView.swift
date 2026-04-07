@@ -11,7 +11,7 @@ import ComposableArchitecture
 
 struct RedisConfigView: View {
     
-    @Perception.Bindable var store:StoreOf<RedisConfigStore>
+    @Bindable var store:StoreOf<RedisConfigStore>
     let logger = Logger(label: "redis-config-view")
     
     var body: some View {

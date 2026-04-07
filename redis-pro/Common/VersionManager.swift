@@ -56,7 +56,7 @@ struct VersionManager {
                     }
                 } else {
                     if isNoUpgradeHint {
-                        Messages.show("Current version \(currentVersion ?? "") is latest!")
+                        Task { @MainActor in Messages.show("Current version \(currentVersion ?? "") is latest!") }
                     }
                 }
                 

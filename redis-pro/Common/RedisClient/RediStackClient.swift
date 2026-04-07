@@ -90,7 +90,7 @@ class RediStackClient {
     func handleError(_ error: Error) {
         logger.info("system error \(error)")
         loading(false)
-        Messages.show(error)
+        Task { @MainActor in Messages.show(error) }
     }
     
     

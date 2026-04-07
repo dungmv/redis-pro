@@ -12,6 +12,11 @@ import ComposableArchitecture
 
 private let logger = Logger(label: "redisKeys-store")
 
+// MARK: - Cancel IDs
+private enum CancelID {
+    case countKeys
+}
+
 @Reducer
 struct RedisKeysStore {
     
@@ -126,11 +131,11 @@ struct RedisKeysStore {
                 state.pageState.current = 1
                 state.pageState.total = 0
                 state.pageState.keywords = keywords
-                // Clear datasource immediately to prevent showing stale data
                 state.tableState.datasource = []
                 state.tableState.selectIndex = -1
-                
+
                 return .merge(
+                    .cancel(id: CancelID.countKeys),   // cancel any running count scan
                     .send(.getKeys),
                     .send(.getCount)
                 )
@@ -154,28 +159,25 @@ struct RedisKeysStore {
             case .getCount:
                 state.countLockId += 1
                 let countLockId = state.countLockId
-                
+
                 return .run { send in
                     await send(.countKeys(0, countLockId))
                 }
-                
-            // 异步计算key数量, 通过setCount 进行递归调用，直接cursor 返回0
-            // 后续可能增加开关，是否查询数量
+                .cancellable(id: CancelID.countKeys, cancelInFlight: true)
+
+            // Async key count loop — cancelled by .search via CancelID.countKeys
             case let .countKeys(cursor, currentLockId):
                 let page = state.pageState.page
-                if currentLockId < state.countLockId {
-                    logger.info("有新查询任务, 当前count任务终止")
+                guard currentLockId >= state.countLockId else {
+                    logger.info("New search started — aborting stale count task")
                     return .none
                 }
-                
-                // 是否开启了快速分页, 默认启用 FIXME
-//                state.pageState.fastPage = redisInstanceModel.getClient().settingViewStore?.fastPage ?? true
-//                state.pageState.fastPageMax = redisInstanceModel.getClient().settingViewStore?.fastPageMax ?? 99
-                
+
                 return .run { send in
                     let r = await redisInstanceModel.getClient().countKey(page, cursor: cursor)
                     await send(.setCount(r.0, r.1, currentLockId))
                 }
+                .cancellable(id: CancelID.countKeys)
                 
                 
             case let .setKeys(_, redisKeys):

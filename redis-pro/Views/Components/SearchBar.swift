@@ -2,68 +2,134 @@
 //  SearchBar.swift
 //  redis-pro
 //
-//  Created by chengpanwang on 2021/4/12.
+//  Liquid Glass search field with history dropdown.
 //
 
 import SwiftUI
 import Logging
-import ComposableArchitecture
 
 struct SearchBar: View {
-    
+
     @State private var keywords: String = ""
     @State private var searchHistory: [String] = []
     @State private var isFocused: Bool = false
-    var placeholder:String = "Search..."
-    
+    @State private var showHistory: Bool = false
+
+    var placeholder: String = "Search..."
     var onCommit: ((String) -> Void)?
-    let logger = Logger(label: "search-bar")
-    
+
+    private static let logger = Logger(label: "search-bar")
+
     var body: some View {
-        HStack {
-            // Search text field
-            if #available(macOS 12.0, *) {
-                NSearchField(value: $keywords, editing: $isFocused, placeholder: placeholder, onCommit: doAction)
-                    .help("HELP_SEARCH_BAR")
-                    .overlay(alignment: .topLeading) {
-                        // 下拉框展示历史搜索记录
-                        if isFocused && !searchHistory.isEmpty {
-                            let height = CGFloat(max(180, min(80, searchHistory.count * 20)))
-                            
-                            List {
-                                ForEach(searchHistory.filter { $0.contains(keywords) || keywords.isEmpty }, id: \.self) { history in
-                                    Text(history)
-                                        .padding(0)
-                                        .onTapGesture {
-                                            // 点击历史记录时，将该条记录填充到搜索框中
-                                            keywords = history
-                                            isFocused = false // 关闭下拉框
-                                            doAction(keywords: keywords)
-                                        }
-                                }
-                            }
-                            .frame(height: height) // 设置下拉框的高度
-                            .padding(0)
-                            .cornerRadius(4)
-                            .offset(x: 0, y: 30)
-                            .shadow(radius: 5)
-                        }
+        VStack(spacing: 0) {
+            HStack(spacing: 6) {
+                Image(systemName: "magnifyingglass")
+                    .font(.system(size: 12, weight: .medium))
+                    .foregroundStyle(.secondary)
+
+                TextField("", text: $keywords, prompt: Text(placeholder).foregroundColor(.secondary))
+                    .textFieldStyle(.plain)
+                    .font(LiquidGlass.fontBody)
+                    .onSubmit { commit() }
+                    .onChange(of: keywords) { _, _ in
+                        showHistory = isFocused && !searchHistory.isEmpty
                     }
-            } else {
-                NSearchField(value: $keywords, editing: $isFocused, placeholder: placeholder, onCommit: doAction)
-                    .help("HELP_SEARCH_BAR")
+                    .onHover { inside in
+                        if inside { NSCursor.iBeam.push() } else { NSCursor.pop() }
+                    }
+
+                if !keywords.isEmpty {
+                    Button(action: {
+                        keywords = ""
+                        showHistory = false
+                        onCommit?("")
+                    }) {
+                        Image(systemName: "xmark.circle.fill")
+                            .font(.system(size: 12))
+                            .foregroundStyle(.secondary)
+                    }
+                    .buttonStyle(.plain)
+                    .transition(.opacity.combined(with: .scale))
+                }
             }
+            .padding(.horizontal, 8)
+            .padding(.vertical, 6)
+            .background(
+                RoundedRectangle(cornerRadius: LiquidGlass.radiusSM)
+                    .fill(Color(NSColor.textBackgroundColor).opacity(0.85))
+            )
+            .overlay(
+                RoundedRectangle(cornerRadius: LiquidGlass.radiusSM)
+                    .strokeBorder(
+                        isFocused ? Color.accentColor.opacity(0.5) : LiquidGlass.glassStroke,
+                        lineWidth: isFocused ? 1.5 : 1
+                    )
+            )
+            .animation(.spring(response: 0.2, dampingFraction: 0.8), value: isFocused)
         }
         .zIndex(10)
         .onAppear {
             searchHistory = RedisDefaults.getSearchHistory()
         }
     }
-    
-    func doAction(keywords: String) -> Void {
-        logger.info("on search bar action, keywords: \(keywords)")
-        searchHistory.insert(keywords, at: 0)
+
+    // MARK: - History dropdown (rendered by parent overlay)
+
+    @ViewBuilder
+    var historyDropdown: some View {
+        if showHistory {
+            let filtered = searchHistory.filter { keywords.isEmpty || $0.localizedCaseInsensitiveContains(keywords) }
+            if !filtered.isEmpty {
+                VStack(alignment: .leading, spacing: 0) {
+                    ForEach(filtered.prefix(8), id: \.self) { item in
+                        HStack {
+                            Image(systemName: "clock")
+                                .font(.system(size: 11))
+                                .foregroundStyle(.secondary)
+                            Text(item)
+                                .font(LiquidGlass.fontBody)
+                                .lineLimit(1)
+                            Spacer()
+                        }
+                        .padding(.horizontal, 10)
+                        .padding(.vertical, 6)
+                        .contentShape(Rectangle())
+                        .onTapGesture {
+                            keywords = item
+                            showHistory = false
+                            commit()
+                        }
+                        .onHover { inside in
+                            if inside { NSCursor.pointingHand.push() } else { NSCursor.pop() }
+                        }
+                        Divider().padding(.horizontal, 8)
+                    }
+                }
+                .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: LiquidGlass.radiusSM))
+                .overlay(
+                    RoundedRectangle(cornerRadius: LiquidGlass.radiusSM)
+                        .strokeBorder(LiquidGlass.glassBorder, lineWidth: 0.5)
+                )
+                .shadow(color: .black.opacity(0.15), radius: 8, x: 0, y: 4)
+                .zIndex(100)
+                .transition(.asymmetric(
+                    insertion: .opacity.combined(with: .move(edge: .top)),
+                    removal: .opacity
+                ))
+            }
+        }
+    }
+
+    // MARK: - Private
+
+    private func commit() {
+        Self.logger.info("SearchBar commit, keywords: \(keywords)")
+        var history = searchHistory
+        history.removeAll { $0 == keywords }
+        if !keywords.isEmpty { history.insert(keywords, at: 0) }
+        searchHistory = Array(history.prefix(20))
         RedisDefaults.saveSearchHistory(history: searchHistory)
         onCommit?(keywords)
+        showHistory = false
     }
 }

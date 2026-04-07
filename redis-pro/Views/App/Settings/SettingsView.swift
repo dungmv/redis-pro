@@ -2,65 +2,69 @@
 //  SettingsView.swift
 //  redis-pro
 //
-//  Created by chengpanwang on 2021/6/9.
+//  Liquid Glass settings panel.
 //
 
-import Logging
 import SwiftUI
 import ComposableArchitecture
+import Logging
 
 struct SettingsView: View {
 
-    private let labelWidth:CGFloat = 160
-    @Perception.Bindable var store:StoreOf<SettingsStore>
-    
-    private let logger = Logger(label: "settings-view")
-    
+    private static let logger = Logger(label: "settings-view")
+    private let labelWidth: CGFloat = 160
+
+    @Bindable var store: StoreOf<SettingsStore>
+
     var body: some View {
         WithPerceptionTracking {
             Form {
-                VStack(alignment: .leading, spacing: 8) {
-                    
-                    Picker(selection: $store.defaultFavorite.sending(\.setDefaultFavorite),
-                           label: Text("Default Favorite:").frame(width: labelWidth, alignment: .trailing)
+                Section {
+                    Picker(
+                        selection: $store.defaultFavorite.sending(\.setDefaultFavorite),
+                        label: Text("Default Favorite").frame(width: labelWidth, alignment: .trailing)
                     ) {
-                        Section {
-                            Text("Last Used").tag("last")
-                        }
-                        
-                        ForEach(store.redisModels, id: \.id) { item in
-                            Text(item.name)
+                        Text("Last Used").tag("last")
+                        ForEach(store.redisModels, id: \.id) { Text($0.name).tag($0.id) }
+                    }
+
+                    Picker(
+                        selection: $store.colorSchemeValue.sending(\.setColorScheme),
+                        label: Text("Appearance").frame(width: labelWidth, alignment: .trailing)
+                    ) {
+                        ForEach(ColorSchemeEnum.allCases.map(\.rawValue), id: \.self) {
+                            Text(verbatim: $0)
                         }
                     }
-                    
-                    Picker(selection: $store.colorSchemeValue.sending(\.setColorScheme),
-                           label: Text("Appearance:").frame(width: labelWidth, alignment: .trailing)) {
-                        ForEach(ColorSchemeEnum.allCases.map({$0.rawValue}), id: \.self) { item in
-                            Text(verbatim: item)
-                        }
-                    }
-                    
-                    FormItemInt(label: "String Max Length", labelWidth: labelWidth, tips:"HELP_STRING_GET_RANGE_LENGTH", value: $store.stringMaxLength.sending(\.setStringMaxLength))
-                    
+                }
+
+                Section {
+                    FormItemInt(
+                        label: "String Max Length",
+                        labelWidth: labelWidth,
+                        tips: "HELP_STRING_GET_RANGE_LENGTH",
+                        value: $store.stringMaxLength.sending(\.setStringMaxLength)
+                    )
+
                     Toggle(isOn: $store.fastPage.sending(\.setFastPage)) {
-                        Text("Fast Page:")
+                        Text("Fast Pagination")
                             .frame(width: labelWidth, alignment: .trailing)
                     }
                     .toggleStyle(.switch)
                     .help("HELP_FAST_PAGE")
-                    
-                    
-                    FormItemInt(label: "Search History", labelWidth: labelWidth, tips:"HELP_SEARCH_HISTORY_SIZE", value: $store.searchHistorySize.sending(\.setSearchHistorySize))
-                    
-                    Spacer()
+
+                    FormItemInt(
+                        label: "Search History Size",
+                        labelWidth: labelWidth,
+                        tips: "HELP_SEARCH_HISTORY_SIZE",
+                        value: $store.searchHistorySize.sending(\.setSearchHistorySize)
+                    )
                 }
             }
-            .onAppear {
-                store.send(.initial)
-            }
+            .formStyle(.grouped)
+            .onAppear { store.send(.initial) }
             .navigationTitle("Preferences")
-            .padding(30)
+            .frame(minWidth: 420, minHeight: 260)
         }
-        
     }
 }

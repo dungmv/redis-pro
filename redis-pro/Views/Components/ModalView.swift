@@ -2,76 +2,79 @@
 //  ModalView.swift
 //  redis-pro
 //
-//  Created by chengpanwang on 2021/4/28.
+//  Liquid Glass modal dialog.
 //
 
 import SwiftUI
 
 struct ModalView<Content: View>: View {
-    @Environment(\.presentationMode) var presentation
+    @Environment(\.dismiss) private var dismiss
+
     var title: String
     var action: () throws -> Void
     var content: Content
-    var width = MTheme.DIALOG_W
-    var height = MTheme.DIALOG_H
-    
-    
-    init(_ title:String, action: @escaping () throws -> Void, @ViewBuilder content: () -> Content) {
+    var width: CGFloat = LiquidGlass.DIALOG_W
+    var height: CGFloat = LiquidGlass.DIALOG_H
+
+    init(_ title: String, action: @escaping () throws -> Void, @ViewBuilder content: () -> Content) {
         self.title = title
         self.action = action
         self.content = content()
     }
-    
-    init(_ title:String, width: CGFloat, height: CGFloat, action: @escaping () throws -> Void, @ViewBuilder content: () -> Content) {
+
+    init(_ title: String, width: CGFloat, height: CGFloat, action: @escaping () throws -> Void, @ViewBuilder content: () -> Content) {
         self.title = title
         self.width = width
         self.height = height
         self.action = action
         self.content = content()
     }
-    
+
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
-            // header
+            // ── Header ──────────────────────────────────────────────────────
             HStack {
                 Text(title)
-                    .font(.body)
+                    .font(.system(size: 14, weight: .semibold))
+                    .foregroundStyle(.primary)
                 Spacer()
             }
-            .padding(EdgeInsets(top: 8, leading: 8, bottom: 8, trailing: 8))
-            Rectangle().frame(height: 1)
-                .padding(.horizontal, 0).foregroundColor(Color.gray.opacity(0.2))
-            
-            VStack(alignment: .center, spacing: 0) {
+            .padding(.horizontal, 16)
+            .padding(.vertical, 12)
+            .background(.bar)
+
+            Divider()
+
+            // ── Content ─────────────────────────────────────────────────────
+            VStack(alignment: .leading, spacing: 0) {
                 content
             }
-            .padding(8)
-            
-            HStack(alignment: .center, spacing: 6) {
+            .padding(16)
+
+            Divider()
+
+            // ── Footer ──────────────────────────────────────────────────────
+            HStack(spacing: 8) {
                 Spacer()
-                MButton(text: "Cancel", action: onCancel, keyEquivalent: .escape).keyboardShortcut(.cancelAction)
-                MButton(text: "Submit", action: doAction, keyEquivalent: .return).keyboardShortcut(.defaultAction)
+                MButton(text: "Cancel", action: cancel, keyEquivalent: .escape)
+                    .keyboardShortcut(.cancelAction)
+                MButton(text: "Submit", action: submit, style: .primary, keyEquivalent: .return)
+                    .keyboardShortcut(.defaultAction)
             }
-            .padding(EdgeInsets(top: 0, leading: 8, bottom: 6, trailing: 8))
+            .padding(.horizontal, 16)
+            .padding(.vertical, 10)
+            .background(.bar)
         }
         .frame(minWidth: width, minHeight: height)
-        .padding(0)
+        .background(.ultraThinMaterial)
     }
-    
-    func doAction() -> Void {
-        presentation.wrappedValue.dismiss()
+
+    private func submit() {
+        dismiss()
         try? action()
     }
-    
-    func onCancel() -> Void{
-        presentation.wrappedValue.dismiss()
-    }
-}
 
-struct ModalView_Previews: PreviewProvider {
-    static var previews: some View {
-        ModalView("title", action: {print("modal view action")}) {
-            Text("modal view")
-        }
+    private func cancel() {
+        dismiss()
     }
 }

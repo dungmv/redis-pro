@@ -13,12 +13,12 @@ import ComposableArchitecture
 
 
 struct LoginView: View {
-    let logger = Logger(label: "login-view")
+    private static let logger = Logger(label: "login-view")
     
     var store: StoreOf<AppStore>
     
     init(store: StoreOf<AppStore>) {
-        logger.info("login view init...")
+        Self.logger.info("login view init...")
         self.store = store
     }
     

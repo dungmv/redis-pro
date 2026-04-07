@@ -10,7 +10,7 @@ import Logging
 import ComposableArchitecture
 
 struct HashEditorView: View {
-    @Perception.Bindable var store: StoreOf<HashValueStore>
+    @Bindable var store: StoreOf<HashValueStore>
     var keyObjectStore: StoreOf<KeyObjectStore>
     private let logger = Logger(label: "redis-hash-editor")
     

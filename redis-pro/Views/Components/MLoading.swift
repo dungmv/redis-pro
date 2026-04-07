@@ -1,27 +1,31 @@
 //
-//  Loading.swift
+//  MLoading.swift
 //  redis-pro
 //
-//  Created by chengpanwang on 2021/5/20.
+//  Liquid Glass inline loading indicator.
 //
 
 import SwiftUI
 
 struct MLoading: View {
-    var text:String
-    var loadingText:String = "Connecting..."
-    var loading:Bool = false
+    var text: String
+    var loadingText: String = "Connecting..."
+    var loading: Bool = false
+
     var body: some View {
-        HStack(alignment: .center, spacing: 4) {
+        HStack(spacing: 6) {
             if loading {
                 ProgressView()
-                    .scaleEffect(x: 0.5, y: 0.5, anchor: .center)
-                    .frame(width: 20, height: 20)
+                    .controlSize(.small)
+                    .tint(.accentColor)
+                    .transition(.opacity.combined(with: .scale(scale: 0.7)))
             }
             Text(loading ? loadingText : text)
-                .font(.body)
-                .multilineTextAlignment(.leading)
+                .font(LiquidGlass.fontBody)
+                .foregroundStyle(loading ? Color.accentColor : Color.primary)
                 .lineLimit(1)
+                .contentTransition(.numericText())
         }
+        .animation(.spring(response: 0.3, dampingFraction: 0.75), value: loading)
     }
 }

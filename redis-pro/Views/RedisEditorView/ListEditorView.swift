@@ -11,7 +11,7 @@ import ComposableArchitecture
 
 struct ListEditorView: View {
     
-    @Perception.Bindable var store:StoreOf<ListValueStore>
+    @Bindable var store:StoreOf<ListValueStore>
     var keyObjectStore: StoreOf<KeyObjectStore>
     let logger = Logger(label: "redis-list-editor")
     

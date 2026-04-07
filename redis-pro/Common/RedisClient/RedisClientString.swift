@@ -139,7 +139,7 @@ extension RediStackClient {
         let command:RedisCommand<Int> = .renamenx(oldKey, newKey: newKey)
         let r = await send(command, 0)
         if r == 0 {
-            Messages.show("rename key error, new key: \(newKey) already exists.")
+            Task { @MainActor in Messages.show("rename key error, new key: \(newKey) already exists.") }
         }
         
         return r > 0

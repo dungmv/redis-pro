@@ -2,133 +2,172 @@
 //  RedisKeysTreeView.swift
 //  redis-pro
 //
-//  Created by chengpanwang on 2024/2/5.
+//  Liquid Glass sidebar tree view.
 //
 
 import SwiftUI
 import ComposableArchitecture
 
+// MARK: - Root tree view
+
 struct RedisKeysTreeView: View {
     let store: StoreOf<RedisKeysStore>
-    
+
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
-            Text("KEYS (\(store.dbsize) SCANNED)")
-                .font(.system(size: 11, weight: .semibold))
-                .foregroundColor(.secondary)
-                .padding(.horizontal, 12)
-                .padding(.vertical, 8)
-            
+            // Section header
+            HStack {
+                Text("KEYS")
+                    .font(.system(size: 10, weight: .bold))
+                    .foregroundStyle(.secondary)
+                    .kerning(0.8)
+                Spacer()
+                Text("\(store.dbsize)")
+                    .font(.system(size: 10, weight: .semibold, design: .monospaced))
+                    .foregroundStyle(.tertiary)
+                    .padding(.horizontal, 6)
+                    .padding(.vertical, 2)
+                    .background(.ultraThinMaterial, in: Capsule())
+            }
+            .padding(.horizontal, 12)
+            .padding(.vertical, 8)
+
             ScrollView {
-                LazyVStack(alignment: .leading, spacing: 0) {
+                LazyVStack(alignment: .leading, spacing: 1) {
                     ForEach(store.redisKeyNodes) { node in
                         TreeRenderNode(node: node, store: store, level: 0)
                     }
                 }
-                .padding(.horizontal, 8)
+                .padding(.horizontal, 6)
+                .padding(.bottom, 8)
             }
         }
     }
 }
 
+// MARK: - Tree node renderer
+
 struct TreeRenderNode: View {
     let node: RedisKeyNode
     let store: StoreOf<RedisKeysStore>
     let level: CGFloat
-    @State private var isExpanded: Bool = false
-    
+    @State private var isExpanded: Bool = true
+
     var body: some View {
-        VStack(alignment: .leading, spacing: 0) {
-            if let children = node.children {
-                // Folder node - Custom implementation for tight spacing
+        VStack(alignment: .leading, spacing: 1) {
+            if node.isFolder {
                 folderRow
-                    .padding(.leading, level * 12)
-                    .onTapGesture {
-                        withAnimation(.easeInOut(duration: 0.2)) {
-                            isExpanded.toggle()
-                        }
-                    }
-                
-                if isExpanded {
-                    VStack(alignment: .leading, spacing: 0) {
+                    .padding(.leading, level * 14)
+
+                if isExpanded, let children = node.children {
+                    VStack(alignment: .leading, spacing: 1) {
                         ForEach(children) { child in
                             TreeRenderNode(node: child, store: store, level: level + 1)
                         }
                     }
+                    .transition(.asymmetric(
+                        insertion: .opacity.combined(with: .move(edge: .top)),
+                        removal: .opacity.combined(with: .move(edge: .top))
+                    ))
                 }
             } else {
-                // Key node
                 keyRow
-                    .padding(.leading, (level * 12) + 16)
+                    .padding(.leading, level * 14 + 16)
             }
         }
     }
-    
-    private var folderRow: some View {
-        HStack(spacing: 4) {
-            Image(systemName: isExpanded ? "chevron.down" : "chevron.right")
-                .font(.system(size: 10, weight: .semibold))
-                .foregroundColor(.secondary)
-                .frame(width: 10)
-            
-            Image(systemName: "folder")
-                .foregroundColor(.secondary)
-            
-            Text(node.name)
-                .lineLimit(1)
-            
-            Spacer()
-            
-            Text("\(node.keyCount)")
-                .font(.system(size: 10))
-                .foregroundColor(.secondary)
-                .padding(.trailing, 4)
-        }
-        .frame(height: 20)
-        .contentShape(Rectangle())
-    }
 
-    private var keyRow: some View {
-        HStack(spacing: 2) {
-            nodeTypeBadge(node.type?.uppercased() ?? "")
-            
+    // MARK: Folder row
+
+    private var folderRow: some View {
+        HStack(spacing: 5) {
+            Image(systemName: isExpanded ? "chevron.down" : "chevron.right")
+                .font(.system(size: 9, weight: .bold))
+                .foregroundStyle(.tertiary)
+                .frame(width: 10)
+                .animation(.spring(response: 0.2, dampingFraction: 0.8), value: isExpanded)
+
+            Image(systemName: isExpanded ? "folder.open" : "folder")
+                .font(.system(size: 11, weight: .medium))
+                .foregroundStyle(.secondary)
+                .symbolRenderingMode(.hierarchical)
+
             Text(node.name)
-                .font(.system(size: 12))
+                .font(.system(size: 12, weight: .medium))
+                .foregroundStyle(.primary)
                 .lineLimit(1)
-                .foregroundColor(store.selectedKeyId == node.id ? .white : .primary)
-            
-            Spacer()
+
+            Spacer(minLength: 4)
+
+            // Key count badge
+            Text("\(node.keyCount)")
+                .font(.system(size: 10, weight: .semibold, design: .monospaced))
+                .foregroundStyle(.secondary)
+                .padding(.horizontal, 5)
+                .padding(.vertical, 1)
+                .background(.quaternary, in: Capsule())
         }
-        .frame(height: 20)
-        .padding(.horizontal, 4)
-        .background(store.selectedKeyId == node.id ? Color.accentColor : Color.clear)
-        .cornerRadius(4)
+        .frame(height: 22)
+        .padding(.horizontal, 6)
         .contentShape(Rectangle())
         .onTapGesture {
-            store.send(.selectNode(node.id))
+            withAnimation(.spring(response: 0.25, dampingFraction: 0.8)) {
+                isExpanded.toggle()
+            }
         }
     }
-    
-    @ViewBuilder
-    private func nodeTypeBadge(_ type: String) -> some View {
-        Text(type)
-            .font(.system(size: 10, weight: .regular))
-            .padding(.horizontal, 2)
-            .padding(.vertical, 1)
-            .frame(width: 48)
-            .background(typeColor(type))
-            .foregroundColor(.white)
-            .cornerRadius(3)
-    }
-    
-    private func typeColor(_ type: String) -> Color {
-        switch type {
-        case "STRING": return .green
-        case "HASH": return .red
-        case "LIST": return .blue
-        case "SET": return .orange
-        case "ZSET": return .purple
-        default: return .gray
+
+    // MARK: Key row
+
+    private var keyRow: some View {
+        let isSelected = store.selectedKeyId == node.id
+
+        return HStack(spacing: 4) {
+            TypeBadge(type: node.type?.uppercased() ?? "")
+
+            Text(node.name)
+                .font(.system(size: 12, design: .monospaced))
+                .lineLimit(1)
+                .foregroundStyle(isSelected ? Color.white : Color.primary)
+
+            Spacer(minLength: 0)
         }
+        .frame(height: 22)
+        .padding(.horizontal, 6)
+        .background(
+            RoundedRectangle(cornerRadius: LiquidGlass.radiusXS)
+                .fill(isSelected
+                      ? Color.accentColor
+                      : Color.clear)
+        )
+        .overlay(
+            RoundedRectangle(cornerRadius: LiquidGlass.radiusXS)
+                .strokeBorder(isSelected ? Color.accentColor.opacity(0.3) : Color.clear, lineWidth: 0.5)
+        )
+        .contentShape(Rectangle())
+        .onTapGesture { store.send(.selectNode(node.id)) }
+        .contextMenu {
+            Button("Copy Key") {
+                PasteboardHelper.copy(node.id)
+            }
+        }
+    }
+}
+
+// MARK: - Type Badge
+
+private struct TypeBadge: View {
+    let type: String
+
+    var body: some View {
+        Text(type.isEmpty ? "–" : type)
+            .font(.system(size: 9, weight: .semibold, design: .monospaced))
+            .tracking(0.3)
+            .foregroundStyle(.white)
+            .frame(width: 42, height: 14)
+            .background(
+                RoundedRectangle(cornerRadius: 3)
+                    .fill(LiquidGlass.typeColor(for: type).opacity(0.85))
+            )
     }
 }
