@@ -15,7 +15,7 @@ struct MTextField: View {
     var editable: Bool = true
     var autoTrim: Bool = false
 
-    @State private var isFocused = false
+    @FocusState private var isFocused: Bool
 
     private var trimmedBinding: Binding<String> {
         Binding(
@@ -30,7 +30,7 @@ struct MTextField: View {
                 TextField("", text: trimmedBinding, prompt: Text(placeholder ?? "").foregroundColor(.secondary))
                     .textFieldStyle(.plain)
                     .onSubmit { onCommit?() }
-                    .focusable()
+                    .focused($isFocused)
                     .onHover { isHovered in
                         if isHovered { NSCursor.iBeam.push() } else { NSCursor.pop() }
                     }
@@ -59,13 +59,5 @@ struct MTextField: View {
                 )
         )
         .animation(.spring(response: 0.2, dampingFraction: 0.8), value: isFocused)
-    }
-}
-
-// Remove NSTextField focus ring globally for cleaner look
-extension NSTextField {
-    open override var focusRingType: NSFocusRingType {
-        get { .none }
-        set { }
     }
 }
