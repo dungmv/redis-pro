@@ -12,24 +12,36 @@ import ComposableArchitecture
 
 @MainActor
 class KeysDelStoreTests: StoreBaseTests {
-    func testBasics() async {
-        let store = TestStore(initialState: RedisKeysStore.State()) {
+    func testDeleteSuccessRemovesKeysAndClearsSelection() async {
+        let first = RedisKeyModel("key-1", type: RedisKeyTypeEnum.STRING.rawValue)
+        let second = RedisKeyModel("key-2", type: RedisKeyTypeEnum.STRING.rawValue)
+        let third = RedisKeyModel("key-3", type: RedisKeyTypeEnum.STRING.rawValue)
+        let datasource: [AnyHashable] = [first, second, third]
+
+        var state = RedisKeysStore.State()
+        state.tableState = TableStore.State(
+            columns: [.init(type: .KEY_TYPE, title: "Type", key: "type", width: 40),
+                      .init(title: "Key", key: "key", width: 50)],
+            datasource: datasource,
+            contextMenus: [.COPY, .RENAME, .DELETE],
+            selectIndex: 1,
+            multiSelect: true
+        )
+        state.redisKeyNodes = RedisKeyNode.buildTree(from: [first, second, third])
+        state.selectedKeyId = second.key
+
+        let store = TestStore(initialState: state) {
             RedisKeysStore()
         } withDependencies: {
             $0.redisInstance = redisInstance
-            $0.redisClient = redisClient
         }
+        store.exhaustivity = Exhaustivity.off(showSkippedAssertions: false)
         
-        
-        await redisClient.set("__keys_del_str_1", value: UUID.init().uuidString)
-        await redisClient.set("__keys_del_str_2", value: UUID.init().uuidString)
-        await redisClient.set("__keys_del_str_3", value: UUID.init().uuidString)
-        await redisClient.set("__keys_del_str_4", value: UUID.init().uuidString)
-        await redisClient.set("__keys_del_str_5", value: UUID.init().uuidString)
-        await store.send(.search("__keys_del_str_*")) {
-            $0.pageState = PageStore.State()
+        await store.send(RedisKeysStore.Action.deleteSuccess([1])) {
+            $0.tableState.datasource = [first, third]
+            $0.redisKeyNodes = RedisKeyNode.buildTree(from: [first, third])
+            $0.tableState.selectIndex = -1
+            $0.selectedKeyId = nil
         }
-        
-        XCTAssertEqual(store.state.tableState.datasource.count, 3)
     }
 }

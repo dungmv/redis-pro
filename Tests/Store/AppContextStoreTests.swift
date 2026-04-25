@@ -17,66 +17,65 @@ class AppContextStoreTests: StoreBaseTests {
             AppContextStore()
         } withDependencies: {
             $0.redisInstance = redisInstance
-            $0.redisClient = redisClient
         }
         
-        await store.send(.show) {
+        await store.send(AppContextStore.Action.show) {
             $0.loading = true
             $0.loadingCount = 1
         }
         
-        await store.send(.hide)
+        await store.send(AppContextStore.Action.hide)
         
-        await store.receive(\._hide) {
+        await store.receive(AppContextStore.Action._hide) {
             $0.loading = false
             $0.loadingCount = 0
         }
         
-        await store.send(.show) {
+        await store.send(AppContextStore.Action.show) {
             $0.loading = true
             $0.loadingCount = 1
         }
-        await store.send(.show) {
+        await store.send(AppContextStore.Action.show) {
             $0.loading = true
             $0.loadingCount = 2
         }
-        await store.send(.show) {
+        await store.send(AppContextStore.Action.show) {
             $0.loading = true
             $0.loadingCount = 3
         }
         
         // hide
-        await store.send(.hide)
+        await store.send(AppContextStore.Action.hide)
         
-        await store.receive(\._hide) {
+        await store.receive(AppContextStore.Action._hide) {
             $0.loading = true
             $0.loadingCount = 2
         }
         
-        await store.send(.show) {
+        await store.send(AppContextStore.Action.show) {
             $0.loading = true
             $0.loadingCount = 3
         }
-        await store.send(.hide)
+        await store.send(AppContextStore.Action.hide)
         
-        await store.receive(\._hide) {
+        await store.receive(AppContextStore.Action._hide) {
             $0.loading = true
             $0.loadingCount = 2
         }
-        await store.send(.hide)
+        await store.send(AppContextStore.Action.hide)
         
-        await store.receive(\._hide) {
+        await store.receive(AppContextStore.Action._hide) {
             $0.loading = true
             $0.loadingCount = 1
         }
         
-        await store.send(.hide)
+        await store.send(AppContextStore.Action.hide)
         
-        await store.receive(\._hide) {
+        await store.receive(AppContextStore.Action._hide) {
             $0.loading = false
             $0.loadingCount = 0
         }
         
-        await store.send(.hide)
+        await store.send(AppContextStore.Action.hide)
     }
 }
