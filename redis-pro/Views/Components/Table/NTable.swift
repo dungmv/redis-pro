@@ -65,9 +65,7 @@ class NTableController: NSViewController{
     
     var store: StoreOf<TableStore>
     var cancellables: Set<AnyCancellable> = []
-    
-    var observation: NSKeyValueObservation?
-    
+        
     let logger = Logger(label: "table-view-controller")
     
     init(_ store: StoreOf<TableStore>) {
@@ -79,10 +77,6 @@ class NTableController: NSViewController{
         self.arrayController.setSelectionIndex(self.store.selectIndex)
         
         super.init(nibName: nil, bundle: nil)
-        
-        // set table dark light mode
-        self.view.appearance = NSApp.appearance
-        self.tableView.appearance = NSApp.appearance
     }
     
     required init?(coder: NSCoder) {
@@ -99,17 +93,6 @@ class NTableController: NSViewController{
             return
         }
         initialized = true
-        
-        // listen app color scheme
-        observation = NSApp.observe(\.effectiveAppearance) { (app, _) in
-            app.effectiveAppearance.performAsCurrentDrawingAppearance {
-                // Invoke your non-view code that needs to be aware of the
-                // change in appearance.
-                self.logger.info("app color scheme change, update table view ...")
-                self.view.appearance = NSApp.appearance
-                self.tableView.appearance = NSApp.appearance
-            }
-        }
         
         tableView.allowsEmptySelection = false
         
@@ -202,7 +185,6 @@ class NTableController: NSViewController{
         
         tableView.style = .fullWidth
         tableView.backgroundColor = NSColor.clear
-        tableView.appearance = NSAppearance(named: NSAppearance.Name.vibrantLight)
         
         tableView.columnAutoresizingStyle = .lastColumnOnlyAutoresizingStyle
         

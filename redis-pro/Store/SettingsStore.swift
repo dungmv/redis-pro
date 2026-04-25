@@ -69,12 +69,6 @@ struct SettingsStore {
                 logger.info("upate color scheme action, \(colorSchemeValue)")
                 state.colorSchemeValue = colorSchemeValue
                 UserDefaults.standard.set(colorSchemeValue, forKey: UserDefaulsKeysEnum.AppColorScheme.rawValue)
-                
-                if colorSchemeValue == ColorSchemeEnum.SYSTEM.rawValue {
-                    NSApp.appearance = nil
-                } else {
-                    NSApp.appearance = NSAppearance(named:  colorSchemeValue == ColorSchemeEnum.DARK.rawValue ? .darkAqua : .aqua)
-                }
                 return .none
                 
             // 默认选中设置

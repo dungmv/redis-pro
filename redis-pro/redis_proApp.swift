@@ -13,6 +13,8 @@ import ComposableArchitecture
 @main
 struct redis_proApp: App {
     private let logger = Logger(label: "app")
+    @AppStorage(UserDefaulsKeysEnum.AppColorScheme.rawValue)
+    private var colorSchemeValue: String = ColorSchemeEnum.SYSTEM.rawValue
     
     // 会造成indexView 多次初始化
 //    @Environment(\.scenePhase) var scenePhase
@@ -39,6 +41,7 @@ struct redis_proApp: App {
        
         WindowGroup {
             IndexView(store: rootStore.scope(state: \.windows[id: self.mainWindowId]!, action: \.windows[id: self.mainWindowId]))
+                .preferredColorScheme(preferredColorScheme)
         }
         .commands {
             CommandGroup(replacing: CommandGroupPlacement.toolbar) {
@@ -64,10 +67,23 @@ struct redis_proApp: App {
         
         WindowGroup("AboutView") {
             AboutView()
+                .preferredColorScheme(preferredColorScheme)
         }.handlesExternalEvents(matching: Set(arrayLiteral: "AboutView"))
         
         Settings {
             SettingsView(store: settingsStore)
+                .preferredColorScheme(preferredColorScheme)
+        }
+    }
+
+    private var preferredColorScheme: ColorScheme? {
+        switch colorSchemeValue {
+        case ColorSchemeEnum.DARK.rawValue:
+            return .dark
+        case ColorSchemeEnum.LIGHT.rawValue:
+            return .light
+        default:
+            return nil
         }
     }
     
@@ -105,14 +121,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     
     func applicationDidFinishLaunching(_ notification: Notification) {
         logger.info("redis pro launch complete")
-        
-        let colorSchemeValue = UserDefaults.standard.string(forKey: UserDefaulsKeysEnum.AppColorScheme.rawValue) ?? ColorSchemeEnum.SYSTEM.rawValue
-        if colorSchemeValue == ColorSchemeEnum.SYSTEM.rawValue {
-            NSApp.appearance = nil
-        } else {
-            NSApp.appearance = NSAppearance(named:  colorSchemeValue == ColorSchemeEnum.DARK.rawValue ? .darkAqua : .aqua)
-        }
-        logger.info("redis pro launch, set color scheme complete...")
+        logger.info("redis pro launch, scene color scheme ready...")
         
     }
     
