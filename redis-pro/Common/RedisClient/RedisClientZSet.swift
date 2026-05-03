@@ -13,7 +13,7 @@ import RediStack
 extension RediStackClient {
     
     // zset operator
-    func pageZSet(_ key:String, page: Page) async -> [RedisZSetItemModel] {
+    func pageZSet(_ key:String, page: Page) async throws -> [RedisZSetItemModel] {
         
         logger.info("redis zset page, key: \(key), page: \(page)")
         
@@ -31,7 +31,7 @@ extension RediStackClient {
             // 查询所有时使用 ZRANGEBYSCORE 按顺序返回
             if isMatchAll(page.keywords) {
                 r = try await _zrangeByScore(key, page: page)
-                page.total = await _zcard(key)
+                page.total = try await _zcard(key)
             }
             else if isScan {
                 let match = page.keywords.isEmpty ? nil : page.keywords
@@ -60,7 +60,7 @@ extension RediStackClient {
     private func zsetCountScan(_ key:String, keywords:String?) async throws -> Int {
         if isMatchAll(keywords ?? "") {
             logger.info("keywords is match all, use scard...")
-            return await _zcard(key)
+            return try await _zcard(key)
         }
         
         var cursor:Int = 0
@@ -127,11 +127,11 @@ extension RediStackClient {
         logger.debug("redis set scan, key: \(key) cursor: \(cursor), keywords: \(String(describing: keywords)), count:\(String(describing: count))")
         
         let command: RedisCommand<(Int, [(RESPValue, Double)])> = .zscan(RedisKey(key), startingFrom: cursor, matching: keywords, count: count)
-        let r = await _send(command)!
+        let r = try await _send(command)!
         return (r.0, r.1.map { ($0.0.string ?? Const.EMPTY_STRING, $0.1) })
     }
     
-    func zupdate(_ key:String, from:String, to:String, score:Double) async -> Bool {
+    func zupdate(_ key:String, from:String, to:String, score:Double) async throws -> Bool {
         logger.info("update zset element key: \(key), from:\(from), to:\(to), score:\(score)")
         begin()
         defer {
@@ -142,7 +142,7 @@ extension RediStackClient {
             let r = try await _zrem(key, ele: from)
             try Assert.isTrue(r > 0, message: "set zset element: `\(from)` is not exist!")
             
-            return await _zadd(key, score: score, ele: to)
+            return try await _zadd(key, score: score, ele: to)
             
         } catch {
             handleError(error)
@@ -150,27 +150,27 @@ extension RediStackClient {
         return false
     }
     
-    func zadd(_ key:String, score:Double, ele:String) async -> Bool {
+    func zadd(_ key:String, score:Double, ele:String) async throws -> Bool {
         begin()
         defer {
             complete()
         }
         
-        return await _zadd(key, score: score, ele: ele)
+        return try await _zadd(key, score: score, ele: ele)
     }
     
-    private func _zadd(_ key:String, score:Double, ele:String) async -> Bool {
+    private func _zadd(_ key:String, score:Double, ele:String) async throws -> Bool {
         let command: RedisCommand<Int> = .zadd((ele, score), to: RedisKey(key))
-        return await _send(command, 0) > 0
+        return try await _send(command, 0) > 0
     }
     
     
-    private func _zcard(_ key:String) async -> Int {
+    private func _zcard(_ key:String) async throws -> Int {
         let command: RedisCommand<Int> = .zcard(of: RedisKey(key))
-        return await _send(command, 0)
+        return try await _send(command, 0)
     }
     
-    func zrem(_ key:String, ele:String) async -> Int {
+    func zrem(_ key:String, ele:String) async throws -> Int {
         begin()
         
         defer {
@@ -186,18 +186,18 @@ extension RediStackClient {
     
     private func _zrem(_ key:String, ele:String) async throws -> Int {
         let command: RedisCommand<Int> = .zrem(ele, from: RedisKey(key))
-        return await _send(command, 0)
+        return try await _send(command, 0)
     }
     
     private func _zscore(_ key:String, ele:String) async throws -> Double? {
         let command: RedisCommand<Double?> = .zscore(of: ele, in: RedisKey(key))
-        return await _send(command)!
+        return try await _send(command)!
     }
     
     private func _zrangeByScore(_ key:String, page:Page) async throws -> [(String, String)] {
     
         let command: RedisCommand<[(RESPValue, Double)]> = .zrangebyscore(from: RedisKey(key), withMinimumScoreOf: .inclusive(Double.min), limitBy: (offset: page.start, count: page.size), returning: .valuesAndScores)
-        let r:[(RESPValue, Double)] = await _send(command)!
+        let r:[(RESPValue, Double)] = try await _send(command)!
         return r.map { ($0.string ?? Const.EMPTY_STRING, "\($1)") }
         
     }

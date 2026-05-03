@@ -1,5 +1,5 @@
 //
-//  RedisInsanceModel.swift
+//  RedisInstanceModel.swift
 //  redis-pro
 //
 //  Created by chengpanwang on 2021/1/25.
@@ -69,7 +69,7 @@ class RedisInstanceModel: Identifiable {
             self.close()
         }
         logger.info("test connect to redis server: \(redisModel)")
-        return  await initRedisClient(redisModel).testConn()
+        return (try? await initRedisClient(redisModel).testConn()) ?? false
     }
     
     func close() -> Void {

@@ -16,7 +16,7 @@ extension RediStackClient {
         logger.debug("redis keys scan, cursor: \(cursor), keywords: \(String(describing: keywords)), count:\(String(describing: count))")
         
         let command:RedisCommand<(Int, [RedisKey])> = .scan(startingFrom: cursor, matching: keywords, count: count)
-        let r = await _send(command) ?? (0, [])
+        let r = try await _send(command) ?? (0, [])
         return (r.0, r.1.map { $0.rawValue })
     }
     
@@ -33,7 +33,7 @@ extension RediStackClient {
     private func keysCountScan(_ keywords:String?) async throws -> Int {
         if isMatchAll(keywords ?? "") {
             logger.info("keywords is match all, use dbsize...")
-            return await dbsize()
+            return try await dbsize()
         }
         
         var cursor:Int = 0
@@ -85,7 +85,7 @@ extension RediStackClient {
         
     }
     
-    func pageKeys(_ page: Page) async -> [RedisKeyModel] {
+    func pageKeys(_ page: Page) async throws -> [RedisKeyModel] {
         begin()
         
         let stopwatch = Stopwatch.createStarted()
@@ -99,28 +99,20 @@ extension RediStackClient {
             complete()
         }
         
-        do {
-            // 带有占位符的情况，使用
-            if isScan {
+        // 带有占位符的情况，使用
+        if isScan {
 
-                let pageData:[String] = try await keysPageScan(page)
-             
-                return await self.toRedisKeyModels(pageData)
+            let pageData:[String] = try await keysPageScan(page)
+         
+            return try await self.toRedisKeyModels(pageData)
+        } else {
+            let exist = try await self.exist(page.keywords)
+            if exist {
+                return try await self.toRedisKeyModels([page.keywords])
             } else {
-                let exist = await self.exist(page.keywords)
-                if exist {
-                    return await self.toRedisKeyModels([page.keywords])
-                } else {
-                    return []
-                }
+                return []
             }
-            
-        } catch {
-            self.logger.error("get key type error: \(error)")
-            self.handleError(error)
         }
-
-        return []
     }
     
     
@@ -130,48 +122,42 @@ extension RediStackClient {
     ///   - cursor: 当前游标
     /// - Returns: 0: 当前游标， 0表示结束查询，同redis scan命令 1: 此次查询到的数量
     ///
-    func countKey(_ page: Page, cursor: Int) async -> (Int, Int) {
+    func countKey(_ page: Page, cursor: Int) async throws -> (Int, Int) {
         let keywords = page.keywords
         // 如果是匹配所，使用dbsize
         if isMatchAll(keywords) {
-            return (0, await dbsize())
+            return (0, try await dbsize())
         }
         
         let isScan = isScan(keywords)
         let match = keywords.isEmpty ? nil : keywords
         
-        do {
-            // 是否走scan扫描key
-            if isScan {
-                let res = try await countScan(cursor: cursor, keywords: match, count: dataCountScanCount)
-                logger.info("count scan keys, current cursor: \(cursor), r: \(res)")
-                
-                // 检查fast page, 如果启用了快速分页，查到99页结束，否则查询所有总页数 FIXME
+        // 是否走scan扫描key
+        if isScan {
+            let res = try await countScan(cursor: cursor, keywords: match, count: dataCountScanCount)
+            logger.info("count scan keys, current cursor: \(cursor), r: \(res)")
+            
+            // 检查fast page, 如果启用了快速分页，查到99页结束，否则查询所有总页数 FIXME
 //                if settingViewStore?.fastPage ?? true && ((res.1 + page.total) > ((settingViewStore?.fastPageMax ?? 99) * page.size)) {
 //                    logger.info("count scan keys, fast page switch is open, stop scan")
 //                    return (0, res.1)
 //                }
-                
-                return res
-            } else {
-                let count = await self.exist(keywords) ? 1 : 0
-                return (0, count)
-            }
-        } catch {
-            handleError(error)
+            
+            return res
+        } else {
+            let count = try await self.exist(keywords) ? 1 : 0
+            return (0, count)
         }
-        
-        return (0, 0)
     }
     
-    func toRedisKeyModels(_ keys:[String]) async -> [RedisKeyModel] {
+    func toRedisKeyModels(_ keys:[String]) async throws -> [RedisKeyModel] {
         if keys.isEmpty {
             return []
         }
         
         var redisKeyModels = [RedisKeyModel]()
         
-        let typeDict = await getTypes(keys)
+        let typeDict = try await getTypes(keys)
         
         for key in keys {
             redisKeyModels.append(RedisKeyModel(key, type: typeDict[key] ?? RedisKeyTypeEnum.NONE.rawValue))

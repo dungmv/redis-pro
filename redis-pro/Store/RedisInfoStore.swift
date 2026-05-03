@@ -56,7 +56,7 @@ struct RedisInfoStore {
             
             case .getValue:
                 return .run { send in
-                    let r = await redisInstanceModel.getClient().info()
+                    let r = try await redisInstanceModel.getClient().info()
                     return await send(.setValue(r))
                 }
             
@@ -93,7 +93,7 @@ struct RedisInfoStore {
                 
             case .resetState:
                 return .run { send in
-                    let _ = await redisInstanceModel.getClient().resetState()
+                    let _ = try await redisInstanceModel.getClient().resetState()
                     return await send(.refresh)
                 }
                 

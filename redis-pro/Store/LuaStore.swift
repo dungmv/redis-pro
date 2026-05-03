@@ -41,20 +41,20 @@ struct LuaStore: Reducer {
             case .eval:
                 let lua = state.lua
                 return .run { send in
-                    let r = await redisInstanceModel.getClient().eval(lua)
+                    let r = try await redisInstanceModel.getClient().eval(lua)
                     await send(.setLuaResult(r))
                 }
                 
             case .scriptKill:
                 
                 return .run { send in
-                    let _ = await redisInstanceModel.getClient().scriptKill()
+                    let _ = try await redisInstanceModel.getClient().scriptKill()
                 }
                 
             case .scriptFlush:
                 
                 return .run { send in
-                    let _ = await redisInstanceModel.getClient().scriptFlush()
+                    let _ = try await redisInstanceModel.getClient().scriptFlush()
                 }
                 
             case .scriptLoad:

@@ -112,7 +112,7 @@ struct ZSetValueStore {
                 let key = redisKeyModel.key
                 let page = state.pageState.page
                 return .run { send in
-                    let res = await redisInstanceModel.getClient().pageZSet(key, page: page)
+                    let res = try await redisInstanceModel.getClient().pageZSet(key, page: page)
                     await send(.setValue(page, res))
                 }
                 
@@ -154,9 +154,9 @@ struct ZSetValueStore {
                 return .run { send in
                     var r = false
                     if isNew {
-                        r = await redisInstanceModel.getClient().zadd(key, score: editScore, ele: editValue)
+                        r = try await redisInstanceModel.getClient().zadd(key, score: editScore, ele: editValue)
                     } else {
-                        r = await redisInstanceModel.getClient().zupdate(key, from: originEle!.value, to: editValue, score: editScore)
+                        r = try await redisInstanceModel.getClient().zupdate(key, from: originEle!.value, to: editValue, score: editScore)
                     }
                     
                     return r ? await send(.submitSuccess(isNewKey)) : await send(.none)
@@ -201,7 +201,7 @@ struct ZSetValueStore {
                 logger.info("delete zset item, key: \(redisKeyModel.key), value: \(item.value)")
                 
                 return .run { send in
-                    let r = await redisInstanceModel.getClient().zrem(redisKeyModel.key, ele: item.value)
+                    let r = try await redisInstanceModel.getClient().zrem(redisKeyModel.key, ele: item.value)
                     logger.info("do delete zset item, key: \(redisKeyModel.key), value: \(item), r:\(r)")
                     
                     if r > 0 {

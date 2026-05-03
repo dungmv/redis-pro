@@ -105,7 +105,7 @@ struct ListValueStore: Reducer {
                 let key = redisKeyModel.key
                 let page = state.pageState.page
                 return .run { send in
-                    let res = await redisInstanceModel.getClient().pageList(key, page: page)
+                    let res = try await redisInstanceModel.getClient().pageList(key, page: page)
                     await send(.setValue(page, res))
                 }
                 
@@ -145,11 +145,11 @@ struct ListValueStore: Reducer {
                 let item = pushType == 0 ? state.tableState.datasource[state.editIndex] as? RedisListItemModel : nil
                 return .run { send in
                     if pushType == -1 {
-                        let _ = await redisInstanceModel.getClient().lpush(key, value: editValue)
+                        let _ = try await redisInstanceModel.getClient().lpush(key, value: editValue)
                     } else if pushType == -2 {
-                        let _ = await redisInstanceModel.getClient().rpush(key, value: editValue)
+                        let _ = try await redisInstanceModel.getClient().rpush(key, value: editValue)
                     } else if pushType == 0 {
-                        let _ = await redisInstanceModel.getClient().lset(key, index: item!.index, value: editValue)
+                        let _ = try await redisInstanceModel.getClient().lset(key, index: item!.index, value: editValue)
                         logger.info("redis list set success, update list")
                     } else {
                         Task { @MainActor in Messages.show("System error!!!") }
@@ -201,7 +201,7 @@ struct ListValueStore: Reducer {
                 logger.info("delete list item, key: \(redisKeyModel.key), index: \(item.index), value: \(item.value)")
                 
                 return .run { send in
-                    let r = await redisInstanceModel.getClient().ldel(redisKeyModel.key, index: item.index, value: item.value)
+                    let r = try await redisInstanceModel.getClient().ldel(redisKeyModel.key, index: item.index, value: item.value)
                     logger.info("do delete list item, key: \(redisKeyModel.key), value: \(item.value), r:\(r)")
                     
                     if r > 0 {

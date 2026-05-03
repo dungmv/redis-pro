@@ -15,7 +15,7 @@ extension RediStackClient {
     /*
      * 初始化redis 连接
      */
-    func initConnection() async -> Bool {
+    func initConnection() async throws -> Bool {
         begin()
         defer {
             complete()
@@ -33,7 +33,7 @@ extension RediStackClient {
     }
     
     /// test redis connection
-    func testConn() async -> Bool {
+    func testConn() async throws -> Bool {
         begin()
         defer {
             complete()
@@ -68,7 +68,7 @@ extension RediStackClient {
     
     func refreshConn() async {
         self.close()
-        let _ = try! await self.getConn()
+        let _ = try! try await self.getConn()
     }
     
     func getConnPool() async throws -> RedisClient {
@@ -96,7 +96,7 @@ extension RediStackClient {
         logger.info("redis client- init new redis connection, host: \(host), port: \(port), pass: \(pass), database: \(database)")
         return try await withCheckedThrowingContinuation { continuation in
             do {
-                let eventLoop = MultiThreadedEventLoopGroup(numberOfThreads: 4).next()
+                let eventLoop = eventLoopGroup.next()
                 var configuration: RedisConnection.Configuration
                 if (pass.isEmpty) {
                     configuration = try RedisConnection.Configuration(hostname: host, port: port, initialDatabase: database, defaultLogger: logger)
@@ -143,7 +143,7 @@ extension RediStackClient {
         let pool = RedisConnectionPool(
             configuration: .init(
                 initialServerConnectionAddresses: addresses
-                , connectionCountBehavior: .elastic(maximumConnectionCount: 2, minimumConnectionCount: 1)
+                , connectionCountBehavior: .elastic(maximumConnectionCount: 10, minimumConnectionCount: 1)
                 , connectionConfiguration: config
                 , retryStrategy: .exponentialBackoff(initialDelay: .milliseconds(100), backoffFactor: 2, timeout: .seconds(3))
                 , poolDefaultLogger: self.logger

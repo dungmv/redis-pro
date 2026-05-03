@@ -108,7 +108,7 @@ struct SetValueStore: Reducer {
                 let key = redisKeyModel.key
                 let page = state.pageState.page
                 return .run { send in
-                    let res = await redisInstanceModel.getClient().pageSet(key, page: page)
+                    let res = try await redisInstanceModel.getClient().pageSet(key, page: page)
                     await send(.setValue(page, res))
                 }
                 
@@ -146,9 +146,9 @@ struct SetValueStore: Reducer {
                 let originEle = isNew ? nil : state.tableState.datasource[state.editIndex] as? String
                 return .run { send in
                     if isNew {
-                        let _ = await redisInstanceModel.getClient().sadd(key, ele: editValue)
+                        let _ = try await redisInstanceModel.getClient().sadd(key, ele: editValue)
                     } else {
-                        let _ = await redisInstanceModel.getClient().supdate(key, from: originEle!, to: editValue)
+                        let _ = try await redisInstanceModel.getClient().supdate(key, from: originEle!, to: editValue)
                     }
                     
                     await send(.submitSuccess(isNewKey))
@@ -191,7 +191,7 @@ struct SetValueStore: Reducer {
                 logger.info("delete set item, key: \(redisKeyModel.key), value: \(item)")
                 
                 return .run { send in
-                    let r = await redisInstanceModel.getClient().srem(redisKeyModel.key, ele: item)
+                    let r = try await redisInstanceModel.getClient().srem(redisKeyModel.key, ele: item)
                     logger.info("do delete set item, key: \(redisKeyModel.key), value: \(item), r:\(r)")
                     
                     return r > 0 ? await send(.deleteSuccess(index)) : await send(.none)

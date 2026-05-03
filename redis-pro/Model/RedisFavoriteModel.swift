@@ -19,7 +19,7 @@ class RedisFavoriteModel:ObservableObject {
     let logger = Logger(label: "redis-favorite-model")
     
     private func getAll() -> [Dictionary<String, Any>] {
-        let redisDicts = userDefaults.array(forKey: UserDefaulsKeysEnum.RedisFavoriteListKey.rawValue)
+        let redisDicts = userDefaults.array(forKey: UserDefaultsKeysEnum.RedisFavoriteListKey.rawValue)
         logger.info("get all redis models from user defaults: \(String(describing: redisDicts))")
         
         return (redisDicts ?? [Dictionary<String, Any>]()) as! [Dictionary<String, Any>]
@@ -40,12 +40,12 @@ class RedisFavoriteModel:ObservableObject {
             redisModels.append(item)
         }
         
-        self.lastRedisModelId = userDefaults.string(forKey: UserDefaulsKeysEnum.RedisLastUseIdKey.rawValue)
+        self.lastRedisModelId = userDefaults.string(forKey: UserDefaultsKeysEnum.RedisLastUseIdKey.rawValue)
         logger.info("last select redis model id: \(String(describing: lastRedisModelId))")
     }
     
     func saveLast(redisModel:RedisModel) -> Void {
-        userDefaults.setValue(redisModel.id, forKey: UserDefaulsKeysEnum.RedisLastUseIdKey.rawValue)
+        userDefaults.setValue(redisModel.id, forKey: UserDefaultsKeysEnum.RedisLastUseIdKey.rawValue)
     }
     
     func save(redisModel:RedisModel) -> Void {
@@ -59,7 +59,7 @@ class RedisFavoriteModel:ObservableObject {
             savedRedisList.append(redisModel.dictionary)
         }
         
-        userDefaults.set(savedRedisList, forKey: UserDefaulsKeysEnum.RedisFavoriteListKey.rawValue)
+        userDefaults.set(savedRedisList, forKey: UserDefaultsKeysEnum.RedisFavoriteListKey.rawValue)
         loadAll()
         logger.info("save redis to favorite complete")
     }
@@ -83,7 +83,7 @@ class RedisFavoriteModel:ObservableObject {
             }
             
             savedRedisList.remove(at: index)
-            userDefaults.set(savedRedisList, forKey: UserDefaulsKeysEnum.RedisFavoriteListKey.rawValue)
+            userDefaults.set(savedRedisList, forKey: UserDefaultsKeysEnum.RedisFavoriteListKey.rawValue)
             logger.info("remove redis from favorite complete, id:\(id)")
             
             

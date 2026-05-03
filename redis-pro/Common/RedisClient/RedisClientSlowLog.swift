@@ -10,23 +10,23 @@ import RediStack
 
 // MARK: -slow log
 extension RediStackClient {
-    func slowLogReset() async -> Bool {
+    func slowLogReset() async throws -> Bool {
         logger.info("slow log reset ...")
         let command: RedisCommand<Bool> = .slowlogReset()
-        return await send(command, false)
+        return try await send(command, false)
         
     }
     
-    func slowLogLen() async -> Int {
+    func slowLogLen() async throws -> Int {
         logger.info("get slow log len ...")
         let command: RedisCommand<Int> = .slowlogLen()
-        return await send(command, 0)
+        return try await send(command, 0)
     }
     
-    func getSlowLog(_ size:Int) async -> [SlowLogModel] {
+    func getSlowLog(_ size:Int) async throws -> [SlowLogModel] {
         logger.info("get slow log list ...")
         let command: RedisCommand<[SlowLogModel]> = .slowlogList(size)
-        return await send(command, [])
+        return try await send(command, [])
     }
 }
 

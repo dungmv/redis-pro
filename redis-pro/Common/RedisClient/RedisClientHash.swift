@@ -15,7 +15,7 @@ extension RediStackClient {
     
     // hash operator
     
-    func pageHash(_ key:String, page:Page) async -> [RedisHashEntryModel] {
+    func pageHash(_ key:String, page:Page) async throws -> [RedisHashEntryModel] {
         logger.info("redis hash field page scan, key: \(key), page: \(page)")
         
         begin()
@@ -39,7 +39,7 @@ extension RediStackClient {
                 let total = try await _hashCountScan(key, keywords: match)
                 page.total = total
             } else {
-                let value = await _hget(key, field: page.keywords)
+                let value = try await _hget(key, field: page.keywords)
                 if value != nil {
                     r.append(RedisHashEntryModel(field: page.keywords, value: value))
                     page.total = 1
@@ -52,16 +52,16 @@ extension RediStackClient {
         return []
     }
     
-    func hset(_ key:String, field:String, value:String) async -> Bool {
+    func hset(_ key:String, field:String, value:String) async throws -> Bool {
         logger.info("redis hash hset key:\(key), field:\(field), value:\(value)")
         let command:RedisCommand<Bool> = .hset(RedisHashFieldKey(field), to: value, in: RedisKey(key))
-        return await send(command, false)
+        return try await send(command, false)
     }
     
-    func hdel(_ key:String, field:String) async -> Int {
+    func hdel(_ key:String, field:String) async throws -> Int {
         logger.info("redis hash hdel key:\(key), field:\(field)")
         let command:RedisCommand<Int> = .hdel([RedisHashFieldKey(field)], from: RedisKey(key))
-        return await send(command, 0)
+        return try await send(command, 0)
     }
     
     
@@ -75,7 +75,7 @@ extension RediStackClient {
         var count:Int = 0
         
         while true {
-            let res = await _hscanCount(key, keywords: keywords, cursor: cursor, count: dataCountScanCount)
+            let res = try await _hscanCount(key, keywords: keywords, cursor: cursor, count: dataCountScanCount)
             logger.info("loop scan page, current cursor: \(cursor), total count: \(count)")
             cursor = res.0
             count = count + res.1
@@ -95,7 +95,7 @@ extension RediStackClient {
         var keys:[(String, String?)] = []
         
         while true {
-            let res = await _hscan(key, keywords: keywords, cursor: cursor, count: dataScanCount)
+            let res = try await _hscan(key, keywords: keywords, cursor: cursor, count: dataScanCount)
             logger.info("hash loop scan page, current cursor: \(cursor), total count: \(keys.count)")
             cursor = res.0
             keys = keys + res.1
@@ -119,26 +119,26 @@ extension RediStackClient {
     
     private func _hlen(_ key:String) async throws -> Int {
         let command: RedisCommand<Int> = .hlen(of: RedisKey(key))
-        return await _send(command, -1)
+        return try await _send(command, -1)
     }
     
     
-    private func _hscanCount(_ key:String, keywords:String?, cursor:Int, count:Int = 100) async -> (Int, Int) {
+    private func _hscanCount(_ key:String, keywords:String?, cursor:Int, count:Int = 100) async throws -> (Int, Int) {
         logger.debug("redis hash scan, key: \(key) cursor: \(cursor), keywords: \(String(describing: keywords)), count:\(String(describing: count))")
         
-        let r = await _hscan(key, keywords: keywords, cursor: cursor, count: count)
+        let r = try await _hscan(key, keywords: keywords, cursor: cursor, count: count)
         return (r.0, r.1.count)
     }
     
-    private func _hscan(_ key:String, keywords:String?, cursor:Int, count:Int = 100) async -> (Int, [(String, String?)]) {
+    private func _hscan(_ key:String, keywords:String?, cursor:Int, count:Int = 100) async throws -> (Int, [(String, String?)]) {
         logger.debug("redis hash scan, key: \(key) cursor: \(cursor), keywords: \(String(describing: keywords)), count:\(String(describing: count))")
         
         let command: RedisCommand<(Int, [(String, String?)])> = ._hscan(key, keywords: keywords, cursor: cursor, count: count)
-        return await _send(command, (0, []))
+        return try await _send(command, (0, []))
     }
     
-    private func _hget(_ key:String, field:String) async -> String? {
+    private func _hget(_ key:String, field:String) async throws -> String? {
         let command: RedisCommand<String?> = .hget(key, field: field)
-        return await _send(command, "")
+        return try await _send(command, "")
     }
 }

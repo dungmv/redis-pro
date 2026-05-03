@@ -95,7 +95,7 @@ class RediStackClient {
     
     
     func assertExist(_ key:String) async throws {
-        let exist = await exist(key)
+        let exist = try await exist(key)
         if !exist {
             throw BizError("key: \(key) is not exist!")
         }
@@ -119,40 +119,28 @@ class RediStackClient {
     
 
     // 公共底层请求redis 数据方法, 不处理任何异常, 使用者需要自己行处理异常信息
-    func _send<R>(_ command: RedisCommand<R>) async -> R? {
-        do {
-            let conn = try await getConn()
-            return try await _send(conn, command)
-        } catch {
-            handleError(error)
-        }
-        
-        return nil
+    func _send<R>(_ command: RedisCommand<R>) async throws -> R? {
+        let conn = try await getConn()
+        return try await _send(conn, command)
     }
     
     // 公共底层请求redis 数据方法, 不处理任何异常, 使用者需要自己行处理异常信息
-    func _send<R>(_ command: RedisCommand<R>, _ defaultValue: R) async -> R {
-        return await _send(command) ?? defaultValue
+    func _send<R>(_ command: RedisCommand<R>, _ defaultValue: R) async throws -> R {
+        return try await _send(command) ?? defaultValue
     }
     
-    func send<R>(_ command: RedisCommand<R>, _ defaultValue: R) async -> R {
+    func send<R>(_ command: RedisCommand<R>, _ defaultValue: R) async throws -> R {
+        return try await send(command) ?? defaultValue
+    }
+    
+    func send<R>(_ command: RedisCommand<R>) async throws -> R? {
         self.logger.info("send redis command, command: \(command)")
         begin()
         defer {
             complete()
         }
         
-        return await _send(command) ?? defaultValue
-    }
-    
-    func send<R>(_ command: RedisCommand<R>) async -> R? {
-        self.logger.info("send redis command, command: \(command)")
-        begin()
-        defer {
-            complete()
-        }
-        
-        return await _send(command)
+        return try await _send(command)
     }
     
     func ttlSecond(_ lifetime: RedisKey.Lifetime) -> Int {

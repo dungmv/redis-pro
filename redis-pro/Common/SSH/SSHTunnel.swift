@@ -101,7 +101,7 @@ class SSHTunnel {
                 self.forwardingServer = server
                 
                 // Run the server until complete
-                self.logger.info("forwarding servier start...")
+                self.logger.info("forwarding server start...")
                 let f:EventLoopFuture<Channel> = server.run()
                 f.whenFailure { error in
                     self.logger.error("init forwarding channel error: \(error)")
@@ -209,6 +209,7 @@ class SSHTunnel {
         let _ = self.localForwardingChannel?.close()
         let _ = self.forwardingServer?.close()
         let _ = self.sshChannel?.close()
+        try? group.syncShutdownGracefully()
     }
 }
 

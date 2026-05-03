@@ -70,8 +70,12 @@ struct StringValueStore {
                 let key = redisKeyModel.key
                 
                 return .run { send in
-                    let r = await redisInstanceModel.getClient().strLen(key)
-                    await send(.updateLength(r))
+                    do {
+                        let r = try await redisInstanceModel.getClient().strLen(key)
+                        await send(.updateLength(r))
+                    } catch {
+                        Task { @MainActor in Messages.show(error) }
+                    }
                 }
                 
             case .getValue:
@@ -88,8 +92,12 @@ struct StringValueStore {
                 
                 let key = redisKeyModel.key
                 return .run { send in
-                    let r = isIntactString ? await redisInstanceModel.getClient().get(key) : await redisInstanceModel.getClient().getRange(key, end: stringMaxLength)
-                    await send(.updateText(r))
+                    do {
+                        let r = isIntactString ? try await redisInstanceModel.getClient().get(key) : try await redisInstanceModel.getClient().getRange(key, end: stringMaxLength)
+                        await send(.updateText(r))
+                    } catch {
+                        Task { @MainActor in Messages.show(error) }
+                    }
                 }
                 
             case .getIntactString:
@@ -107,8 +115,12 @@ struct StringValueStore {
                 let isNew = redisKeyModel.isNew
                 let text = state.text
                 return .run { send in
-                    await redisInstanceModel.getClient().set(key, value: text)
-                    await send(.submitSuccess(isNew))
+                    do {
+                        try await redisInstanceModel.getClient().set(key, value: text)
+                        await send(.submitSuccess(isNew))
+                    } catch {
+                        Task { @MainActor in Messages.show(error) }
+                    }
                 }
                 
             case .submitSuccess:

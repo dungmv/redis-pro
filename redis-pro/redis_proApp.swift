@@ -13,7 +13,7 @@ import ComposableArchitecture
 @main
 struct redis_proApp: App {
     private let logger = Logger(label: "app")
-    @AppStorage(UserDefaulsKeysEnum.AppColorScheme.rawValue)
+    @AppStorage(UserDefaultsKeysEnum.AppColorScheme.rawValue)
     private var colorSchemeValue: String = ColorSchemeEnum.SYSTEM.rawValue
     
     // 会造成indexView 多次初始化

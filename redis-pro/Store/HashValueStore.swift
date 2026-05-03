@@ -108,7 +108,7 @@ struct HashValueStore {
                 let key = redisKeyModel.key
                 let page = state.pageState.page
                 return .run {  send in
-                    let res = await redisInstanceModel.getClient().pageHash(key, page: page)
+                    let res = try await redisInstanceModel.getClient().pageHash(key, page: page)
                     await  send(.setValue(page, res))
                 }
                 
@@ -143,7 +143,7 @@ struct HashValueStore {
                 let value = state.value
                 let isNewKey = state.redisKeyModel?.isNew ?? false
                 return .run { send in
-                    _ = await redisInstanceModel.getClient().hset(key, field: field, value: value)
+                    _ = try await redisInstanceModel.getClient().hset(key, field: field, value: value)
                     await send(.submitSuccess(isNewKey))
                 }
                 
@@ -180,7 +180,7 @@ struct HashValueStore {
                 logger.info("delete hash field, key: \(redisKeyModel.key), field: \(item.field)")
                 
                 return .run { send in
-                    let r = await redisInstanceModel.getClient().hdel(redisKeyModel.key, field: item.field)
+                    let r = try await redisInstanceModel.getClient().hdel(redisKeyModel.key, field: item.field)
                     logger.info("do delete hash field, key: \(redisKeyModel.key), field: \(item.field), r:\(r)")
                     
                     if r > 0 {

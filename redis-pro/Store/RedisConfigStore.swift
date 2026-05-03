@@ -69,8 +69,12 @@ struct RedisConfigStore {
             case .getValue:
                 let pattern = state.pattern
                 return .run { send in
-                    let r = await redisInstanceModel.getClient().getConfigList(pattern)
-                    await send(.setValue(r))
+                    do {
+                        let r = try await redisInstanceModel.getClient().getConfigList(pattern)
+                        await send(.setValue(r))
+                    } catch {
+                        Task { @MainActor in Messages.show(error) }
+                    }
                 }
             
             case let .setValue(redisConfigs):
@@ -92,8 +96,12 @@ struct RedisConfigStore {
             
             case .rewrite:
                 return .run { send in
-                    let _ = await redisInstanceModel.getClient().configRewrite()
-                    await send(.refresh)
+                    do {
+                        let _ = try await redisInstanceModel.getClient().configRewrite()
+                        await send(.refresh)
+                    } catch {
+                        Task { @MainActor in Messages.show(error) }
+                    }
                 }
             case let .edit(index):
                 
@@ -112,8 +120,12 @@ struct RedisConfigStore {
                 let value = state.editValue
                 
                 return .run { send in
-                    let _ = await redisInstanceModel.getClient().setConfig(key: key, value: value)
-                    await send(.refresh)
+                    do {
+                        let _ = try await redisInstanceModel.getClient().setConfig(key: key, value: value)
+                        await send(.refresh)
+                    } catch {
+                        Task { @MainActor in Messages.show(error) }
+                    }
                 }
                 
             // table action

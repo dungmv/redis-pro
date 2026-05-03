@@ -83,7 +83,7 @@ struct ClientListStore {
             
             case .getValue:
                 return .run { send in
-                    let r = await redisInstanceModel.getClient().clientList()
+                    let r = try await redisInstanceModel.getClient().clientList()
                     await send(.setValue(r))
                 }
             
@@ -108,7 +108,7 @@ struct ClientListStore {
                 logger.info("kill client, addr: \(client.addr)")
                 
                 return .run { send in
-                    let r = await redisInstanceModel.getClient().clientKill(client)
+                    let r = try await redisInstanceModel.getClient().clientKill(client)
                     logger.info("do kill client, addr: \(client.addr), r:\(r)")
                     
                     await send(.refresh)

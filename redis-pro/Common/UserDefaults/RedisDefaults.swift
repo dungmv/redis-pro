@@ -39,17 +39,17 @@ class RedisDefaults {
     
     // 默认选中类型 last:最后一个, id: 上次成功连接的redis id
     static func defaultSelectType() -> String {
-        return userDefaults.string(forKey: UserDefaulsKeysEnum.RedisFavoriteDefaultSelectType.rawValue) ?? "last"
+        return userDefaults.string(forKey: UserDefaultsKeysEnum.RedisFavoriteDefaultSelectType.rawValue) ?? "last"
     }
     
     // 最后使用的id
     static func getLastId() -> String? {
-        return userDefaults.string(forKey: UserDefaulsKeysEnum.RedisLastUseIdKey.rawValue)
+        return userDefaults.string(forKey: UserDefaultsKeysEnum.RedisLastUseIdKey.rawValue)
     }
     
     // string 最大显示长度
     static func getStringMaxLength() -> Int {
-        let string:String? = userDefaults.string(forKey: UserDefaulsKeysEnum.AppStringMaxLength.rawValue)
+        let string:String? = userDefaults.string(forKey: UserDefaultsKeysEnum.AppStringMaxLength.rawValue)
         if let string = string {
             return Int(string) ?? Const.DEFAULT_STRING_MAX_LENGTH
         }
@@ -59,11 +59,11 @@ class RedisDefaults {
     
     
     private static func getAllDict() -> [Dictionary<String, Any>]? {
-        return userDefaults.array(forKey: UserDefaulsKeysEnum.RedisFavoriteListKey.rawValue) as? [Dictionary<String, Any>]
+        return userDefaults.array(forKey: UserDefaultsKeysEnum.RedisFavoriteListKey.rawValue) as? [Dictionary<String, Any>]
     }
     
     static func saveLastUse(_ redisModel:RedisModel) -> Void {
-        userDefaults.setValue(redisModel.id, forKey: UserDefaulsKeysEnum.RedisLastUseIdKey.rawValue)
+        userDefaults.setValue(redisModel.id, forKey: UserDefaultsKeysEnum.RedisLastUseIdKey.rawValue)
     }
     
     static func save(_ redisModel:RedisModel) -> Int {
@@ -80,7 +80,7 @@ class RedisDefaults {
             r = savedRedisList.count - 1
         }
         
-        userDefaults.set(savedRedisList, forKey: UserDefaulsKeysEnum.RedisFavoriteListKey.rawValue)
+        userDefaults.set(savedRedisList, forKey: UserDefaultsKeysEnum.RedisFavoriteListKey.rawValue)
         logger.info("save redis to user defaults complete")
         return r
     }
@@ -88,7 +88,7 @@ class RedisDefaults {
     static func save(_ redisModels:[RedisModel]) -> Bool {
         let redisDics = redisModels.map { $0.dictionary }
         
-        userDefaults.set(redisDics, forKey: UserDefaulsKeysEnum.RedisFavoriteListKey.rawValue)
+        userDefaults.set(redisDics, forKey: UserDefaultsKeysEnum.RedisFavoriteListKey.rawValue)
         logger.info("save all redis to user defaults complete")
         return true
     }
@@ -107,7 +107,7 @@ class RedisDefaults {
         let  deletedRedis = savedRedisList[index]
         
         savedRedisList.remove(at: index)
-        userDefaults.set(savedRedisList, forKey: UserDefaulsKeysEnum.RedisFavoriteListKey.rawValue)
+        userDefaults.set(savedRedisList, forKey: UserDefaultsKeysEnum.RedisFavoriteListKey.rawValue)
         logger.info("remove redis from user defaults complete, redis: \(deletedRedis)")
         
         return true
@@ -126,18 +126,18 @@ class RedisDefaults {
             }
             
             savedRedisList.remove(at: index)
-            userDefaults.set(savedRedisList, forKey: UserDefaulsKeysEnum.RedisFavoriteListKey.rawValue)
+            userDefaults.set(savedRedisList, forKey: UserDefaultsKeysEnum.RedisFavoriteListKey.rawValue)
             logger.info("remove redis from user defaults complete, id:\(id)")
         }
         return nextId
     }
     
     public static func getSearchHistory() -> [String] {
-        return userDefaults.array(forKey: UserDefaulsKeysEnum.UserSearchHistory.rawValue) as? [String] ?? []
+        return userDefaults.array(forKey: UserDefaultsKeysEnum.UserSearchHistory.rawValue) as? [String] ?? []
     }
     
     public static func saveSearchHistory(history:[String]) {
-        userDefaults.set(history, forKey: UserDefaulsKeysEnum.UserSearchHistory.rawValue)
+        userDefaults.set(history, forKey: UserDefaultsKeysEnum.UserSearchHistory.rawValue)
         logger.info("save user search history to user defaults complete, \(history)")
     }
 }

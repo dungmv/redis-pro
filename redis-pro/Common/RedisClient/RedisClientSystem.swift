@@ -12,7 +12,7 @@ import RediStack
 // system
 extension RediStackClient {
     
-    func selectDB(_ database: Int) async -> Bool {
+    func selectDB(_ database: Int) async throws -> Bool {
         self.logger.info("select db: \(database)")
         self.redisModel.database = database
         
@@ -20,53 +20,53 @@ extension RediStackClient {
         self.connPool = nil
         
         let command: RedisCommand<Void> = .select(database: database)
-        let _ = await send(command)
+        let _ = try await send(command)
         return true
     }
     
-    func databases() async -> Int {
+    func databases() async throws -> Int {
     
         let command: RedisCommand<Int> = .databases()
-        return await send(command, 0)
+        return try await send(command, 0)
     }
     
-    func dbsize() async -> Int {
+    func dbsize() async throws -> Int {
         
         let command: RedisCommand<Int> = .dbsize()
-        return await send(command, 0)
+        return try await send(command, 0)
     }
     
-    func flushDB() async -> Bool {
+    func flushDB() async throws -> Bool {
         let command: RedisCommand<Bool> = .flushDB()
-        return await send(command, false)
+        return try await send(command, false)
     }
     
-    func clientKill(_ clientModel:ClientModel) async -> Bool {
+    func clientKill(_ clientModel:ClientModel) async throws -> Bool {
         
         let command: RedisCommand<Bool> = .clientKill(clientModel.addr)
-        return await send(command, false)
+        return try await send(command, false)
     }
     
-    func clientList() async -> [ClientModel] {
+    func clientList() async throws -> [ClientModel] {
         
         let command: RedisCommand<[ClientModel]> = .clientList()
-        return await send(command, [])
+        return try await send(command, [])
     }
     
-    func info() async -> [RedisInfoModel] {
+    func info() async throws -> [RedisInfoModel] {
         let command: RedisCommand<[RedisInfoModel]> = .info()
-        return await send(command, [])
+        return try await send(command, [])
     }
     
-    func resetState() async -> Bool {
+    func resetState() async throws -> Bool {
         logger.info("reset state...")
         let command: RedisCommand<Bool> = .resetState()
-        return await send(command, false)
+        return try await send(command, false)
     }
     
-    func ping() async -> Bool {
+    func ping() async throws -> Bool {
         let command: RedisCommand<String> = .ping()
-        return await send(command) == "PONG"
+        return try await send(command) == "PONG"
     }
     
 }

@@ -66,7 +66,7 @@ struct KeyObjectStore {
             case .getEncoding:
                 let key = state.key
                 return .run { send in
-                    let r = await redisInstanceModel.getClient().objectEncoding(key)
+                    let r = try await redisInstanceModel.getClient().objectEncoding(key)
                     return await send(.setEncoding(r))
                 }
                 

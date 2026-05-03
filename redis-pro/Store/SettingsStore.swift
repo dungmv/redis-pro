@@ -47,19 +47,19 @@ struct SettingsStore {
             case .initial:
                 
                 logger.info("settings store initial...")
-                state.colorSchemeValue = UserDefaults.standard.string(forKey: UserDefaulsKeysEnum.AppColorScheme.rawValue) ?? ColorSchemeEnum.SYSTEM.rawValue
+                state.colorSchemeValue = UserDefaults.standard.string(forKey: UserDefaultsKeysEnum.AppColorScheme.rawValue) ?? ColorSchemeEnum.SYSTEM.rawValue
                 
-                let stringMaxLength:String? = UserDefaults.standard.string(forKey: UserDefaulsKeysEnum.AppStringMaxLength.rawValue)
+                let stringMaxLength:String? = UserDefaults.standard.string(forKey: UserDefaultsKeysEnum.AppStringMaxLength.rawValue)
                 if let stringMaxLength = stringMaxLength {
                     state.stringMaxLength = Int(stringMaxLength) ?? Const.DEFAULT_STRING_MAX_LENGTH
                 } else {
                     state.stringMaxLength = Const.DEFAULT_STRING_MAX_LENGTH
                 }
                 
-                state.defaultFavorite = UserDefaults.standard.string(forKey: UserDefaulsKeysEnum.RedisFavoriteDefaultSelectType.rawValue) ?? RedisFavoriteDefaultSelectTypeEnum.LAST.rawValue
+                state.defaultFavorite = UserDefaults.standard.string(forKey: UserDefaultsKeysEnum.RedisFavoriteDefaultSelectType.rawValue) ?? RedisFavoriteDefaultSelectTypeEnum.LAST.rawValue
                 
                 // fast apge
-                state.fastPage = Bool(UserDefaults.standard.string(forKey: UserDefaulsKeysEnum.AppFastPage.rawValue) ?? "true") ?? true
+                state.fastPage = Bool(UserDefaults.standard.string(forKey: UserDefaultsKeysEnum.AppFastPage.rawValue) ?? "true") ?? true
                 
                 state.redisModels = RedisDefaults.getAll()
                 return .none
@@ -68,7 +68,7 @@ struct SettingsStore {
             case let .setColorScheme(colorSchemeValue):
                 logger.info("upate color scheme action, \(colorSchemeValue)")
                 state.colorSchemeValue = colorSchemeValue
-                UserDefaults.standard.set(colorSchemeValue, forKey: UserDefaulsKeysEnum.AppColorScheme.rawValue)
+                UserDefaults.standard.set(colorSchemeValue, forKey: UserDefaultsKeysEnum.AppColorScheme.rawValue)
                 return .none
                 
             // 默认选中设置
@@ -76,35 +76,35 @@ struct SettingsStore {
                 logger.info("upate default favorite action, \(defaultFavorite)")
                 
                 state.defaultFavorite = defaultFavorite
-                UserDefaults.standard.set(defaultFavorite, forKey: UserDefaulsKeysEnum.RedisFavoriteDefaultSelectType.rawValue)
+                UserDefaults.standard.set(defaultFavorite, forKey: UserDefaultsKeysEnum.RedisFavoriteDefaultSelectType.rawValue)
                 return .none
                 
             case let .setStringMaxLength(stringMaxLength):
                 logger.info("set stringMaxLength action, \(stringMaxLength)")
                 
                 state.stringMaxLength = stringMaxLength
-                UserDefaults.standard.set(stringMaxLength, forKey: UserDefaulsKeysEnum.AppStringMaxLength.rawValue)
+                UserDefaults.standard.set(stringMaxLength, forKey: UserDefaultsKeysEnum.AppStringMaxLength.rawValue)
                 return .none
                 
             case let .setSearchHistorySize(searchHistorySize):
                 logger.info("set search history size action, \(searchHistorySize)")
                 
                 state.searchHistorySize = searchHistorySize
-                UserDefaults.standard.set(searchHistorySize, forKey: UserDefaulsKeysEnum.UserSearchHistory.rawValue)
+                UserDefaults.standard.set(searchHistorySize, forKey: UserDefaultsKeysEnum.UserSearchHistory.rawValue)
                 return .none
                 
             case let .setKeepalive(keepalive):
                 logger.info("set keepalive second action, \(keepalive)")
                 
                 state.keepalive = keepalive
-                UserDefaults.standard.set(keepalive, forKey: UserDefaulsKeysEnum.AppKeepalive.rawValue)
+                UserDefaults.standard.set(keepalive, forKey: UserDefaultsKeysEnum.AppKeepalive.rawValue)
                 return .none
                 
             case let .setFastPage(fastPage):
                 logger.info("set fast page action, \(fastPage)")
                 
                 state.fastPage = fastPage
-                UserDefaults.standard.set("\(fastPage)", forKey: UserDefaulsKeysEnum.AppFastPage.rawValue)
+                UserDefaults.standard.set("\(fastPage)", forKey: UserDefaultsKeysEnum.AppFastPage.rawValue)
                 return .none
             }
         }

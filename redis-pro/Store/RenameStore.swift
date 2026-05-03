@@ -56,10 +56,13 @@ struct RenameStore {
                 let index = state.index
                 let newKey = state.newKey
                 return .run { send in
-                    
-                    let r = await redisInstanceModel.getClient().rename(key, newKey: newKey)
-                    if r {
-                        await send(.setKey(index, newKey))
+                    do {
+                        let r = try await redisInstanceModel.getClient().rename(key, newKey: newKey)
+                        if r {
+                            await send(.setKey(index, newKey))
+                        }
+                    } catch {
+                        Task { @MainActor in Messages.show(error) }
                     }
                 }
                 

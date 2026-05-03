@@ -13,7 +13,7 @@ import RediStack
 // set
 extension RediStackClient {
     
-    func pageSet(_ key:String, page: Page) async -> [String] {
+    func pageSet(_ key:String, page: Page) async throws -> [String] {
         
         logger.info("redis set page, key: \(key), page: \(page)")
         
@@ -37,7 +37,7 @@ extension RediStackClient {
                 let total = try await _setCountScan(key, keywords: match)
                 page.total = total
             } else {
-                let exist = await _sexist(key, ele: page.keywords)
+                let exist = try await _sexist(key, ele: page.keywords)
                 if exist {
                     r = [page.keywords]
                     page.total = 1
@@ -55,7 +55,7 @@ extension RediStackClient {
     private func _setCountScan(_ key:String, keywords:String?) async throws -> Int {
         if isMatchAll(keywords ?? "") {
             logger.info("keywords is match all, use scard...")
-            return await _scard(key)
+            return try await _scard(key)
         }
         
         var cursor:Int = 0
@@ -107,16 +107,16 @@ extension RediStackClient {
         logger.debug("redis set scan, key: \(key) cursor: \(cursor), keywords: \(String(describing: keywords)), count:\(String(describing: count))")
     
         let command: RedisCommand<(Int, [RESPValue])> = .sscan(RedisKey(key), startingFrom: cursor, matching: keywords, count: count)
-        let r = await _send(command)!
+        let r = try await _send(command)!
         return (r.0, r.1.map { $0.description })
     }
     
-    private func _sexist(_ key:String, ele:String?) async -> Bool{
+    private func _sexist(_ key:String, ele:String?) async throws -> Bool{
         let command: RedisCommand<Bool> = .sismember(ele, of: RedisKey(key))
-        return await _send(command, false)
+        return try await _send(command, false)
     }
     
-    func supdate(_ key:String, from:String, to:String) async -> Int {
+    func supdate(_ key:String, from:String, to:String) async throws -> Int {
         begin()
         defer {
             complete()
@@ -124,10 +124,10 @@ extension RediStackClient {
         logger.info("redis set update, key: \(key), from: \(from), to: \(to)")
         
         do {
-            let r = await _srem(key, ele: from)
+            let r = try await _srem(key, ele: from)
             try Assert.isTrue(r > 0, message: "set element: `\(from)` is not exist!")
             
-            return await _sadd(key, ele: to)
+            return try await _sadd(key, ele: to)
         } catch {
             handleError(error)
         }
@@ -135,37 +135,37 @@ extension RediStackClient {
         
     }
     
-    func srem(_ key:String, ele:String) async -> Int {
+    func srem(_ key:String, ele:String) async throws -> Int {
         begin()
         defer {
             complete()
         }
         
-        return await _srem(key, ele: ele)
+        return try await _srem(key, ele: ele)
     }
     
-    func sadd(_ key:String, ele:String) async -> Int {
+    func sadd(_ key:String, ele:String) async throws -> Int {
         begin()
         defer {
             complete()
         }
-        return await _sadd(key, ele: ele)
+        return try await _sadd(key, ele: ele)
     }
     
-    private func _scard(_ key:String) async -> Int {
+    private func _scard(_ key:String) async throws -> Int {
         let command: RedisCommand<Int> = .scard(of: RedisKey(key))
-        return await _send(command, 0)
+        return try await _send(command, 0)
     }
     
-    private func _srem(_ key:String, ele:String) async -> Int {
+    private func _srem(_ key:String, ele:String) async throws -> Int {
         let command: RedisCommand<Int> = .srem(ele, from: RedisKey(key))
-        return await _send(command, 0)
+        return try await _send(command, 0)
     }
     
     
-    private func _sadd(_ key:String, ele:String) async -> Int {
+    private func _sadd(_ key:String, ele:String) async throws -> Int {
         let command: RedisCommand<Int> = .sadd(ele, to: RedisKey(key))
-        return await _send(command, 0)
+        return try await _send(command, 0)
     }
     
     

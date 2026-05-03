@@ -83,7 +83,7 @@ struct KeyStore {
                 
                 let key = state.key
                 return .run { send in
-                    let r = await redisInstanceModel.getClient().ttl(key)
+                    let r = try await redisInstanceModel.getClient().ttl(key)
                     await send(.setTtl(r))
                 }
             case let .setTtl(ttl):
@@ -104,7 +104,7 @@ struct KeyStore {
                 let key = state.key
                 let ttl = state.ttl
                 return .run { send in
-                    let _ = await redisInstanceModel.getClient().expire(key, seconds: ttl)
+                    let _ = try await redisInstanceModel.getClient().expire(key, seconds: ttl)
                 }
                 
             case let .setType(type):

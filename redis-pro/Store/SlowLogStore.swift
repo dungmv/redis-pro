@@ -77,10 +77,10 @@ struct SlowLogStore {
             case .getValue:
                 let size = state.size
                 return .run { send in
-                    let datasource = await redisInstanceModel.getClient().getSlowLog(size)
-                    let total = await redisInstanceModel.getClient().slowLogLen()
-                    let maxLen = await redisInstanceModel.getClient().getConfigOne(key: "slowlog-max-len")
-                    let slowerThan = await redisInstanceModel.getClient().getConfigOne(key: "slowlog-log-slower-than")
+                    let datasource = try await redisInstanceModel.getClient().getSlowLog(size)
+                    let total = try await redisInstanceModel.getClient().slowLogLen()
+                    let maxLen = try await redisInstanceModel.getClient().getConfigOne(key: "slowlog-max-len")
+                    let slowerThan = try await redisInstanceModel.getClient().getConfigOne(key: "slowlog-log-slower-than")
                     await send(.setValue(datasource, total, NumberHelper.toInt(maxLen), NumberHelper.toInt(slowerThan)))
                 }
 
@@ -93,20 +93,20 @@ struct SlowLogStore {
                 return .none
             case .reset:
                 return .run { send in
-                    let _ = await redisInstanceModel.getClient().slowLogReset()
+                    let _ = try await redisInstanceModel.getClient().slowLogReset()
                     await send(.refresh)
                 }
                 
             case .setSlowerThan:
                 let slowerThan = state.slowerThan
                 return .run { send in
-                    let _ = await redisInstanceModel.getClient().setConfig(key: "slowlog-log-slower-than", value: "\(slowerThan)")
+                    let _ = try await redisInstanceModel.getClient().setConfig(key: "slowlog-log-slower-than", value: "\(slowerThan)")
                     await send(.none)
                 }
             case .setMaxLen:
                 let maxLen = state.maxLen
                 return .run { send in
-                    let _ = await redisInstanceModel.getClient().setConfig(key: "slowlog-max-len", value: "\(maxLen)")
+                    let _ = try await redisInstanceModel.getClient().setConfig(key: "slowlog-max-len", value: "\(maxLen)")
                 }
                 
             case .setSize:

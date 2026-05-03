@@ -52,8 +52,12 @@ struct DatabaseStore {
                 }
             case .getDatabases:
                 return .run { send in
-                    let r = await redisInstanceModel.getClient().databases()
-                    await send(.setDB(r))
+                    do {
+                        let r = try await redisInstanceModel.getClient().databases()
+                        await send(.setDB(r))
+                    } catch {
+                        Task { @MainActor in Messages.show(error) }
+                    }
                 }
             case let .setDB(databases):
                 state.databases = databases
@@ -66,13 +70,16 @@ struct DatabaseStore {
                     // 1. Send onDBChange immediately to clear UI
                     await send(.onDBChange(database))
                     
-                    // 2. Perform the actual database switch
-                    let r = await redisInstanceModel.getClient().selectDB(database)
-                    if r {
-                        // 3. Notify success to trigger reload in other stores
-                        await send(.selectDBSuccess(database))
-                    } else {
-                        logger.error("Failed to switch to database \(database)")
+                    do {
+                        // 2. Perform the actual database switch
+                        let r = try await redisInstanceModel.getClient().selectDB(database)
+                        if r {
+                            // 3. Notify success to trigger reload in other stores
+                            await send(.selectDBSuccess(database))
+                        }
+                    } catch {
+                        logger.error("Failed to switch to database \(database): \(error)")
+                        Task { @MainActor in Messages.show(error) }
                     }
                 }
                 

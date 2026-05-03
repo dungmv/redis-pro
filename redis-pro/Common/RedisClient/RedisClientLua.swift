@@ -10,7 +10,7 @@ import RediStack
 
 // MARK: -lua script
 extension RediStackClient {
-    func eval(_ lua:String) async -> String {
+    func eval(_ lua:String) async throws -> String {
         logger.info("lua script eval: \(lua)")
         guard lua.count > 3 else {
             return "lua script invalid!"
@@ -45,7 +45,7 @@ extension RediStackClient {
             let command:RedisCommand<String> = RedisCommand(keyword: "EVAL", arguments: respValues, mapValueToResult: {
                 $0.description
             })
-            return await send(command, "eval error")
+            return try await send(command, "eval error")
         } catch {
             handleError(error)
         }
@@ -55,19 +55,19 @@ extension RediStackClient {
     
     
     
-    func scriptKill() async -> String {
+    func scriptKill() async throws -> String {
         logger.info("lua script kill")
         
         
         let command:RedisCommand<String> = RedisCommand(keyword: "SCRIPT", arguments: [.init(from: "KILL")], mapValueToResult: {
             $0.description
         })
-        return await send(command, "script kill error")
+        return try await send(command, "script kill error")
     }
     
     
     
-    func scriptFlush() async -> Void {
+    func scriptFlush() async throws -> Void {
         logger.info("lua script flush")
     }
 }

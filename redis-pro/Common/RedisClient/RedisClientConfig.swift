@@ -11,31 +11,31 @@ import RediStack
 
 // MARK: -config
 extension RediStackClient {
-    func getConfigList(_ pattern:String = "*") async -> [RedisConfigItemModel] {
+    func getConfigList(_ pattern:String = "*") async throws -> [RedisConfigItemModel] {
         logger.info("get redis config list, pattern: \(pattern)...")
         
         let command: RedisCommand<[RedisConfigItemModel]> = .configList(pattern)
-        return await send(command, [])
+        return try await send(command, [])
     }
     
-    func configRewrite() async -> Bool {
+    func configRewrite() async throws -> Bool {
         logger.info("redis config rewrite ...")
         let command: RedisCommand<Bool> = .configRewrite()
-        return await send(command, false)
+        return try await send(command, false)
         
     }
     
-    func getConfigOne(key:String) async -> String? {
+    func getConfigOne(key:String) async throws -> String? {
         logger.info("get redis config ...")
         let command: RedisCommand<String> = .getConfig(key)
-        return await send(command)
+        return try await send(command)
     }
     
     
-    func setConfig(key:String, value:String) async -> Bool {
+    func setConfig(key:String, value:String) async throws -> Bool {
         logger.info("set redis config, key: \(key), value: \(value)")
         let command: RedisCommand<Bool> = .setConfig(key, value: value)
-        return await send(command, false)
+        return try await send(command, false)
     }
     
 }
