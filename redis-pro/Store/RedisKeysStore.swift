@@ -15,6 +15,8 @@ private let logger = Logger(label: "redisKeys-store")
 // MARK: - Cancel IDs
 private enum CancelID {
     case countKeys
+    case getKeys
+    case search
 }
 
 @Reducer
@@ -55,6 +57,7 @@ struct RedisKeysStore {
         case refresh
         case refreshCount
         case search(String)
+        case searchChange(String)
         case getKeys
         case getCount
         // 1. cursor, 2. searchGroup 查询批次
@@ -136,10 +139,15 @@ struct RedisKeysStore {
                 state.tableState.selectIndex = -1
 
                 return .merge(
+                    .cancel(id: CancelID.getKeys),     // cancel any running keys fetch
                     .cancel(id: CancelID.countKeys),   // cancel any running count scan
                     .send(.getKeys),
                     .send(.getCount)
                 )
+                
+            case let .searchChange(keywords):
+                return .send(.search(keywords))
+                    .debounce(id: CancelID.search, for: .milliseconds(400), scheduler: mainQueue)
                 
                 // dbsize
             case .dbsize:
@@ -163,6 +171,7 @@ struct RedisKeysStore {
                         Task { @MainActor in Messages.show(error) }
                     }
                 }
+                .cancellable(id: CancelID.getKeys, cancelInFlight: true)
                 
             case .getCount:
                 state.countLockId += 1

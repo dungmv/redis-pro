@@ -51,7 +51,11 @@ struct RedisKeysListView: View {
 
     private var sidebarHeader: some View {
         VStack(alignment: .leading, spacing: 6) {
-            SearchBar(placeholder: "Search keys...", onCommit: { store.send(.search($0)) })
+            SearchBar(
+                placeholder: "Search keys...",
+                onCommit: { store.send(.search($0)) },
+                onChange: { store.send(.searchChange($0)) }
+            )
 
             HStack(spacing: 4) {
                 IconButton(icon: "plus", name: "Add") { store.send(.addNew) }

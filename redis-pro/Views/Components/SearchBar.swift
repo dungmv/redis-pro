@@ -17,6 +17,7 @@ struct SearchBar: View {
 
     var placeholder: String = "Search..."
     var onCommit: ((String) -> Void)?
+    var onChange: ((String) -> Void)?
 
     private static let logger = Logger(label: "search-bar")
 
@@ -32,8 +33,9 @@ struct SearchBar: View {
                     .font(LiquidGlass.fontBody)
                     .focused($isFocused)
                     .onSubmit { commit() }
-                    .onChange(of: keywords) { _, _ in
+                    .onChange(of: keywords) { _, newValue in
                         showHistory = isFocused && !searchHistory.isEmpty
+                        onChange?(newValue)
                     }
                     .onChange(of: isFocused) { _, focused in
                         showHistory = focused && !searchHistory.isEmpty
