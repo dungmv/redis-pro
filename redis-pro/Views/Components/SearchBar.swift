@@ -12,7 +12,7 @@ struct SearchBar: View {
 
     @State private var keywords: String = ""
     @State private var searchHistory: [String] = []
-    @State private var isFocused: Bool = false
+    @FocusState private var isFocused: Bool
     @State private var showHistory: Bool = false
 
     var placeholder: String = "Search..."
@@ -30,9 +30,13 @@ struct SearchBar: View {
                 TextField("", text: $keywords, prompt: Text(placeholder).foregroundColor(.secondary))
                     .textFieldStyle(.plain)
                     .font(LiquidGlass.fontBody)
+                    .focused($isFocused)
                     .onSubmit { commit() }
                     .onChange(of: keywords) { _, _ in
                         showHistory = isFocused && !searchHistory.isEmpty
+                    }
+                    .onChange(of: isFocused) { _, focused in
+                        showHistory = focused && !searchHistory.isEmpty
                     }
                     .onHover { inside in
                         if inside { NSCursor.iBeam.push() } else { NSCursor.pop() }
@@ -54,17 +58,7 @@ struct SearchBar: View {
             }
             .padding(.horizontal, 8)
             .padding(.vertical, 6)
-            .background(
-                RoundedRectangle(cornerRadius: LiquidGlass.radiusSM)
-                    .fill(Color(NSColor.textBackgroundColor).opacity(0.85))
-            )
-            .overlay(
-                RoundedRectangle(cornerRadius: LiquidGlass.radiusSM)
-                    .strokeBorder(
-                        isFocused ? Color.accentColor.opacity(0.5) : LiquidGlass.glassStroke,
-                        lineWidth: isFocused ? 1.5 : 1
-                    )
-            )
+            .glassField(cornerRadius: LiquidGlass.radiusSM, isActive: isFocused)
             .animation(.spring(response: 0.2, dampingFraction: 0.8), value: isFocused)
         }
         .zIndex(10)
@@ -105,12 +99,7 @@ struct SearchBar: View {
                         Divider().padding(.horizontal, 8)
                     }
                 }
-                .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: LiquidGlass.radiusSM))
-                .overlay(
-                    RoundedRectangle(cornerRadius: LiquidGlass.radiusSM)
-                        .strokeBorder(LiquidGlass.glassBorder, lineWidth: 0.5)
-                )
-                .shadow(color: .black.opacity(0.15), radius: 8, x: 0, y: 4)
+                .glassCard(cornerRadius: LiquidGlass.radiusSM)
                 .zIndex(100)
                 .transition(.asymmetric(
                     insertion: .opacity.combined(with: .move(edge: .top)),

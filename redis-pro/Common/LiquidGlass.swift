@@ -76,10 +76,12 @@ enum LiquidGlass {
     static var PRIMARY: Color { .secondary }
 
     // ── Semantic Colors ──────────────────────────────────────────────────────
-    /// Glass surface tint (ultra-thin material for sidebars / cards)
-    static var glassSurface: Color { Color(NSColor.windowBackgroundColor).opacity(0.6) }
-    static var glassBorder:  Color { Color.primary.opacity(0.08) }
-    static var glassStroke:  Color { Color.primary.opacity(0.12) }
+    /// Shared semantic surfaces tuned toward native macOS materials.
+    static var glassSurface: Color { Color(NSColor.windowBackgroundColor).opacity(0.42) }
+    static var glassBorder:  Color { Color(NSColor.separatorColor).opacity(0.45) }
+    static var glassStroke:  Color { Color.primary.opacity(0.18) }
+    static var glassHighlight: Color { Color.white.opacity(0.16) }
+    static var glassShadow: Color { Color.black.opacity(0.10) }
 
     // ── Redis type colors ────────────────────────────────────────────────────
     static func typeColor(for type: String) -> Color {
@@ -102,11 +104,17 @@ struct GlassCard: ViewModifier {
 
     func body(content: Content) -> some View {
         content
-            .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: cornerRadius))
+            .background(.regularMaterial, in: RoundedRectangle(cornerRadius: cornerRadius, style: .continuous))
             .overlay(
                 RoundedRectangle(cornerRadius: cornerRadius)
                     .strokeBorder(LiquidGlass.glassBorder, lineWidth: 0.5)
             )
+            .overlay(
+                RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
+                    .strokeBorder(LiquidGlass.glassHighlight, lineWidth: 0.5)
+                    .blendMode(.screen)
+            )
+            .shadow(color: LiquidGlass.glassShadow, radius: 10, x: 0, y: 4)
     }
 }
 
@@ -117,18 +125,21 @@ struct GlassField: ViewModifier {
 
     func body(content: Content) -> some View {
         content
-            .padding(.horizontal, 8)
-            .padding(.vertical, 5)
             .background(
                 RoundedRectangle(cornerRadius: cornerRadius)
-                    .fill(Color(NSColor.textBackgroundColor).opacity(0.7))
+                    .fill(.thinMaterial)
             )
             .overlay(
                 RoundedRectangle(cornerRadius: cornerRadius)
                     .strokeBorder(
-                        isActive ? Color.accentColor.opacity(0.5) : LiquidGlass.glassStroke,
+                        isActive ? Color.accentColor.opacity(0.55) : LiquidGlass.glassStroke,
                         lineWidth: isActive ? 1.5 : 1
                     )
+            )
+            .overlay(
+                RoundedRectangle(cornerRadius: cornerRadius)
+                    .strokeBorder(LiquidGlass.glassHighlight, lineWidth: 0.5)
+                    .blendMode(.screen)
             )
             .animation(.spring(duration: 0.2), value: isActive)
     }
@@ -138,7 +149,30 @@ struct GlassField: ViewModifier {
 struct GlassToolbar: ViewModifier {
     func body(content: Content) -> some View {
         content
-            .background(.bar)
+            .background(.thinMaterial)
+            .overlay(alignment: .bottom) {
+                Rectangle()
+                    .fill(LiquidGlass.glassBorder)
+                    .frame(height: 0.5)
+            }
+    }
+}
+
+struct GlassWindowSurface: ViewModifier {
+    func body(content: Content) -> some View {
+        content
+            .background(.regularMaterial)
+            .overlay {
+                LinearGradient(
+                    colors: [
+                        LiquidGlass.glassHighlight.opacity(0.45),
+                        .clear
+                    ],
+                    startPoint: .top,
+                    endPoint: .center
+                )
+                .allowsHitTesting(false)
+            }
     }
 }
 
@@ -155,6 +189,10 @@ extension View {
 
     func glassToolbar() -> some View {
         modifier(GlassToolbar())
+    }
+
+    func glassWindowSurface() -> some View {
+        modifier(GlassWindowSurface())
     }
 
     /// Hover cursor + subtle scale animation for interactive elements.

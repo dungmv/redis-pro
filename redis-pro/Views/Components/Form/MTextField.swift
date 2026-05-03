@@ -45,19 +45,8 @@ struct MTextField: View {
         .multilineTextAlignment(.leading)
         .padding(.horizontal, 8)
         .padding(.vertical, 5)
-        .background(
-            RoundedRectangle(cornerRadius: LiquidGlass.radiusXS)
-                .fill(editable
-                      ? Color(NSColor.textBackgroundColor).opacity(0.85)
-                      : Color.primary.opacity(0.04))
-        )
-        .overlay(
-            RoundedRectangle(cornerRadius: LiquidGlass.radiusXS)
-                .strokeBorder(
-                    isFocused ? Color.accentColor.opacity(0.6) : LiquidGlass.glassStroke,
-                    lineWidth: isFocused ? 1.5 : 1
-                )
-        )
+        .glassField(cornerRadius: LiquidGlass.radiusXS, isActive: editable && isFocused)
+        .opacity(editable ? 1 : 0.82)
         .animation(.spring(response: 0.2, dampingFraction: 0.8), value: isFocused)
     }
 }

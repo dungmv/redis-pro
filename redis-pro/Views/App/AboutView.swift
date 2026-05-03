@@ -18,31 +18,26 @@ struct AboutView: View {
 
     var body: some View {
         ZStack {
-            // Background gradient
-            LinearGradient(
-                colors: [
-                    Color(red: 0.08, green: 0.08, blue: 0.12),
-                    Color(red: 0.05, green: 0.05, blue: 0.10),
-                ],
-                startPoint: .topLeading,
-                endPoint: .bottomTrailing
-            )
-            .ignoresSafeArea()
+            Rectangle()
+                .fill(.clear)
+                .ignoresSafeArea()
 
             VStack(spacing: 0) {
-                // ── App Icon + Name ─────────────────────────────────────────
-                VStack(spacing: 12) {
-                    // App icon placeholder (uses asset catalog icon if available)
+                VStack(spacing: LiquidGlass.spacing20) {
                     ZStack {
                         RoundedRectangle(cornerRadius: 22, style: .continuous)
                             .fill(
                                 LinearGradient(
-                                    colors: [Color(red: 0.85, green: 0.25, blue: 0.15), Color(red: 0.60, green: 0.10, blue: 0.08)],
+                                    colors: [Color.accentColor.opacity(0.95), Color.accentColor.opacity(0.72)],
                                     startPoint: .topLeading, endPoint: .bottomTrailing
                                 )
                             )
                             .frame(width: 80, height: 80)
-                            .shadow(color: Color(red: 0.85, green: 0.25, blue: 0.15).opacity(0.4), radius: 16, x: 0, y: 8)
+                            .overlay(
+                                RoundedRectangle(cornerRadius: 22, style: .continuous)
+                                    .strokeBorder(LiquidGlass.glassHighlight, lineWidth: 0.5)
+                            )
+                            .shadow(color: LiquidGlass.glassShadow, radius: 12, x: 0, y: 6)
 
                         Image(systemName: "server.rack")
                             .font(.system(size: 36, weight: .medium))
@@ -50,14 +45,14 @@ struct AboutView: View {
                             .symbolRenderingMode(.hierarchical)
                     }
 
-                    VStack(spacing: 4) {
+                    VStack(spacing: LiquidGlass.spacing4) {
                         Text("Redis Pro")
                             .font(.system(size: 24, weight: .bold))
-                            .foregroundStyle(.white)
+                            .foregroundStyle(.primary)
 
                         Text("A beautiful Redis client for macOS")
                             .font(.system(size: 13))
-                            .foregroundStyle(.white.opacity(0.6))
+                            .foregroundStyle(.secondary)
 
                         Link("github.com/cmushroom/redis-pro",
                              destination: URL(string: "https://github.com/cmushroom/redis-pro")!)
@@ -65,17 +60,16 @@ struct AboutView: View {
                             .foregroundStyle(Color.accentColor)
                     }
                 }
-                .padding(.top, 36)
+                .frame(maxWidth: .infinity)
+                .padding(.horizontal, 24)
+                .padding(.top, 28)
                 .padding(.bottom, 24)
+                .glassCard(cornerRadius: LiquidGlass.radiusLG)
 
-                Divider()
-                    .background(.white.opacity(0.1))
-
-                // ── Open Source Credits ──────────────────────────────────────
                 VStack(alignment: .leading, spacing: 0) {
                     Text("Open Source Libraries")
                         .font(.system(size: 12, weight: .semibold))
-                        .foregroundStyle(.white.opacity(0.5))
+                        .foregroundStyle(.secondary)
                         .kerning(0.5)
                         .padding(.horizontal, 20)
                         .padding(.vertical, 12)
@@ -85,7 +79,7 @@ struct AboutView: View {
                             HStack {
                                 Image(systemName: "shippingbox")
                                     .font(.system(size: 11))
-                                    .foregroundStyle(.white.opacity(0.4))
+                                    .foregroundStyle(.secondary)
 
                                 Link(dep.0, destination: URL(string: dep.1)!)
                                     .font(.system(size: 13))
@@ -95,30 +89,31 @@ struct AboutView: View {
 
                                 Image(systemName: "arrow.up.right.square")
                                     .font(.system(size: 10))
-                                    .foregroundStyle(.white.opacity(0.3))
+                                    .foregroundStyle(.tertiary)
                             }
                             .padding(.horizontal, 20)
                             .padding(.vertical, 10)
                             .contentShape(Rectangle())
 
                             if dep.0 != dependencies.last?.0 {
-                                Divider().padding(.horizontal, 20).background(.white.opacity(0.1))
+                                Divider().padding(.horizontal, 20)
                             }
                         }
                     }
-                    .background(.white.opacity(0.05), in: RoundedRectangle(cornerRadius: 10))
-                    .padding(.horizontal, 16)
+                    .glassCard(cornerRadius: LiquidGlass.radiusMD)
                 }
+                .padding(.top, 16)
 
                 Spacer()
 
-                // ── Footer ───────────────────────────────────────────────────
-                Text("Made with ❤️ by the open-source community")
+                Text("Made by the open-source community")
                     .font(.system(size: 11))
-                    .foregroundStyle(.white.opacity(0.3))
+                    .foregroundStyle(.secondary)
                     .padding(.bottom, 20)
             }
+            .padding(16)
         }
+        .glassWindowSurface()
         .frame(minWidth: 400, maxWidth: 480, minHeight: 420, maxHeight: 520)
     }
 }
