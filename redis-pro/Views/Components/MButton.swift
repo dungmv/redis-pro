@@ -54,12 +54,12 @@ struct LiquidButtonStyle: ButtonStyle {
             .padding(.vertical, 5)
             .background(background(for: configuration))
             .foregroundStyle(foreground)
-            .clipShape(RoundedRectangle(cornerRadius: LiquidGlass.radiusXS))
+            .clipShape(RoundedRectangle(cornerRadius: LiquidGlass.radiusSM, style: .continuous))
             .overlay(
-                RoundedRectangle(cornerRadius: LiquidGlass.radiusXS)
-                    .strokeBorder(borderColor, lineWidth: 0.5)
+                RoundedRectangle(cornerRadius: LiquidGlass.radiusSM, style: .continuous)
+                    .strokeBorder(borderColor(for: configuration), lineWidth: 0.5)
             )
-            .scaleEffect(configuration.isPressed ? 0.97 : 1.0)
+            .scaleEffect(configuration.isPressed ? 0.98 : 1.0)
             .opacity(isEnabled ? 1.0 : 0.45)
             .animation(.spring(response: 0.2, dampingFraction: 0.8), value: configuration.isPressed)
     }
@@ -68,18 +68,17 @@ struct LiquidButtonStyle: ButtonStyle {
     private func background(for configuration: Configuration) -> some View {
         switch variant {
         case .primary:
-            RoundedRectangle(cornerRadius: LiquidGlass.radiusXS)
-                .fill(Color.accentColor.opacity(configuration.isPressed ? 0.75 : 1.0))
+            RoundedRectangle(cornerRadius: LiquidGlass.radiusSM, style: .continuous)
+                .fill(Color.accentColor.opacity(configuration.isPressed ? 0.82 : 0.95))
         case .destructive:
-            RoundedRectangle(cornerRadius: LiquidGlass.radiusXS)
-                .fill(Color.red.opacity(configuration.isPressed ? 0.75 : 0.85))
+            RoundedRectangle(cornerRadius: LiquidGlass.radiusSM, style: .continuous)
+                .fill(Color.red.opacity(configuration.isPressed ? 0.82 : 0.92))
         case .plain:
-            RoundedRectangle(cornerRadius: LiquidGlass.radiusXS)
+            RoundedRectangle(cornerRadius: LiquidGlass.radiusSM, style: .continuous)
                 .fill(Color.clear)
         default:
-            RoundedRectangle(cornerRadius: LiquidGlass.radiusXS)
-                .fill(.ultraThinMaterial)
-                .brightness(configuration.isPressed ? -0.05 : 0)
+            RoundedRectangle(cornerRadius: LiquidGlass.radiusSM, style: .continuous)
+                .fill(configuration.isPressed ? AnyShapeStyle(.regularMaterial) : AnyShapeStyle(.thinMaterial))
         }
     }
 
@@ -92,11 +91,14 @@ struct LiquidButtonStyle: ButtonStyle {
         }
     }
 
-    private var borderColor: Color {
+    private func borderColor(for configuration: Configuration) -> Color {
         switch variant {
-        case .primary:   return Color.accentColor.opacity(0.3)
-        case .destructive: return Color.red.opacity(0.3)
-        default:         return LiquidGlass.glassBorder
+        case .primary:
+            return Color.accentColor.opacity(configuration.isPressed ? 0.45 : 0.35)
+        case .destructive:
+            return Color.red.opacity(configuration.isPressed ? 0.45 : 0.35)
+        default:
+            return configuration.isPressed ? LiquidGlass.glassStroke : LiquidGlass.glassBorder
         }
     }
 }

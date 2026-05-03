@@ -21,7 +21,6 @@ struct PageBar: View {
                         .lineLimit(1)
                 }
 
-                // Page size picker
                 Picker("", selection: $store.size) {
                     Text("10").tag(10)
                     Text("50").tag(50)
@@ -32,15 +31,10 @@ struct PageBar: View {
                 .frame(width: 60)
                 .labelsHidden()
 
-                // Prev / page info / Next
-                HStack(spacing: 2) {
-                    Button(action: { store.send(.prevPage) }) {
-                        Image(systemName: "chevron.left")
-                            .font(.system(size: 11, weight: .semibold))
+                HStack(spacing: 6) {
+                    MIcon(icon: "chevron.left", fontSize: 10, disabled: !store.hasPrev) {
+                        store.send(.prevPage)
                     }
-                    .buttonStyle(.plain)
-                    .disabled(!store.hasPrev)
-                    .foregroundStyle(store.hasPrev ? Color.primary : Color.secondary)
 
                     Text("\(store.current)/\(store.totalPageText)")
                         .font(LiquidGlass.FONT_FOOTER)
@@ -49,15 +43,14 @@ struct PageBar: View {
                         .multilineTextAlignment(.center)
                         .lineLimit(1)
 
-                    Button(action: { store.send(.nextPage) }) {
-                        Image(systemName: "chevron.right")
-                            .font(.system(size: 11, weight: .semibold))
+                    MIcon(icon: "chevron.right", fontSize: 10, disabled: !store.hasNext) {
+                        store.send(.nextPage)
                     }
-                    .buttonStyle(.plain)
-                    .disabled(!store.hasNext)
-                    .foregroundStyle(store.hasNext ? Color.primary : Color.secondary)
                 }
             }
+            .padding(.horizontal, 10)
+            .padding(.vertical, 6)
+            .glassCard(cornerRadius: LiquidGlass.radiusLG)
         }
     }
 }

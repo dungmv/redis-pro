@@ -11,7 +11,7 @@ import Logging
 struct MIntField: View {
     @Binding var value:Int
     var placeholder:String?
-    @State private var isEditing = false
+    @FocusState private var isFocused: Bool
     var onCommit: (() -> Void)?
     
     // 是否有编辑过，编辑过才会触commit
@@ -26,18 +26,16 @@ struct MIntField: View {
                 .onSubmit {
                     doCommit()
                 }
+                .focused($isFocused)
         } else {
             TextField(placeholder ?? "", value: $value, formatter: NumberHelper.intFormatter, onEditingChanged: { isEditing in
-                self.isEditing = isEditing
-                if isEditing {
-                    self.isEdited = true
-                }
+                self.isEdited = isEditing
             }, onCommit: doCommit)
         }
     }
     
     var body: some View {
-        HStack(alignment: /*@START_MENU_TOKEN@*/.center/*@END_MENU_TOKEN@*/, spacing: 2) {
+        HStack(alignment: .center, spacing: 2) {
             field
                 .labelsHidden()
                 .lineLimit(1)
@@ -45,16 +43,11 @@ struct MIntField: View {
                 .font(.body)
                 .disableAutocorrection(true)
                 .textFieldStyle(PlainTextFieldStyle())
-                .onHover { inside in
-                    self.isEditing = inside
-                }
+                .focused($isFocused)
         }
-        .padding(EdgeInsets(top: 3, leading: 4, bottom: 3, trailing: 4))
-        .background(Color.init(NSColor.textBackgroundColor))
-        .cornerRadius(MTheme.CORNER_RADIUS)
-        .overlay(
-            RoundedRectangle(cornerRadius: MTheme.CORNER_RADIUS).stroke(Color.gray.opacity(isEditing ?  0.4 : 0.2), lineWidth: 1)
-        )
+        .padding(.horizontal, 8)
+        .padding(.vertical, 5)
+        .glassField(cornerRadius: LiquidGlass.radiusXS, isActive: isFocused)
     }
     
     func doCommit() -> Void {

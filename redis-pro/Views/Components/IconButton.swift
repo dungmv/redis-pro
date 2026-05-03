@@ -29,10 +29,16 @@ struct IconButton: View {
             .padding(.horizontal, 8)
             .padding(.vertical, 5)
             .background(
-                RoundedRectangle(cornerRadius: LiquidGlass.radiusXS)
-                    .fill(isHovered && !disabled
-                          ? Color.primary.opacity(0.1)
-                          : Color.clear)
+                RoundedRectangle(cornerRadius: LiquidGlass.radiusSM, style: .continuous)
+                    .fill(
+                        disabled
+                        ? AnyShapeStyle(Color.clear)
+                        : AnyShapeStyle(isHovered ? .regularMaterial : .thinMaterial)
+                    )
+            )
+            .overlay(
+                RoundedRectangle(cornerRadius: LiquidGlass.radiusSM, style: .continuous)
+                    .strokeBorder(disabled ? Color.clear : (isHovered ? LiquidGlass.glassStroke : LiquidGlass.glassBorder), lineWidth: 0.5)
             )
             .contentShape(Rectangle())
         }
