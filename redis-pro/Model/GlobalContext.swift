@@ -6,7 +6,7 @@
 //
 
 import Foundation
-import RediStack
+import Valkey
 
 class GlobalContext:ObservableObject, CustomStringConvertible {
     @Published var alertVisible:Bool = false

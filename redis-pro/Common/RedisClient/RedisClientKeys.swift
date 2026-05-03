@@ -6,47 +6,49 @@
 //
 
 import Foundation
-import RediStack
+import Valkey
 import Logging
 
 // MARK: - keys function
 extension RediStackClient {
     
-    private func keyScan(cursor:Int, keywords:String?, count:Int? = 1) async throws -> (cursor:Int, keys:[String]) {
+    private func keyScan(cursor: Int, keywords: String?, count: Int? = 1) async throws -> (cursor: Int, keys: [String]) {
         logger.debug("redis keys scan, cursor: \(cursor), keywords: \(String(describing: keywords)), count:\(String(describing: count))")
         
-        let command:RedisCommand<(Int, [RedisKey])> = .scan(startingFrom: cursor, matching: keywords, count: count)
-        let r = try await _send(command) ?? (0, [])
-        return (r.0, r.1.map { $0.rawValue })
+        guard let client = try await getClient() else { return (0, []) }
+        
+        let res = try await client.scan(
+            cursor: cursor,
+            match: keywords,
+            count: count
+        )
+        
+        return (res.cursor, res.keys)
     }
     
-    
-    private func countScan(cursor:Int, keywords:String?, count:Int? = 1) async throws -> (cursor:Int, count:Int) {
+    private func countScan(cursor: Int, keywords: String?, count: Int? = 1) async throws -> (cursor: Int, count: Int) {
         logger.debug("redis keys scan, cursor: \(cursor), keywords: \(String(describing: keywords)), count:\(String(describing: count))")
-        
         
         let res = try await keyScan(cursor: cursor, keywords: keywords, count: count)
-        return (res.0, res.1.count)
+        return (res.cursor, res.keys.count)
     }
     
-    
-    private func keysCountScan(_ keywords:String?) async throws -> Int {
+    private func keysCountScan(_ keywords: String?) async throws -> Int {
         if isMatchAll(keywords ?? "") {
             logger.info("keywords is match all, use dbsize...")
             return try await dbsize()
         }
         
-        var cursor:Int = 0
-        var count:Int = 0
+        var cursor: Int = 0
+        var count: Int = 0
         
         while true {
             let res = try await countScan(cursor: cursor, keywords: keywords, count: dataCountScanCount)
             logger.info("loop scan page, current cursor: \(cursor), total count: \(count)")
-            cursor = res.0
-            count = count + res.1
+            cursor = res.cursor
+            count = count + res.count
             
-            // 取到结果，或者已满足分页数据
-            if cursor == 0{
+            if cursor == 0 {
                 break
             }
         }
@@ -54,22 +56,18 @@ extension RediStackClient {
     }
     
     /// 分页查询 key
-    /// - Parameters:
-    ///     - page:  分页参数
-    /// - Returns: keys array
     private func keysPageScan(_ page: Page) async throws -> [String] {
         let keywords = page.keywords.isEmpty ? nil : page.keywords
-        var end:Int = page.end
-        var cursor:Int = 0
-        var keys:[String] = []
+        var end: Int = page.end
+        var cursor: Int = 0
+        var keys: [String] = []
         
         while true {
             let res = try await keyScan(cursor: cursor, keywords: keywords, count: dataScanCount)
             logger.info("loop scan page, current cursor: \(cursor), total count: \(keys.count)")
-            cursor = res.0
-            keys = keys + res.1
+            cursor = res.cursor
+            keys = keys + res.keys
             
-            // 取到结果，或者已满足分页数据
             if cursor == 0 || keys.count >= end {
                 break
             }
@@ -82,14 +80,12 @@ extension RediStackClient {
         
         end = min(end, keys.count)
         return Array(keys[start..<end])
-        
     }
     
     func pageKeys(_ page: Page) async throws -> [RedisKeyModel] {
         begin()
         
         let stopwatch = Stopwatch.createStarted()
-        
         logger.info("redis keys page scan, page: \(page)")
         
         let isScan = isScan(page.keywords)
@@ -99,11 +95,8 @@ extension RediStackClient {
             complete()
         }
         
-        // 带有占位符的情况，使用
         if isScan {
-
-            let pageData:[String] = try await keysPageScan(page)
-         
+            let pageData: [String] = try await keysPageScan(page)
             return try await self.toRedisKeyModels(pageData)
         } else {
             let exist = try await self.exist(page.keywords)
@@ -115,16 +108,8 @@ extension RediStackClient {
         }
     }
     
-    
-    /// 通过scan命令查询key匹配数量
-    /// - Parameters:
-    ///   - page: 分页参数
-    ///   - cursor: 当前游标
-    /// - Returns: 0: 当前游标， 0表示结束查询，同redis scan命令 1: 此次查询到的数量
-    ///
     func countKey(_ page: Page, cursor: Int) async throws -> (Int, Int) {
         let keywords = page.keywords
-        // 如果是匹配所，使用dbsize
         if isMatchAll(keywords) {
             return (0, try await dbsize())
         }
@@ -132,17 +117,9 @@ extension RediStackClient {
         let isScan = isScan(keywords)
         let match = keywords.isEmpty ? nil : keywords
         
-        // 是否走scan扫描key
         if isScan {
             let res = try await countScan(cursor: cursor, keywords: match, count: dataCountScanCount)
             logger.info("count scan keys, current cursor: \(cursor), r: \(res)")
-            
-            // 检查fast page, 如果启用了快速分页，查到99页结束，否则查询所有总页数 FIXME
-//                if settingViewStore?.fastPage ?? true && ((res.1 + page.total) > ((settingViewStore?.fastPageMax ?? 99) * page.size)) {
-//                    logger.info("count scan keys, fast page switch is open, stop scan")
-//                    return (0, res.1)
-//                }
-            
             return res
         } else {
             let count = try await self.exist(keywords) ? 1 : 0
@@ -150,13 +127,12 @@ extension RediStackClient {
         }
     }
     
-    func toRedisKeyModels(_ keys:[String]) async throws -> [RedisKeyModel] {
+    func toRedisKeyModels(_ keys: [String]) async throws -> [RedisKeyModel] {
         if keys.isEmpty {
             return []
         }
         
         var redisKeyModels = [RedisKeyModel]()
-        
         let typeDict = try await getTypes(keys)
         
         for key in keys {
@@ -165,5 +141,4 @@ extension RediStackClient {
         
         return redisKeyModels
     }
-    
 }

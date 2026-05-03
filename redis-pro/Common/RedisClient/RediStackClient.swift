@@ -1,5 +1,5 @@
 //
-//  RedisClient.swift
+//  RediStackClient.swift
 //  redis-pro
 //
 //  Created by chengpanwang on 2021/4/13.
@@ -7,7 +7,7 @@
 
 import Foundation
 import NIO
-import RediStack
+import Valkey
 import Logging
 import NIOSSH
 import ComposableArchitecture
@@ -15,31 +15,28 @@ import Cocoa
 
 class RediStackClient {
     let logger = Logger(label: "redis-client")
-    var redisModel:RedisModel
+    var redisModel: RedisModel
     var appContextStore: StoreOf<AppContextStore>? = nil
     
-    // conn
-    let eventLoopGroup = MultiThreadedEventLoopGroup(numberOfThreads: 2)
-    var connection:RedisConnection?
-    var connPool:RedisConnectionPool?
-    
-    var keepaliveTask: RepeatedTask?
+    // Valkey Client
+    var valkeyClient: ValkeyClient?
+    private var backgroundTask: Task<Void, Never>?
     
     // ssh
-    var sshChannel:Channel?
-    var sshLocalChannel:Channel?
-    var sshServer:PortForwardingServer?
+    var sshChannel: Channel?
+    var sshLocalChannel: Channel?
+    var sshServer: PortForwardingServer?
     
     // 递归查询每页大小
-    let dataScanCount:Int = 2000
-    var dataCountScanCount:Int = 2000
-    var recursionSize:Int = 2000
-    var recursionCountSize:Int = 5000
+    let dataScanCount: Int = 2000
+    var dataCountScanCount: Int = 2000
+    var recursionSize: Int = 2000
+    var recursionCountSize: Int = 5000
     
     private var observers = [NSObjectProtocol]()
     private var networkMonitor = NetworkMonitor()
     
-    init(_ redisModel:RedisModel) {
+    init(_ redisModel: RedisModel) {
         self.logger.info("init redis client, param: \(redisModel)")
         self.redisModel = redisModel
        
@@ -47,22 +44,15 @@ class RediStackClient {
         observers.append(
             NotificationCenter.default.addObserver(forName: NSApplication.willTerminateNotification, object: nil, queue: .main) { [self] _ in
                 logger.info("redis pro will exit...")
-                
                 shutdown()
             }
         )
-        
-//        networkMonitor.startMonitoring({ connected in
-//            self.logger.info("network had change, refresh connections, network: \(connected)")
-//            if (connected) {
-//                await self.refreshConn()
-//            }
-//        })
     }
     
     deinit {
         observers.forEach(NotificationCenter.default.removeObserver)
         networkMonitor.stopMonitoring()
+        backgroundTask?.cancel()
     }
     
     func loading(_ bool: Bool) {
@@ -71,19 +61,11 @@ class RediStackClient {
         }
     }
     
-    func begin() -> Void {
+    func begin() {
         loading(true)
     }
     
-    func complete<T:Any, R:Any>(_ completion:Swift.Result<T, Error>, continuation:CheckedContinuation<R, Error>) -> Void {
-        if case .failure(let error) = completion {
-            continuation.resume(throwing: error)
-        }
-  
-        loading(false)
-    }
-    
-    func complete() -> Void {
+    func complete() {
         loading(false)
     }
     
@@ -93,119 +75,85 @@ class RediStackClient {
         Task { @MainActor in Messages.show(error) }
     }
     
-    
-    func assertExist(_ key:String) async throws {
+    func assertExist(_ key: String) async throws {
         let exist = try await exist(key)
         if !exist {
             throw BizError("key: \(key) is not exist!")
         }
     }
     
-    // MARK: - Common function
-    func _send<R>(_ conn: RedisClient, _ command: RedisCommand<R>) async throws -> R {
-        return try await withCheckedThrowingContinuation { continuation in
-            conn.send(command, eventLoop: nil, logger: self.logger)
-                .whenComplete({completion in
-                    if case .success(let r) = completion {
-                        self.logger.info("send redis command: \(command) complete")
-                        continuation.resume(returning: r)
-                    }
-                    else if case .failure(let error) = completion {
-                        continuation.resume(throwing: error)
-                    }
-                })
+    // MARK: - Core Send Method
+    // This is a bridge for the old _send method. ValkeyClient handles connection pooling internally.
+    func _send<R>(_ command: @escaping (ValkeyClient) async throws -> R) async throws -> R {
+        guard let client = try await getClient() else {
+            throw BizError("Valkey client not initialized")
+        }
+        return try await command(client)
+    }
+    
+    // MARK: - Client Management
+    func getClient() async throws -> ValkeyClient? {
+        if let client = valkeyClient {
+            return client
+        }
+        return try await initClient()
+    }
+    
+    private func initClient() async throws -> ValkeyClient {
+        if self.redisModel.connectionType == RedisConnectionTypeEnum.SSH.rawValue {
+            return try await initSSHClient()
+        } else {
+            return try await initDirectClient()
         }
     }
     
+    func initDirectClient() async throws -> ValkeyClient {
+        let config = ValkeyClientConfiguration(
+            endpoint: .hostname(redisModel.host, port: redisModel.port),
+            username: redisModel.username.isEmpty ? nil : redisModel.username,
+            password: redisModel.password.isEmpty ? nil : redisModel.password,
+            database: redisModel.database,
+            logger: self.logger
+        )
+        
+        let client = ValkeyClient(configuration: config)
+        
+        // Start background task for the client
+        self.backgroundTask?.cancel()
+        self.backgroundTask = Task {
+            do {
+                try await client.run()
+            } catch {
+                self.logger.error("Valkey client background task error: \(error)")
+            }
+        }
+        
+        self.valkeyClient = client
+        return client
+    }
 
-    // 公共底层请求redis 数据方法, 不处理任何异常, 使用者需要自己行处理异常信息
-    func _send<R>(_ command: RedisCommand<R>) async throws -> R? {
-        let conn = try await getConn()
-        return try await _send(conn, command)
-    }
-    
-    // 公共底层请求redis 数据方法, 不处理任何异常, 使用者需要自己行处理异常信息
-    func _send<R>(_ command: RedisCommand<R>, _ defaultValue: R) async throws -> R {
-        return try await _send(command) ?? defaultValue
-    }
-    
-    func send<R>(_ command: RedisCommand<R>, _ defaultValue: R) async throws -> R {
-        return try await send(command) ?? defaultValue
-    }
-    
-    func send<R>(_ command: RedisCommand<R>) async throws -> R? {
-        self.logger.info("send redis command, command: \(command)")
+    // MARK: - Helper for legacy extensions
+    // RediStack used RedisCommand objects. Valkey uses direct method calls.
+    // We'll update the extensions to use direct calls, but this helper might be useful during transition.
+    func send<R>(_ command: String, _ args: [ValkeyValue] = []) async throws -> R? where R: ValkeyValueConvertible {
         begin()
-        defer {
-            complete()
-        }
+        defer { complete() }
         
-        return try await _send(command)
+        let client = try await getClient()
+        let result = try await client?.command(command, args: args)
+        return R(fromValkeyValue: result ?? .null)
     }
-    
-    func ttlSecond(_ lifetime: RedisKey.Lifetime) -> Int {
-        switch lifetime {
-        case .keyDoesNotExist:
-            return -2
-        case .limited(let duration):
-            return Int(duration.timeAmount.nanoseconds / 1000000000)
-        default:
-            return -1
-        }
-    }
-    
-    
-    private func _keepalive() {
-        let eventLoop = eventLoopGroup.next()
-        self.keepaliveTask = eventLoop.scheduleRepeatedAsyncTask(initialDelay: .seconds(10), delay: .seconds(5)) {_ in
-            self.logger.info("keep alive connection...")
-            self.connPool?.leaseConnection() { conn in
-                return conn.send(.echo("redis-pro heartbeat"))
-            }.whenComplete({completion in
-                if case .success(let r) = completion {
-                    self.logger.info("keepalive heartbeat echo: \(r)")
-                }
-                else if case .failure(let error) = completion {
-                    self.logger.info("keepalive heartbeat error: \(error)")
-                }
-            })
-            
-            return eventLoop.makeSucceededVoidFuture()
-        }
-    }
-    
-    // close
-    func close() -> Void {
-        self.connection?.close().whenComplete({completion in
-                self.connection = nil
-                self.logger.info("redis client- connection close")
-            })
-        self.connPool?.close()
-        self.connPool = nil
-        self.logger.info("redis client- connection pool close")
-        
+
+    // MARK: - Lifecycle
+    func close() {
+        self.valkeyClient = nil
+        self.backgroundTask?.cancel()
+        self.backgroundTask = nil
+        self.logger.info("redis client- connection closed")
         self.closeSSH()
     }
     
     func shutdown() {
-        do {
-            close()
-            
-            logger.info("gracefully shutdown event loop group start...")
-            try self.eventLoopGroup.syncShutdownGracefully()
-        } catch {
-            logger.info("gracefully shutdown event loop group error: \(error)")
-        }
-    }
-}
-
-
-
-// MARK: RESPValue Conversion
-extension RESPValue {
-    @usableFromInline
-    func map<T: RESPValueConvertible>(to type: T.Type = T.self) throws -> T {
-        guard let value = T(fromRESP: self) else { throw RedisClientError.failedRESPConversion(to: type) }
-        return value
+        close()
     }
 }

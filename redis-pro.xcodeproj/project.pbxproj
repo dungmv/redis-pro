@@ -53,7 +53,6 @@
 		4373C50525C3F0B6002B700E /* UserDefaultsKeysEnum.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4373C50425C3F0B6002B700E /* UserDefaultsKeysEnum.swift */; };
 		4373C50925C3F218002B700E /* RedisModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4373C50825C3F218002B700E /* RedisModel.swift */; };
 		4373C50C25C3FC81002B700E /* LoginForm.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4373C50B25C3FC81002B700E /* LoginForm.swift */; };
-		437499582CE875D600869391 /* SwiftSyntax in Frameworks */ = {isa = PBXBuildFile; productRef = 437499572CE875D600869391 /* SwiftSyntax */; };
 		437BC2452645272E00E2C84D /* DoubleFormatter.swift in Sources */ = {isa = PBXBuildFile; fileRef = 437BC2442645272E00E2C84D /* DoubleFormatter.swift */; };
 		437BC24726452AE400E2C84D /* StringFormatter.swift in Sources */ = {isa = PBXBuildFile; fileRef = 437BC24626452AE400E2C84D /* StringFormatter.swift */; };
 		437BC2492645413000E2C84D /* MDoubleField.swift in Sources */ = {isa = PBXBuildFile; fileRef = 437BC2482645413000E2C84D /* MDoubleField.swift */; };
@@ -185,7 +184,6 @@
 		62F44FE42A7E752D00714D98 /* AppContextStoreTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 62F44FE32A7E752D00714D98 /* AppContextStoreTests.swift */; };
 		62F44FE62AADAD2000714D98 /* FormText.swift in Sources */ = {isa = PBXBuildFile; fileRef = 62F44FE52AADAD2000714D98 /* FormText.swift */; };
 		62FD85D62A7E6020005DE558 /* RediStack in Frameworks */ = {isa = PBXBuildFile; productRef = 62FD85D52A7E6020005DE558 /* RediStack */; };
-		62FD85D82A7E6020005DE558 /* RedisTypes in Frameworks */ = {isa = PBXBuildFile; productRef = 62FD85D72A7E6020005DE558 /* RedisTypes */; };
 		62FD85DB2A7E680E005DE558 /* KeysDelStoreTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 62FD85DA2A7E680E005DE558 /* KeysDelStoreTests.swift */; };
 		62FD85DD2A7E6A46005DE558 /* StoreBaseTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 62FD85DC2A7E6A46005DE558 /* StoreBaseTests.swift */; };
 		CE3A187D282525AB00988515 /* KeyStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = CE3A187C282525AB00988515 /* KeyStore.swift */; };
@@ -199,11 +197,6 @@
 		CEA1EF4D277C56DD00D300E9 /* NIO in Frameworks */ = {isa = PBXBuildFile; productRef = CEA1EF4C277C56DD00D300E9 /* NIO */; };
 		CEA1EF4F277C56DD00D300E9 /* NIOConcurrencyHelpers in Frameworks */ = {isa = PBXBuildFile; productRef = CEA1EF4E277C56DD00D300E9 /* NIOConcurrencyHelpers */; };
 		CEA1EF51277C56DD00D300E9 /* NIOCore in Frameworks */ = {isa = PBXBuildFile; productRef = CEA1EF50277C56DD00D300E9 /* NIOCore */; };
-		CEA1EF53277C56DD00D300E9 /* NIOEmbedded in Frameworks */ = {isa = PBXBuildFile; productRef = CEA1EF52277C56DD00D300E9 /* NIOEmbedded */; };
-		CEA1EF55277C56DD00D300E9 /* NIOFoundationCompat in Frameworks */ = {isa = PBXBuildFile; productRef = CEA1EF54277C56DD00D300E9 /* NIOFoundationCompat */; };
-		CEA1EF57277C56DD00D300E9 /* NIOPosix in Frameworks */ = {isa = PBXBuildFile; productRef = CEA1EF56277C56DD00D300E9 /* NIOPosix */; };
-		CEA1EF59277C56DD00D300E9 /* NIOTLS in Frameworks */ = {isa = PBXBuildFile; productRef = CEA1EF58277C56DD00D300E9 /* NIOTLS */; };
-		CEA1EF5B277C56DD00D300E9 /* _NIOConcurrency in Frameworks */ = {isa = PBXBuildFile; productRef = CEA1EF5A277C56DD00D300E9 /* _NIOConcurrency */; };
 		CEEC2562282508C0000463F5 /* RedisKeysStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = CEEC2561282508C0000463F5 /* RedisKeysStore.swift */; };
 		CEF000FF2771B6640020A27E /* NTextEditor.swift in Sources */ = {isa = PBXBuildFile; fileRef = CEF000FE2771B6640020A27E /* NTextEditor.swift */; };
 /* End PBXBuildFile section */
@@ -964,6 +957,7 @@
 				629E0B752CE629B1001CDC77 /* XCRemoteSwiftPackageReference "Puppy" */,
 				629E0B7D2CE62E88001CDC77 /* XCRemoteSwiftPackageReference "swift-composable-architecture" */,
 				437499562CE875D600869391 /* XCRemoteSwiftPackageReference "swift-syntax" */,
+				5C35809C2FA7D8CF008E23C2 /* XCRemoteSwiftPackageReference "valkey-swift" */,
 			);
 			productRefGroup = 4320AAF125B6740900A8E214 /* Products */;
 			projectDirPath = "";
@@ -1494,6 +1488,14 @@
 				minimumVersion = 600.0.1;
 			};
 		};
+		5C35809C2FA7D8CF008E23C2 /* XCRemoteSwiftPackageReference "valkey-swift" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/valkey-io/valkey-swift";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 1.3.2;
+			};
+		};
 		6237D030275C954A000ACD6A /* XCRemoteSwiftPackageReference "swift-log" */ = {
 			isa = XCRemoteSwiftPackageReference;
 			repositoryURL = "https://github.com/apple/swift-log.git";
@@ -1553,11 +1555,6 @@
 /* End XCRemoteSwiftPackageReference section */
 
 /* Begin XCSwiftPackageProductDependency section */
-		437499572CE875D600869391 /* SwiftSyntax */ = {
-			isa = XCSwiftPackageProductDependency;
-			package = 437499562CE875D600869391 /* XCRemoteSwiftPackageReference "swift-syntax" */;
-			productName = SwiftSyntax;
-		};
 		6237D031275C954A000ACD6A /* Logging */ = {
 			isa = XCSwiftPackageProductDependency;
 			package = 6237D030275C954A000ACD6A /* XCRemoteSwiftPackageReference "swift-log" */;
@@ -1583,11 +1580,6 @@
 			package = 62FD85D42A7E6020005DE558 /* XCRemoteSwiftPackageReference "RediStack" */;
 			productName = RediStack;
 		};
-		62FD85D72A7E6020005DE558 /* RedisTypes */ = {
-			isa = XCSwiftPackageProductDependency;
-			package = 62FD85D42A7E6020005DE558 /* XCRemoteSwiftPackageReference "RediStack" */;
-			productName = RedisTypes;
-		};
 		CEA1EF49277C56B100D300E9 /* NIOSSH */ = {
 			isa = XCSwiftPackageProductDependency;
 			package = CEA1EF48277C56B100D300E9 /* XCRemoteSwiftPackageReference "swift-nio-ssh" */;
@@ -1607,31 +1599,6 @@
 			isa = XCSwiftPackageProductDependency;
 			package = CEA1EF4B277C56DD00D300E9 /* XCRemoteSwiftPackageReference "swift-nio" */;
 			productName = NIOCore;
-		};
-		CEA1EF52277C56DD00D300E9 /* NIOEmbedded */ = {
-			isa = XCSwiftPackageProductDependency;
-			package = CEA1EF4B277C56DD00D300E9 /* XCRemoteSwiftPackageReference "swift-nio" */;
-			productName = NIOEmbedded;
-		};
-		CEA1EF54277C56DD00D300E9 /* NIOFoundationCompat */ = {
-			isa = XCSwiftPackageProductDependency;
-			package = CEA1EF4B277C56DD00D300E9 /* XCRemoteSwiftPackageReference "swift-nio" */;
-			productName = NIOFoundationCompat;
-		};
-		CEA1EF56277C56DD00D300E9 /* NIOPosix */ = {
-			isa = XCSwiftPackageProductDependency;
-			package = CEA1EF4B277C56DD00D300E9 /* XCRemoteSwiftPackageReference "swift-nio" */;
-			productName = NIOPosix;
-		};
-		CEA1EF58277C56DD00D300E9 /* NIOTLS */ = {
-			isa = XCSwiftPackageProductDependency;
-			package = CEA1EF4B277C56DD00D300E9 /* XCRemoteSwiftPackageReference "swift-nio" */;
-			productName = NIOTLS;
-		};
-		CEA1EF5A277C56DD00D300E9 /* _NIOConcurrency */ = {
-			isa = XCSwiftPackageProductDependency;
-			package = CEA1EF4B277C56DD00D300E9 /* XCRemoteSwiftPackageReference "swift-nio" */;
-			productName = _NIOConcurrency;
 		};
 /* End XCSwiftPackageProductDependency section */
 	};

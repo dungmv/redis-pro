@@ -7,7 +7,7 @@
 
 import SwiftUI
 import NIO
-import RediStack
+import Valkey
 import Logging
 import ComposableArchitecture
 

@@ -6,32 +6,24 @@
 //
 
 import Foundation
-import RediStack
-
+import Valkey
 
 // MARK: - set function
-// set
 extension RediStackClient {
     
-    func pageSet(_ key:String, page: Page) async throws -> [String] {
-        
+    func pageSet(_ key: String, page: Page) async throws -> [String] {
         logger.info("redis set page, key: \(key), page: \(page)")
-        
         begin()
-        defer {
-            complete()
-        }
+        defer { complete() }
         
         do {
             try await assertExist(key)
-            
             let isScan = isScan(page.keywords)
-            var r:[String] = []
+            var r: [String] = []
             
             if isScan {
                 let match = page.keywords.isEmpty ? nil : page.keywords
-                
-                let pageData:[String] = try await _setPageScan(key, page: page)
+                let pageData: [String] = try await _setPageScan(key, page: page)
                 r = r + pageData
                 
                 let total = try await _setCountScan(key, keywords: match)
@@ -50,124 +42,111 @@ extension RediStackClient {
         return []
     }
     
-    
-    
-    private func _setCountScan(_ key:String, keywords:String?) async throws -> Int {
+    private func _setCountScan(_ key: String, keywords: String?) async throws -> Int {
         if isMatchAll(keywords ?? "") {
             logger.info("keywords is match all, use scard...")
             return try await _scard(key)
         }
         
-        var cursor:Int = 0
-        var count:Int = 0
+        var cursor: Int = 0
+        var count: Int = 0
         
         while true {
             let res = try await _sscan(key, keywords: keywords, cursor: cursor, count: dataCountScanCount)
             logger.info("set loop scan count, current cursor: \(cursor), total count: \(count)")
-            cursor = res.0
-            count = count + res.1.count
+            cursor = res.cursor
+            count = count + res.elements.count
             
-            // 取到结果，或者已满足分页数据
-            if cursor == 0{
+            if cursor == 0 {
                 break
             }
         }
         return count
     }
     
-    private func _setPageScan(_ key:String, page: Page) async throws -> [String] {
+    private func _setPageScan(_ key: String, page: Page) async throws -> [String] {
         let keywords = page.keywords.isEmpty ? nil : page.keywords
-        var end:Int = page.end
-        var cursor:Int = 0
-        var keys:[String] = []
+        var end: Int = page.end
+        var cursor: Int = 0
+        var elements: [String] = []
         
         while true {
             let res = try await _sscan(key, keywords: keywords, cursor: cursor, count: dataScanCount)
-            logger.info("set loop scan page, current cursor: \(cursor), total count: \(keys.count)")
-            cursor = res.0
-            keys = keys + res.1.map { $0 ?? ""}
+            logger.info("set loop scan page, current cursor: \(cursor), total count: \(elements.count)")
+            cursor = res.cursor
+            elements = elements + res.elements
             
-            // 取到结果，或者已满足分页数据
-            if cursor == 0 || keys.count >= end {
+            if cursor == 0 || elements.count >= end {
                 break
             }
         }
         
         let start = page.start
-        if start >= keys.count {
+        if start >= elements.count {
             return []
         }
         
-        end = min(end, keys.count)
-        return Array(keys[start..<end])
-        
+        end = min(end, elements.count)
+        return Array(elements[start..<end])
     }
     
-    private func _sscan(_ key:String, keywords:String?, cursor:Int, count:Int = 1) async throws -> (Int, [String?]) {
+    private func _sscan(_ key: String, keywords: String?, cursor: Int, count: Int = 1) async throws -> (cursor: Int, elements: [String]) {
         logger.debug("redis set scan, key: \(key) cursor: \(cursor), keywords: \(String(describing: keywords)), count:\(String(describing: count))")
-    
-        let command: RedisCommand<(Int, [RESPValue])> = .sscan(RedisKey(key), startingFrom: cursor, matching: keywords, count: count)
-        let r = try await _send(command)!
-        return (r.0, r.1.map { $0.description })
+        guard let client = try await getClient() else { return (0, []) }
+        
+        let res = try await client.sscan(
+            key: key,
+            cursor: cursor,
+            match: keywords,
+            count: count
+        )
+        return (res.cursor, res.elements)
     }
     
-    private func _sexist(_ key:String, ele:String?) async throws -> Bool{
-        let command: RedisCommand<Bool> = .sismember(ele, of: RedisKey(key))
-        return try await _send(command, false)
+    private func _sexist(_ key: String, ele: String?) async throws -> Bool {
+        guard let ele = ele, let client = try await getClient() else { return false }
+        return try await client.sismember(key: key, element: ele)
     }
     
-    func supdate(_ key:String, from:String, to:String) async throws -> Int {
+    func supdate(_ key: String, from: String, to: String) async throws -> Int {
         begin()
-        defer {
-            complete()
-        }
+        defer { complete() }
         logger.info("redis set update, key: \(key), from: \(from), to: \(to)")
         
         do {
             let r = try await _srem(key, ele: from)
             try Assert.isTrue(r > 0, message: "set element: `\(from)` is not exist!")
-            
             return try await _sadd(key, ele: to)
         } catch {
             handleError(error)
         }
         return 0
-        
     }
     
-    func srem(_ key:String, ele:String) async throws -> Int {
+    func srem(_ key: String, ele: String) async throws -> Int {
         begin()
-        defer {
-            complete()
-        }
-        
+        defer { complete() }
         return try await _srem(key, ele: ele)
     }
     
-    func sadd(_ key:String, ele:String) async throws -> Int {
+    func sadd(_ key: String, ele: String) async throws -> Int {
         begin()
-        defer {
-            complete()
-        }
+        defer { complete() }
         return try await _sadd(key, ele: ele)
     }
     
-    private func _scard(_ key:String) async throws -> Int {
-        let command: RedisCommand<Int> = .scard(of: RedisKey(key))
-        return try await _send(command, 0)
+    private func _scard(_ key: String) async throws -> Int {
+        guard let client = try await getClient() else { return 0 }
+        return try await client.scard(key: key)
     }
     
-    private func _srem(_ key:String, ele:String) async throws -> Int {
-        let command: RedisCommand<Int> = .srem(ele, from: RedisKey(key))
-        return try await _send(command, 0)
+    private func _srem(_ key: String, ele: String) async throws -> Int {
+        guard let client = try await getClient() else { return 0 }
+        return try await client.srem(key: key, elements: [ele])
     }
     
-    
-    private func _sadd(_ key:String, ele:String) async throws -> Int {
-        let command: RedisCommand<Int> = .sadd(ele, to: RedisKey(key))
-        return try await _send(command, 0)
+    private func _sadd(_ key: String, ele: String) async throws -> Int {
+        guard let client = try await getClient() else { return 0 }
+        return try await client.sadd(key: key, elements: [ele])
     }
-    
-    
 }
-

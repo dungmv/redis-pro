@@ -8,7 +8,7 @@
 import Foundation
 import Cocoa
 import Logging
-import RediStack
+import Valkey
 
 /// Thread-safe alert helpers.
 /// All methods dispatch work on the main actor to avoid race conditions

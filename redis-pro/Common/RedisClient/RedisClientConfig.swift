@@ -6,36 +6,46 @@
 //
 
 import Foundation
-import RediStack
+import Valkey
 
-
-// MARK: -config
+// MARK: - config
 extension RediStackClient {
-    func getConfigList(_ pattern:String = "*") async throws -> [RedisConfigItemModel] {
+    func getConfigList(_ pattern: String = "*") async throws -> [RedisConfigItemModel] {
         logger.info("get redis config list, pattern: \(pattern)...")
+        guard let client = try await getClient() else { return [] }
         
-        let command: RedisCommand<[RedisConfigItemModel]> = .configList(pattern)
-        return try await send(command, [])
+        let res = try await client.command("CONFIG", args: ["GET", pattern.isEmpty ? "*" : pattern])
+        guard case .array(let arr) = res else { return [] }
+        
+        var configList = [RedisConfigItemModel]()
+        let max: Int = arr.count / 2
+        for index in (0..<max) {
+            configList.append(RedisConfigItemModel(key: String(fromValkeyValue: arr[index * 2]), value: String(fromValkeyValue: arr[index * 2 + 1])))
+        }
+        return configList
     }
     
     func configRewrite() async throws -> Bool {
         logger.info("redis config rewrite ...")
-        let command: RedisCommand<Bool> = .configRewrite()
-        return try await send(command, false)
-        
+        guard let client = try await getClient() else { return false }
+        let res = try await client.command("CONFIG", args: ["REWRITE"])
+        return String(fromValkeyValue: res) == "OK"
     }
     
-    func getConfigOne(key:String) async throws -> String? {
+    func getConfigOne(key: String) async throws -> String? {
         logger.info("get redis config ...")
-        let command: RedisCommand<String> = .getConfig(key)
-        return try await send(command)
+        guard let client = try await getClient() else { return nil }
+        let res = try await client.command("CONFIG", args: ["GET", key])
+        if case .array(let arr) = res, arr.count >= 2 {
+            return String(fromValkeyValue: arr[1])
+        }
+        return nil
     }
     
-    
-    func setConfig(key:String, value:String) async throws -> Bool {
+    func setConfig(key: String, value: String) async throws -> Bool {
         logger.info("set redis config, key: \(key), value: \(value)")
-        let command: RedisCommand<Bool> = .setConfig(key, value: value)
-        return try await send(command, false)
+        guard let client = try await getClient() else { return false }
+        let res = try await client.command("CONFIG", args: ["SET", key, value])
+        return String(fromValkeyValue: res) == "OK"
     }
-    
 }
