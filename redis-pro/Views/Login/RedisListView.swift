@@ -58,14 +58,17 @@ struct RedisListView: View {
                     .padding(.vertical, 6)
                     .glassToolbar()
                 }
+                .background(.thinMaterial)
                 .frame(minWidth: 200, idealWidth: 220)
                 .layoutPriority(0)
                 .onAppear { onLoad() }
 
                 // ── Login form (right panel) ───────────────────────────────
                 LoginForm(store: store.scope(state: \.loginState, action: \.loginAction))
+                    .background(.regularMaterial)
                     .frame(minWidth: 800, maxWidth: .infinity, minHeight: 520, maxHeight: .infinity)
             }
+            .glassWindowSurface()
         }
     }
 

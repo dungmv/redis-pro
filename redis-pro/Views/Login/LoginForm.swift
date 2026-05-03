@@ -26,6 +26,7 @@ struct LoginForm: View {
             }
             .padding(20)
             .frame(width: 500, height: store.height)
+            .glassWindowSurface()
         }
     }
 
@@ -37,6 +38,7 @@ struct LoginForm: View {
                 connectionSection
                 footerSection
             }
+            .padding(.bottom, 8)
         }
     }
 
@@ -47,38 +49,35 @@ struct LoginForm: View {
             VStack(spacing: 0) {
                 connectionSection
 
-                GroupBox {
-                    VStack(alignment: .leading, spacing: 12) {
-                        sectionHeader("SSH Configuration", icon: "lock.shield")
-                        FormItemText(label: "SSH Host", placeholder: "hostname", value: $store.sshHost)
-                        FormItemInt(label: "SSH Port", placeholder: "22", value: $store.sshPort)
-                        FormItemText(label: "SSH User", placeholder: "username", value: $store.sshUser)
-                        FormItemPassword(label: "SSH Pass", value: $store.sshPass)
-                    }
-                    .padding(.vertical, 4)
+                VStack(alignment: .leading, spacing: 12) {
+                    sectionHeader("SSH Configuration", icon: "lock.shield")
+                    FormItemText(label: "SSH Host", placeholder: "hostname", value: $store.sshHost)
+                    FormItemInt(label: "SSH Port", placeholder: "22", value: $store.sshPort)
+                    FormItemText(label: "SSH User", placeholder: "username", value: $store.sshUser)
+                    FormItemPassword(label: "SSH Pass", value: $store.sshPass)
                 }
+                .sectionSurface()
                 .padding(.top, 12)
 
                 footerSection
             }
+            .padding(.bottom, 8)
         }
     }
 
     // MARK: - Shared sections
 
     private var connectionSection: some View {
-        GroupBox {
-            VStack(alignment: .leading, spacing: 12) {
-                sectionHeader("Connection", icon: "server.rack")
-                FormItemText(label: "Name", placeholder: "connection name", value: $store.name)
-                FormItemText(label: "Host", placeholder: "127.0.0.1", value: $store.host)
-                FormItemInt(label: "Port", placeholder: "6379", value: $store.port)
-                FormItemText(label: "User", placeholder: "default", value: $store.username)
-                FormItemPassword(label: "Password", value: $store.password)
-                FormItemInt(label: "Database", value: $store.database)
-            }
-            .padding(.vertical, 4)
+        VStack(alignment: .leading, spacing: 12) {
+            sectionHeader("Connection", icon: "server.rack")
+            FormItemText(label: "Name", placeholder: "connection name", value: $store.name)
+            FormItemText(label: "Host", placeholder: "127.0.0.1", value: $store.host)
+            FormItemInt(label: "Port", placeholder: "6379", value: $store.port)
+            FormItemText(label: "User", placeholder: "default", value: $store.username)
+            FormItemPassword(label: "Password", value: $store.password)
+            FormItemInt(label: "Database", value: $store.database)
         }
+        .sectionSurface()
     }
 
     private var footerSection: some View {
@@ -126,5 +125,14 @@ struct LoginForm: View {
             .font(.system(size: 12, weight: .semibold))
             .foregroundStyle(.secondary)
             .padding(.bottom, 4)
+    }
+}
+
+private extension View {
+    func sectionSurface() -> some View {
+        self
+            .padding(.vertical, 4)
+            .padding(.horizontal, 14)
+            .glassCard(cornerRadius: LiquidGlass.radiusLG)
     }
 }

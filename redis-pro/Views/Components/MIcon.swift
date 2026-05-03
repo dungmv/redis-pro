@@ -20,12 +20,23 @@ struct MIcon: View {
             Image(systemName: icon)
                 .font(.system(size: fontSize, weight: .medium))
                 .symbolRenderingMode(.hierarchical)
-                .frame(width: fontSize + 8, height: fontSize + 8)
+                .frame(width: fontSize + 12, height: fontSize + 12)
                 .background(
                     Circle()
-                        .fill(isHovered && !disabled
-                              ? Color.primary.opacity(0.10)
-                              : Color.clear)
+                        .fill(
+                            disabled
+                            ? AnyShapeStyle(Color.clear)
+                            : AnyShapeStyle(isHovered ? .regularMaterial : .thinMaterial)
+                        )
+                )
+                .overlay(
+                    Circle()
+                        .strokeBorder(
+                            disabled
+                            ? Color.clear
+                            : (isHovered ? LiquidGlass.glassStroke : LiquidGlass.glassBorder),
+                            lineWidth: 0.5
+                        )
                 )
                 .contentShape(Circle())
         }

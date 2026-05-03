@@ -52,6 +52,7 @@ struct TreeRenderNode: View {
     let store: StoreOf<RedisKeysStore>
     let level: CGFloat
     @State private var isExpanded: Bool = true
+    @State private var isHovered: Bool = false
 
     var body: some View {
         VStack(alignment: .leading, spacing: 1) {
@@ -109,7 +110,12 @@ struct TreeRenderNode: View {
         }
         .frame(height: 22)
         .padding(.horizontal, 6)
+        .background(
+            RoundedRectangle(cornerRadius: LiquidGlass.radiusXS)
+                .fill(isHovered ? AnyShapeStyle(.thinMaterial) : AnyShapeStyle(Color.clear))
+        )
         .contentShape(Rectangle())
+        .onHover { isHovered = $0 }
         .onTapGesture {
             withAnimation(.spring(response: 0.25, dampingFraction: 0.8)) {
                 isExpanded.toggle()
@@ -128,7 +134,7 @@ struct TreeRenderNode: View {
             Text(node.name)
                 .font(.system(size: 12, design: .monospaced))
                 .lineLimit(1)
-                .foregroundStyle(isSelected ? Color.white : Color.primary)
+                .foregroundStyle(isSelected ? Color.primary : Color.primary)
 
             Spacer(minLength: 0)
         }
@@ -136,15 +142,23 @@ struct TreeRenderNode: View {
         .padding(.horizontal, 6)
         .background(
             RoundedRectangle(cornerRadius: LiquidGlass.radiusXS)
-                .fill(isSelected
-                      ? Color.accentColor
-                      : Color.clear)
+                .fill(
+                    isSelected
+                    ? AnyShapeStyle(.regularMaterial)
+                    : (isHovered ? AnyShapeStyle(.thinMaterial) : AnyShapeStyle(Color.clear))
+                )
         )
         .overlay(
             RoundedRectangle(cornerRadius: LiquidGlass.radiusXS)
-                .strokeBorder(isSelected ? Color.accentColor.opacity(0.3) : Color.clear, lineWidth: 0.5)
+                .strokeBorder(
+                    isSelected
+                    ? Color.accentColor.opacity(0.45)
+                    : (isHovered ? LiquidGlass.glassBorder : Color.clear),
+                    lineWidth: isSelected ? 1 : 0.5
+                )
         )
         .contentShape(Rectangle())
+        .onHover { isHovered = $0 }
         .onTapGesture { store.send(.selectNode(node.id)) }
         .contextMenu {
             Button("Copy Key") {
