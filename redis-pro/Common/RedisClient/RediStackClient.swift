@@ -20,7 +20,7 @@ class RediStackClient {
     
     // Valkey Client
     var valkeyClient: ValkeyClient?
-    private var backgroundTask: Task<Void, Never>?
+    var backgroundTask: Task<Void, Never>?
     
     // ssh
     var sshChannel: Channel?
@@ -108,42 +108,82 @@ class RediStackClient {
     }
     
     func initDirectClient() async throws -> ValkeyClient {
+        let auth = (redisModel.password.isEmpty && redisModel.username.isEmpty) ? nil : ValkeyClientConfiguration.Authentication(username: redisModel.username, password: redisModel.password)
         let config = ValkeyClientConfiguration(
-            endpoint: .hostname(redisModel.host, port: redisModel.port),
-            username: redisModel.username.isEmpty ? nil : redisModel.username,
-            password: redisModel.password.isEmpty ? nil : redisModel.password,
-            database: redisModel.database,
-            logger: self.logger
+            authentication: auth,
+            databaseNumber: redisModel.database
         )
         
-        let client = ValkeyClient(configuration: config)
+        let client = ValkeyClient(.hostname(redisModel.host, port: redisModel.port), configuration: config, logger: self.logger)
         
         // Start background task for the client
         self.backgroundTask?.cancel()
         self.backgroundTask = Task {
-            do {
-                try await client.run()
-            } catch {
-                self.logger.error("Valkey client background task error: \(error)")
-            }
+            await client.run()
         }
         
         self.valkeyClient = client
         return client
     }
+}
 
-    // MARK: - Helper for legacy extensions
-    // RediStack used RedisCommand objects. Valkey uses direct method calls.
-    // We'll update the extensions to use direct calls, but this helper might be useful during transition.
-    func send<R>(_ command: String, _ args: [ValkeyValue] = []) async throws -> R? where R: ValkeyValueConvertible {
-        begin()
-        defer { complete() }
-        
-        let client = try await getClient()
-        let result = try await client?.command(command, args: args)
-        return R(fromValkeyValue: result ?? .null)
+// MARK: - Bridge Types
+public protocol ValkeyValueConvertible {
+    init(fromValkeyValue token: RESPToken)
+}
+
+extension String: ValkeyValueConvertible {
+    public init(fromValkeyValue token: RESPToken) {
+        switch token.value {
+        case .simpleString(let buffer), .bulkString(let buffer):
+            self = String(buffer: buffer)
+        case .number(let i):
+            self = String(i)
+        case .double(let d):
+            self = String(d)
+        case .boolean(let b):
+            self = String(b)
+        default:
+            self = ""
+        }
     }
+}
 
+extension Int: ValkeyValueConvertible {
+    public init(fromValkeyValue token: RESPToken) {
+        switch token.value {
+        case .number(let i):
+            self = Int(i)
+        case .simpleString(let buffer), .bulkString(let buffer):
+            self = Int(String(buffer: buffer)) ?? 0
+        default:
+            self = 0
+        }
+    }
+}
+
+extension RESPToken: ValkeyValueConvertible {
+    public init(fromValkeyValue token: RESPToken) {
+        self = token
+    }
+}
+
+// Custom command to support raw commands from the console
+struct AnyCommand: ValkeyCommand {
+    typealias Response = RESPToken
+    static var name: String { "ANY" }
+    var keysAffected: [ValkeyKey] { [] }
+    
+    let commandName: String
+    let args: [any RESPRenderable]
+    
+    func encode(into commandEncoder: inout ValkeyCommandEncoder) {
+        // We use the multi-encode version of encodeArray for the command name and the args array
+        commandEncoder.encodeArray(commandName, args)
+    }
+}
+
+extension RediStackClient {
     // MARK: - Lifecycle
     func close() {
         self.valkeyClient = nil
@@ -152,8 +192,24 @@ class RediStackClient {
         self.logger.info("redis client- connection closed")
         self.closeSSH()
     }
-    
+
     func shutdown() {
         close()
+    }
+
+    // MARK: - Helper for legacy extensions
+    func send<R>(_ command: String, args: [any RESPRenderable] = []) async throws -> R? where R: ValkeyValueConvertible {
+        begin()
+        defer { complete() }
+        
+        let client = try await getClient()
+        // Use execute with our custom AnyCommand
+        do {
+            let result = try await client?.execute(AnyCommand(commandName: command, args: args))
+            return result.map { R(fromValkeyValue: $0) }
+        } catch {
+            self.logger.error("Valkey command error: \(error)")
+            throw error
+        }
     }
 }

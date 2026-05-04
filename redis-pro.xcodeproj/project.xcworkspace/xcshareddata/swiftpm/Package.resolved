@@ -1,5 +1,5 @@
 {
-  "originHash" : "d26a680490b802cfbc42c78182ad6868051f0e1a2798922933ad450a8e8cac2d",
+  "originHash" : "95eb88d1a962bee781f57d760c5ce49009fa22d911e4f236670df160e9eea2ab",
   "pins" : [
     {
       "identity" : "combine-schedulers",
@@ -17,15 +17,6 @@
       "state" : {
         "revision" : "80ebe6ab25fb7050904647cb96f6ad7bee77bad6",
         "version" : "0.9.0"
-      }
-    },
-    {
-      "identity" : "redistack",
-      "kind" : "remoteSourceControl",
-      "location" : "https://github.com/chengpan168/RediStack",
-      "state" : {
-        "branch" : "feat/user",
-        "revision" : "07a005e97530334efec8ed4b5c96a91e2b45c3f5"
       }
     },
     {
@@ -155,15 +146,6 @@
       }
     },
     {
-      "identity" : "swift-metrics",
-      "kind" : "remoteSourceControl",
-      "location" : "https://github.com/apple/swift-metrics.git",
-      "state" : {
-        "revision" : "971ba26378ab69c43737ee7ba967a896cb74c0d1",
-        "version" : "2.4.1"
-      }
-    },
-    {
       "identity" : "swift-navigation",
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/pointfreeco/swift-navigation",
@@ -224,15 +206,6 @@
       "state" : {
         "revision" : "d0997351b0c7779017f88e7a93bc30a1878d7f29",
         "version" : "1.3.0"
-      }
-    },
-    {
-      "identity" : "swift-service-discovery",
-      "kind" : "remoteSourceControl",
-      "location" : "https://github.com/apple/swift-service-discovery",
-      "state" : {
-        "revision" : "5c88b88dd40446740e86ba809453bc39f7904fa7",
-        "version" : "1.2.1"
       }
     },
     {

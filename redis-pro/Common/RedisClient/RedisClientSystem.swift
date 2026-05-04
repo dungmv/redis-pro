@@ -23,44 +23,41 @@ extension RediStackClient {
     }
     
     func databases() async throws -> Int {
-        guard let client = try await getClient() else { return 0 }
+        let client = try await getClient()
         
-        // Usually obtained via CONFIG GET databases
-        let res = try await client.command("CONFIG", args: ["GET", "databases"])
-        // CONFIG GET returns an array [key, value, key, value...]
-        if case .array(let arr) = res, arr.count >= 2 {
-            return Int(fromValkeyValue: arr[1]) ?? 16
+        // CONFIG GET returns RESPToken.Map
+        let res = try await client?.configGet(parameters: ["databases"])
+        if let databasesToken = res?["databases"] {
+             return Int(fromValkeyValue: databasesToken) ?? 16
         }
         return 16 // Default
     }
     
     func dbsize() async throws -> Int {
-        guard let client = try await getClient() else { return 0 }
-        return try await client.dbsize()
+        let client = try await getClient()
+        return try await client?.dbsize() ?? 0
     }
     
     func flushDB() async throws -> Bool {
-        guard let client = try await getClient() else { return false }
-        try await client.flushdb()
+        let client = try await getClient()
+        try await client?.flushdb()
         return true
     }
     
     func clientKill(_ clientModel: ClientModel) async throws -> Bool {
-        guard let client = try await getClient() else { return false }
-        let res = try await client.command("CLIENT", args: ["KILL", clientModel.addr])
-        return String(fromValkeyValue: res) == "OK"
+        let res: String? = try await self.send("CLIENT", args: ["KILL", clientModel.addr])
+        return res == "OK"
     }
     
     func clientList() async throws -> [ClientModel] {
-        guard let client = try await getClient() else { return [] }
-        let res = try await client.command("CLIENT", args: ["LIST"])
-        let listStr = String(fromValkeyValue: res) ?? ""
+        let res: String? = try await self.send("CLIENT", args: ["LIST"])
+        let listStr = res ?? ""
         return ClientModel.parse(listStr)
     }
     
     func info() async throws -> [RedisInfoModel] {
-        guard let client = try await getClient() else { return [] }
-        let res = try await client.info()
+        let client = try await getClient()
+        let res = try await client?.info() ?? ""
         return RedisInfoModel.parse(res)
     }
     
@@ -73,8 +70,9 @@ extension RediStackClient {
     }
     
     func ping() async throws -> Bool {
-        guard let client = try await getClient() else { return false }
-        let res = try await client.ping()
+        let client = try await getClient()
+        let res = try await client?.ping()
+        // ping() returns PING.Response which is String or RESPBulkString
         return res == "PONG"
     }
 }

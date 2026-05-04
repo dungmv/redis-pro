@@ -24,24 +24,18 @@ extension RediStackClient {
         self.logger.info("init forwarding server success, local port: \(localBindPort)")
         self.sshLocalChannel = localChannel
         
+        let auth = (redisModel.password.isEmpty && redisModel.username.isEmpty) ? nil : ValkeyClientConfiguration.Authentication(username: redisModel.username, password: redisModel.password)
         let config = ValkeyClientConfiguration(
-            endpoint: .hostname(bindHost, port: localBindPort),
-            username: redisModel.username.isEmpty ? nil : redisModel.username,
-            password: redisModel.password.isEmpty ? nil : redisModel.password,
-            database: redisModel.database,
-            logger: self.logger
+            authentication: auth,
+            databaseNumber: redisModel.database
         )
         
-        let client = ValkeyClient(configuration: config)
+        let client = ValkeyClient(.hostname(bindHost, port: localBindPort), configuration: config, logger: self.logger)
         
         // Start background task
         self.backgroundTask?.cancel()
         self.backgroundTask = Task {
-            do {
-                try await client.run()
-            } catch {
-                self.logger.error("Valkey SSH client background task error: \(error)")
-            }
+            await client.run()
         }
         
         self.valkeyClient = client

@@ -43,36 +43,30 @@ extension RediStackClient {
         return []
     }
     
-    func hset(_ key: String, field: String, value: String) async throws -> Bool {
-        logger.info("redis hash hset key:\(key), field:\(field), value:\(value)")
-        guard let client = try await getClient() else { return false }
-        
-        // hset returns number of fields added. We map it to bool for success.
-        let result = try await client.hset(key: key, field: field, value: value)
-        return result >= 0
+    func hset(key: String, field: String, value: String) async throws -> Int {
+        let client = try await getClient()
+        return try await client?.hset(ValkeyKey(key), data: [HSET<String, String>.Data(field: field, value: value)]) ?? 0
     }
     
-    func hdel(_ key: String, field: String) async throws -> Int {
-        logger.info("redis hash hdel key:\(key), field:\(field)")
-        guard let client = try await getClient() else { return 0 }
-        
-        return try await client.hdel(key: key, fields: [field])
+    func hdel(key: String, fields: [String]) async throws -> Int {
+        let client = try await getClient()
+        return try await client?.hdel(ValkeyKey(key), fields: fields) ?? 0
     }
     
     private func _hashCountScan(_ key: String, keywords: String?) async throws -> Int {
         if isMatchAll(keywords ?? "") {
             logger.info("keywords is match all, use hlen...")
-            return try await _hlen(key)
+            return try await hlen(key: key)
         }
         
         var cursor: Int = 0
         var count: Int = 0
         
         while true {
-            let res = try await _hscanCount(key, keywords: keywords, cursor: cursor, count: dataCountScanCount)
-            logger.info("loop scan page, current cursor: \(cursor), total count: \(count)")
-            cursor = res.cursor
-            count = count + res.count
+            let res = try await hscan(key: key, cursor: cursor, keywords: keywords, count: dataCountScanCount)
+            logger.info("loop scan page, current cursor: \(res.0), total count: \(count)")
+            cursor = res.0
+            count = count + res.1.count
             
             if cursor == 0 {
                 break
@@ -88,10 +82,10 @@ extension RediStackClient {
         var entries: [(String, String)] = []
         
         while true {
-            let res = try await _hscan(key, keywords: keywords, cursor: cursor, count: dataScanCount)
-            logger.info("hash loop scan page, current cursor: \(cursor), total count: \(entries.count)")
-            cursor = res.cursor
-            entries = entries + res.entries
+            let res = try await hscan(key: key, cursor: cursor, keywords: keywords, count: dataScanCount)
+            logger.info("hash loop scan page, current cursor: \(res.0), total count: \(entries.count)")
+            cursor = res.0
+            entries = entries + res.1
             
             if cursor == 0 || entries.count >= end {
                 break
@@ -107,32 +101,25 @@ extension RediStackClient {
         return Array(entries[start..<end])
     }
     
-    private func _hlen(_ key: String) async throws -> Int {
-        guard let client = try await getClient() else { return -1 }
-        return try await client.hlen(key: key)
+    private func hlen(key: String) async throws -> Int {
+        let client = try await getClient()
+        return try await client?.hlen(ValkeyKey(key)) ?? 0
     }
     
-    private func _hscanCount(_ key: String, keywords: String?, cursor: Int, count: Int = 100) async throws -> (cursor: Int, count: Int) {
-        let r = try await _hscan(key, keywords: keywords, cursor: cursor, count: count)
-        return (r.cursor, r.entries.count)
-    }
-    
-    private func _hscan(_ key: String, keywords: String?, cursor: Int, count: Int = 100) async throws -> (cursor: Int, entries: [(String, String)]) {
-        guard let client = try await getClient() else { return (0, []) }
+    private    func hscan(key: String, cursor: Int, pattern: String?, count: Int?) async throws -> (Int, [(String, String)]) {
+        let client = try await getClient()
+        let result = try await client?.hscan(ValkeyKey(key), cursor: cursor, pattern: pattern, count: count)
         
-        let res = try await client.hscan(
-            key: key,
-            cursor: cursor,
-            match: keywords,
-            count: count
-        )
+        guard let token = result else { return (0, []) }
+        let (newCursor, elementsToken): (Int, RESPToken) = try token.decodeArrayElements()
+        let elements: [(String, String)] = try elementsToken.decodeKeyValuePairs()
         
-        return (res.cursor, res.entries)
+        return (newCursor, elements)
     }
     
     private func _hget(_ key: String, field: String) async throws -> String? {
-        guard let client = try await getClient() else { return nil }
-        let val = try await client.hget(key: key, field: field)
-        return String(fromValkeyValue: val)
+        let client = try await getClient()
+        let val = try await client?.hget(ValkeyKey(key), field: field)
+        return val.map { String($0) }
     }
 }

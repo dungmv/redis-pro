@@ -38,14 +38,9 @@ extension RediStackClient {
             logger.info("eval lua script, script: \(script), args: \(argArr)")
             
             guard let client = try await getClient() else { return "eval error" }
-            
-            // Map args to ValkeyValue
-            let valkeyArgs = argArr.map { ValkeyValue.string($0) }
-            
-            // In EVAL command: EVAL script numkeys key [key ...] arg [arg ...]
-            // The project seems to expect the user to provide the numkeys as part of the args.
-            let res = try await client.command("EVAL", args: [ValkeyValue.string(script)] + valkeyArgs)
-            return res.description
+            // EVAL script numkeys key [key ...] arg [arg ...]
+            let res: RESPToken? = try await self.send("EVAL", args: [script] + argArr)
+            return res?.debugDescription ?? "eval error"
         } catch {
             handleError(error)
         }
@@ -53,17 +48,26 @@ extension RediStackClient {
         return "eval error"
     }
     
+    @discardableResult
+    func eval(_ script: String, keys: [String] = [], args: [String] = []) async throws -> RESPToken {
+        guard let client = try await getClient() else { throw BizError("Valkey client not initialized") }
+        return try await client.eval(script: script, keys: keys.map { ValkeyKey($0) }, args: args)
+    }
+    
+    @discardableResult
+    func evalsha(_ sha1: String, keys: [String] = [], args: [String] = []) async throws -> RESPToken {
+        guard let client = try await getClient() else { throw BizError("Valkey client not initialized") }
+        return try await client.evalsha(sha1: sha1, keys: keys.map { ValkeyKey($0) }, args: args)
+    }
+
     func scriptKill() async throws -> String {
         logger.info("lua script kill")
-        guard let client = try await getClient() else { return "script kill error" }
-        
-        let res = try await client.command("SCRIPT", args: ["KILL"])
-        return res.description
+        let res: RESPToken? = try await self.send("SCRIPT", args: ["KILL"])
+        return res?.debugDescription ?? "script kill error"
     }
     
     func scriptFlush() async throws {
         logger.info("lua script flush")
-        guard let client = try await getClient() else { return }
-        _ = try await client.command("SCRIPT", args: ["FLUSH"])
+        _ = try await self.send("SCRIPT", args: ["FLUSH"]) as RESPToken?
     }
 }

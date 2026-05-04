@@ -96,15 +96,11 @@ extension RediStackClient {
     
     private func zscan(_ key: String, keywords: String?, cursor: Int, count: Int? = 1) async throws -> (cursor: Int, elements: [(String, Double)]) {
         logger.debug("redis set scan, key: \(key) cursor: \(cursor), keywords: \(String(describing: keywords)), count:\(String(describing: count))")
-        guard let client = try await getClient() else { return (0, []) }
+        let client = try await getClient()
         
-        let res = try await client.zscan(
-            key: key,
-            cursor: cursor,
-            match: keywords,
-            count: count
-        )
-        return (res.cursor, res.elements)
+        let res = try await client?.zscan(ValkeyKey(key), cursor: cursor, pattern: keywords, count: count)
+        let elements: [(String, Double)] = res?.1.map { (String(fromValkeyValue: $0.0), $0.1) } ?? []
+        return (res?.0 ?? 0, elements)
     }
     
     func zupdate(_ key: String, from: String, to: String, score: Double) async throws -> Bool {
@@ -129,14 +125,15 @@ extension RediStackClient {
     }
     
     private func _zadd(_ key: String, score: Double, ele: String) async throws -> Bool {
-        guard let client = try await getClient() else { return false }
-        let res = try await client.zadd(key: key, elements: [(ele, score)])
-        return res >= 0
+        let client = try await getClient()
+        let res = try await client?.zadd(ValkeyKey(key), data: [ZADD<String>.Data(score: score, member: ele)])
+        // ZADD returns RESPToken? which can be Int or Null
+        return res != nil
     }
     
     private func _zcard(_ key: String) async throws -> Int {
-        guard let client = try await getClient() else { return 0 }
-        return try await client.zcard(key: key)
+        let client = try await getClient()
+        return try await client?.zcard(ValkeyKey(key)) ?? 0
     }
     
     func zrem(_ key: String, ele: String) async throws -> Int {
@@ -151,29 +148,37 @@ extension RediStackClient {
     }
     
     private func _zrem(_ key: String, ele: String) async throws -> Int {
-        guard let client = try await getClient() else { return 0 }
-        return try await client.zrem(key: key, elements: [ele])
+        let client = try await getClient()
+        return try await client?.zrem(ValkeyKey(key), members: [ele]) ?? 0
     }
     
     private func _zscore(_ key: String, ele: String) async throws -> Double? {
-        guard let client = try await getClient() else { return nil }
-        return try await client.zscore(key: key, element: ele)
+        let client = try await getClient()
+        return try await client?.zscore(ValkeyKey(key), member: ele)
     }
     
     private func _zrangeByScore(_ key: String, page: Page) async throws -> [(String, String)] {
-        guard let client = try await getClient() else { return [] }
+        let client = try await getClient()
         
-        // Using zrange with BYSCORE option
-        let res = try await client.zrange(
-            key: key,
-            min: "-inf",
-            max: "+inf",
-            by: .score,
-            limit: (offset: page.start, count: page.size),
-            withScores: true
+        let res = try await client?.zrange(
+            ValkeyKey(key),
+            start: "\(page.start)",
+            stop: "\(page.end)",
+            sortby: .byscore,
+            rev: false,
+            limit: .init(offset: page.start, count: page.size),
+            withscores: true
         )
         
-        // Valkey zrange withScores returns [(String, Double)]
-        return res.map { ($0.0, "\($0.1)") }
+        // zrange withscores returns RESPToken.Array which is flat [member, score, member, score, ...] in RESP2
+        // We need to parse it.
+        var result: [(String, String)] = []
+        if let res = res {
+            var iterator = res.makeIterator()
+            while let memberToken = iterator.next(), let scoreToken = iterator.next() {
+                result.append((String(fromValkeyValue: memberToken), String(fromValkeyValue: scoreToken)))
+            }
+        }
+        return result
     }
 }

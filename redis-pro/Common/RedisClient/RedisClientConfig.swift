@@ -12,9 +12,8 @@ import Valkey
 extension RediStackClient {
     func getConfigList(_ pattern: String = "*") async throws -> [RedisConfigItemModel] {
         logger.info("get redis config list, pattern: \(pattern)...")
-        guard let client = try await getClient() else { return [] }
         
-        let res = try await client.command("CONFIG", args: ["GET", pattern.isEmpty ? "*" : pattern])
+        let res: RESPToken? = try await self.send("CONFIG", args: ["GET", pattern.isEmpty ? "*" : pattern])
         guard case .array(let arr) = res else { return [] }
         
         var configList = [RedisConfigItemModel]()
@@ -27,15 +26,13 @@ extension RediStackClient {
     
     func configRewrite() async throws -> Bool {
         logger.info("redis config rewrite ...")
-        guard let client = try await getClient() else { return false }
-        let res = try await client.command("CONFIG", args: ["REWRITE"])
-        return String(fromValkeyValue: res) == "OK"
+        let res: RESPToken? = try await self.send("CONFIG", args: ["REWRITE"])
+        return String(fromValkeyValue: res ?? .null) == "OK"
     }
     
     func getConfigOne(key: String) async throws -> String? {
         logger.info("get redis config ...")
-        guard let client = try await getClient() else { return nil }
-        let res = try await client.command("CONFIG", args: ["GET", key])
+        let res: RESPToken? = try await self.send("CONFIG", args: ["GET", key])
         if case .array(let arr) = res, arr.count >= 2 {
             return String(fromValkeyValue: arr[1])
         }
@@ -44,8 +41,7 @@ extension RediStackClient {
     
     func setConfig(key: String, value: String) async throws -> Bool {
         logger.info("set redis config, key: \(key), value: \(value)")
-        guard let client = try await getClient() else { return false }
-        let res = try await client.command("CONFIG", args: ["SET", key, value])
-        return String(fromValkeyValue: res) == "OK"
+        let res: RESPToken? = try await self.send("CONFIG", args: ["SET", key, value])
+        return String(fromValkeyValue: res ?? .null) == "OK"
     }
 }

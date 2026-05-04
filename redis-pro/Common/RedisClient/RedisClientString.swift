@@ -17,12 +17,12 @@ extension RediStackClient {
     func set(_ key: String, value: String, ex: Int = -1) async throws {
         logger.info("set value, key:\(key), value:\(value), ex:\(ex)")
         
-        guard let client = try await getClient() else { return }
+        let client = try await getClient()
         
         if ex == -1 {
-            try await client.set(key: key, value: value)
+            try await client?.set(ValkeyKey(key), value: value)
         } else {
-            try await client.setex(key: key, seconds: ex, value: value)
+            try await client?.setex(ValkeyKey(key), seconds: ex, value: value)
         }
     }
     
@@ -32,25 +32,25 @@ extension RediStackClient {
     
     func get(_ key: String) async throws -> String {
         logger.info("get value, key:\(key)")
-        guard let client = try await getClient() else { return Const.EMPTY_STRING }
+        let client = try await getClient()
         
-        let val = try await client.get(key: key)
-        return String(fromValkeyValue: val) ?? Const.EMPTY_STRING
+        let val = try await client?.get(ValkeyKey(key))
+        return val.map { String($0) } ?? Const.EMPTY_STRING
     }
     
     func getRange(_ key: String, start: Int = 0, end: Int) async throws -> String {
         logger.info("get value range, key:\(key), start:\(start), end:\(end)")
-        guard let client = try await getClient() else { return Const.EMPTY_STRING }
+        let client = try await getClient()
         
-        let val = try await client.getrange(key: key, start: start, end: end)
-        return String(fromValkeyValue: val) ?? Const.EMPTY_STRING
+        let val = try await client?.getrange(ValkeyKey(key), start: start, end: end)
+        return val.map { String($0) } ?? Const.EMPTY_STRING
     }
     
     func strLen(_ key: String) async throws -> Int {
         logger.info("get value length, key:\(key)")
-        guard let client = try await getClient() else { return 0 }
+        let client = try await getClient()
         
-        return try await client.strlen(key: key)
+        return try await client?.strlen(ValkeyKey(key)) ?? 0
     }
     
     func del(_ key: String) async throws -> Int {
@@ -60,43 +60,40 @@ extension RediStackClient {
     func del(_ keys: [String]) async throws -> Int {
         self.logger.info("delete keys \(keys)")
         guard !keys.isEmpty else { return 0 }
-        guard let client = try await getClient() else { return 0 }
+        let client = try await getClient()
         
-        return try await client.del(keys: keys)
+        return try await client?.del(keys: keys.map { ValkeyKey($0) }) ?? 0
     }
     
     func expire(_ key: String, seconds: Int = -1) async throws -> Bool {
         logger.info("set key expire key:\(key), seconds:\(seconds)")
-        guard let client = try await getClient() else { return false }
+        let client = try await getClient()
         
         if seconds < 0 {
-            return try await client.persist(key: key)
+            return try await client?.persist(ValkeyKey(key)) == 1
         } else {
-            return try await client.expire(key: key, seconds: seconds)
+            return try await client?.expire(ValkeyKey(key), seconds: seconds) == 1
         }
     }
     
     func exist(_ key: String) async throws -> Bool {
         logger.info("get key exist: \(key)")
-        guard let client = try await getClient() else { return false }
+        let client = try await getClient()
         
-        return try await client.exists(keys: [key]) > 0
+        return (try await client?.exists(keys: [ValkeyKey(key)]) ?? 0) > 0
     }
     
     func ttl(_ key: String) async throws -> Int {
         logger.info("get ttl key: \(key)")
-        guard let client = try await getClient() else { return -2 }
+        let client = try await getClient()
         
-        return try await client.ttl(key: key)
+        return try await client?.ttl(ValkeyKey(key)) ?? -2
     }
     
     func objectEncoding(_ key: String) async throws -> String {
         logger.info("get object encoding, key: \(key)")
-        guard let client = try await getClient() else { return "" }
-        
-        // Valkey might not have a direct helper for OBJECT ENCODING, use generic command
-        let res = try await client.command("OBJECT", args: ["ENCODING", key])
-        return String(fromValkeyValue: res) ?? ""
+        let res: String? = try await self.send("OBJECT", args: ["ENCODING", ValkeyKey(key)])
+        return res ?? ""
     }
     
     func getTypes(_ keys: [String]) async throws -> [String: String] {
@@ -119,16 +116,16 @@ extension RediStackClient {
     }
     
     private func type(_ key: String) async throws -> String {
-        guard let client = try await getClient() else { return RedisKeyTypeEnum.NONE.rawValue }
-        let type = try await client.type(key: key)
-        return type.description
+        let client = try await getClient()
+        let type = try await client?.type(ValkeyKey(key))
+        return type?.description ?? RedisKeyTypeEnum.NONE.rawValue
     }
     
     func rename(_ oldKey: String, newKey: String) async throws -> Bool {
         logger.info("rename key, old key:\(oldKey), new key: \(newKey)")
-        guard let client = try await getClient() else { return false }
+        let client = try await getClient()
         
-        let r = try await client.renamenx(key: oldKey, newKey: newKey)
+        let r = try await client?.renamenx(ValkeyKey(oldKey), newkey: ValkeyKey(newKey)) == 1
         if !r {
             Task { @MainActor in Messages.show("rename key error, new key: \(newKey) already exists.") }
         }
