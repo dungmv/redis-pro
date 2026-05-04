@@ -31,12 +31,12 @@ struct RedisKeysTreeView: View {
             // Native hierarchical list for virtualization and performance
             List(store.redisKeyNodes, children: \.children, selection: selection) { node in
                 TreeRow(node: node, selectedId: store.selectedKeyId)
-                    .listRowInsets(EdgeInsets(top: 0, leading: 4, bottom: 0, trailing: 4))
+                    .listRowInsets(EdgeInsets(top: 0, leading: 1, bottom: 0, trailing: 4))
                     .listRowBackground(Color.clear)
                     .listRowSeparator(.hidden)
-                    .tag(node.id as String?) // Explicit cast to match selection type
+                    .tag(node.id as String?)
             }
-            .listStyle(.sidebar)
+            .listStyle(.plain) // Use plain style for tighter control over spacing
             .scrollContentBackground(.hidden)
             .environment(\.defaultMinListRowHeight, 20) // High density
         }
@@ -101,19 +101,19 @@ struct TreeRow: View {
     private var folderContent: some View {
         HStack(spacing: 5) {
             Image(systemName: "folder.fill")
-                .font(.system(size: 10))
+                .font(.system(.body))
                 .foregroundStyle(isSelected ? Color.accentColor : .secondary.opacity(0.7))
                 .symbolRenderingMode(.hierarchical)
             
             Text(node.name)
-                .font(.system(size: 11, weight: .medium))
+                .font(.system(.body))
                 .foregroundStyle(isSelected ? .primary : Color.primary.opacity(0.9))
                 .lineLimit(1)
 
             Spacer(minLength: 4)
 
             Text("\(node.keyCount)")
-                .font(.system(size: 8, weight: .bold, design: .monospaced))
+                .font(.system(.caption))
                 .foregroundStyle(.secondary.opacity(0.8))
                 .padding(.horizontal, 4)
                 .background(.quaternary.opacity(0.3), in: RoundedRectangle(cornerRadius: 3))
@@ -125,18 +125,18 @@ struct TreeRow: View {
     // MARK: Key Content
     
     private var keyContent: some View {
-        HStack(spacing: 5) {
+        HStack(spacing: 6) {
             TypeBadge(type: node.type?.uppercased() ?? "")
             
             Text(node.name)
-                .font(.system(size: 11, design: .monospaced))
+                .font(.system(.body)) // Medium weight for better visibility
                 .lineLimit(1)
-                .foregroundStyle(isSelected ? .primary : Color.primary.opacity(0.85))
+                .foregroundStyle(isSelected ? .primary : Color.primary.opacity(0.9))
 
             Spacer(minLength: 0)
         }
-        .frame(height: 20)
-        .padding(.horizontal, 4)
+        .frame(height: 22) // Slightly increased for breathing room
+        .padding(.horizontal, 2)
     }
 }
 
@@ -147,13 +147,13 @@ private struct TypeBadge: View {
 
     var body: some View {
         Text(type.isEmpty ? "–" : String(type.prefix(1)))
-            .font(.system(size: 7.5, weight: .black, design: .monospaced))
+            .font(.system(.subheadline))
             .foregroundStyle(.white)
-            .frame(width: 12, height: 12)
+            .frame(width: 14, height: 14) // Balanced with 12pt text
             .background(
-                RoundedRectangle(cornerRadius: 2.5)
+                RoundedRectangle(cornerRadius: 3)
                     .fill(LiquidGlass.typeColor(for: type))
             )
-            .shadow(color: LiquidGlass.typeColor(for: type).opacity(0.2), radius: 1, x: 0, y: 0.5)
+            .shadow(color: LiquidGlass.typeColor(for: type).opacity(0.25), radius: 1, x: 0, y: 0.5)
     }
 }
