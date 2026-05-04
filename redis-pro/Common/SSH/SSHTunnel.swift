@@ -11,7 +11,7 @@ import NIO
 import NIOSSH
 import Logging
 
-class SSHTunnel {
+class SSHTunnel: @unchecked Sendable {
     private let logger = Logger(label: "ssh-tunnel")
     let group = MultiThreadedEventLoopGroup(numberOfThreads: 1)
     

@@ -87,4 +87,10 @@ public class ClientModel:NSObject, Identifiable {
         self.user = item["user"] ?? ""
         
     }
+    
+    static func parse(_ text: String) -> [ClientModel] {
+        return text.components(separatedBy: .newlines)
+            .filter { !$0.isEmpty }
+            .map { ClientModel(line: $0) }
+    }
 }

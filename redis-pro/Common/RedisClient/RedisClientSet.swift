@@ -95,14 +95,15 @@ extension RediStackClient {
         let client = try await getClient()
         
         let res = try await client?.sscan(ValkeyKey(key), cursor: cursor, pattern: keywords, count: count)
-        let elements = res?.1.map { String(fromValkeyValue: $0) } ?? []
-        return (res?.0 ?? 0, elements)
+        let elements = res?.elements.map { String(fromValkeyValue: $0) } ?? []
+        return (res?.cursor ?? 0, elements)
     }
     
     private func _sexist(_ key: String, ele: String?) async throws -> Bool {
         guard let ele = ele else { return false }
         let client = try await getClient()
-        return try await client?.sismember(ValkeyKey(key), element: ele) ?? false
+        let res = try await client?.sismember(ValkeyKey(key), member: ele)
+        return res == 1
     }
     
     func supdate(_ key: String, from: String, to: String) async throws -> Int {
@@ -139,11 +140,11 @@ extension RediStackClient {
     
     private func _srem(_ key: String, ele: String) async throws -> Int {
         let client = try await getClient()
-        return try await client?.srem(ValkeyKey(key), elements: [ele]) ?? 0
+        return try await client?.srem(ValkeyKey(key), members: [ele]) ?? 0
     }
     
     private func _sadd(_ key: String, ele: String) async throws -> Int {
         let client = try await getClient()
-        return try await client?.sadd(ValkeyKey(key), elements: [ele]) ?? 0
+        return try await client?.sadd(ValkeyKey(key), members: [ele]) ?? 0
     }
 }

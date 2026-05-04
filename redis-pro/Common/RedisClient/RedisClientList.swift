@@ -39,7 +39,7 @@ extension RediStackClient {
         logger.debug("redis list range, key: \(key)")
         guard let client = try await getClient() else { return [] }
         
-        let res = try await client.lrange(key: key, start: start, stop: stop)
+        let res = try await client.lrange(ValkeyKey(key), start: start, stop: stop)
         return res.map { String(fromValkeyValue: $0) }
     }
     
@@ -64,7 +64,7 @@ extension RediStackClient {
     
     private func _lrem(_ key: String, value: String) async throws -> Int {
         guard let client = try await getClient() else { return 0 }
-        return try await client.lrem(key: key, count: 0, value: value)
+        return try await client.lrem(ValkeyKey(key), count: 0, element: value)
     }
     
     func lset(_ key: String, index: Int, value: String) async throws {
@@ -75,28 +75,28 @@ extension RediStackClient {
     
     private func _lset(_ key: String, index: Int, value: String) async throws {
         guard let client = try await getClient() else { return }
-        _ = try await client.lset(key: key, index: index, value: value)
+        _ = try await client.lset(ValkeyKey(key), index: index, element: value)
     }
     
     func lpush(_ key: String, value: String) async throws -> Int {
         guard let client = try await getClient() else { return 0 }
-        return try await client.lpush(key: key, elements: [value])
+        return try await client.lpush(ValkeyKey(key), elements: [value])
     }
     
     func rpush(_ key: String, value: String) async throws -> Int {
         guard let client = try await getClient() else { return 0 }
-        return try await client.rpush(key: key, elements: [value])
+        return try await client.rpush(ValkeyKey(key), elements: [value])
     }
     
     private func _lindex(_ key: String, index: Int) async throws -> String? {
         guard let client = try await getClient() else { return nil }
-        let val = try await client.lindex(key: key, index: index)
-        return String(fromValkeyValue: val)
+        let val = try await client.lindex(ValkeyKey(key), index: index)
+        return val.map { String($0) }
     }
     
     private func llen(_ key: String) async throws -> Int {
         logger.debug("redis list length, key: \(key)")
         guard let client = try await getClient() else { return 0 }
-        return try await client.llen(key: key)
+        return try await client.llen(ValkeyKey(key))
     }
 }

@@ -17,8 +17,8 @@ extension RediStackClient {
         
         let client = try await getClient()
         let result = try await client?.scan(cursor: cursor, pattern: keywords, count: count)
-        let keys = result?.1.map { String(fromValkeyValue: $0) } ?? []
-        return (result?.0 ?? 0, keys)
+        let keys = result?.keys.map { String(fromValkeyValue: $0) } ?? []
+        return (result?.cursor ?? 0, keys)
     }
     
     private func countScan(cursor: Int, keywords: String?, count: Int? = 1) async throws -> (cursor: Int, count: Int) {

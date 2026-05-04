@@ -41,10 +41,10 @@ extension RediStackClient {
         
         do {
             let client = try await initClient()
-            let pong: String? = try await client.ping()
+            let pong = try await client.ping()
             
             // For testing, we close the client immediately
-            return pong == "PONG"
+            return String(fromValkeyValue: pong) == "PONG"
         } catch {
             Task { @MainActor in Messages.show(error) }
             return false

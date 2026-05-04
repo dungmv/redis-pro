@@ -99,8 +99,8 @@ extension RediStackClient {
         let client = try await getClient()
         
         let res = try await client?.zscan(ValkeyKey(key), cursor: cursor, pattern: keywords, count: count)
-        let elements: [(String, Double)] = res?.1.map { (String(fromValkeyValue: $0.0), $0.1) } ?? []
-        return (res?.0 ?? 0, elements)
+        let elements: [(String, Double)] = (try? res?.members.withScores().map { (String($0.value), $0.score) }) ?? []
+        return (res?.cursor ?? 0, elements)
     }
     
     func zupdate(_ key: String, from: String, to: String, score: Double) async throws -> Bool {

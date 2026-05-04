@@ -88,6 +88,7 @@ struct RedisKeysStore {
     }
 
     @Dependency(\.redisInstance) var redisInstanceModel: RedisInstanceModel
+    let mainQueue: AnySchedulerOf<DispatchQueue> = .main
     
     var body: some Reducer<State, Action> {
         Scope(state: \.tableState, action: \.tableAction) {

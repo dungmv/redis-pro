@@ -69,8 +69,8 @@ class Messages {
         let message: String
         if let biz = error as? BizError {
             message = biz.message
-        } else if let redis = error as? RedisError {
-            message = redis.message
+        } else if let redis = error as? ValkeyClientError {
+            message = redis.message ?? redis.description
         } else {
             message = "\(error)"
         }

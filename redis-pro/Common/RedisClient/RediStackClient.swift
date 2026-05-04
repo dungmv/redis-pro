@@ -99,7 +99,7 @@ class RediStackClient {
         return try await initClient()
     }
     
-    private func initClient() async throws -> ValkeyClient {
+    func initClient() async throws -> ValkeyClient {
         if self.redisModel.connectionType == RedisConnectionTypeEnum.SSH.rawValue {
             return try await initSSHClient()
         } else {
@@ -168,6 +168,14 @@ extension RESPToken: ValkeyValueConvertible {
     }
 }
 
+struct RESPRenderableWrapper: RESPRenderable {
+    let base: any RESPRenderable
+    var respEntries: Int { base.respEntries }
+    func encode(into commandEncoder: inout ValkeyCommandEncoder) {
+        base.encode(into: &commandEncoder)
+    }
+}
+
 // Custom command to support raw commands from the console
 struct AnyCommand: ValkeyCommand {
     typealias Response = RESPToken
@@ -178,8 +186,16 @@ struct AnyCommand: ValkeyCommand {
     let args: [any RESPRenderable]
     
     func encode(into commandEncoder: inout ValkeyCommandEncoder) {
-        // We use the multi-encode version of encodeArray for the command name and the args array
-        commandEncoder.encodeArray(commandName, args)
+        let wrappedArgs = args.map { RESPRenderableWrapper(base: $0) }
+        commandEncoder.encodeArray(commandName, wrappedArgs)
+    }
+    
+    static func == (lhs: AnyCommand, rhs: AnyCommand) -> Bool {
+        return lhs.commandName == rhs.commandName
+    }
+    
+    func hash(into hasher: inout Hasher) {
+        hasher.combine(commandName)
     }
 }
 

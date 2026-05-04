@@ -23,25 +23,25 @@ extension RediStackClient {
     }
     
     func databases() async throws -> Int {
-        let client = try await getClient()
-        
-        // CONFIG GET returns RESPToken.Map
-        let res = try await client?.configGet(parameters: ["databases"])
-        if let databasesToken = res?["databases"] {
-             return Int(fromValkeyValue: databasesToken) ?? 16
+        // CONFIG GET returns RESPToken.Map, but our send bridge returns RESPToken?
+        let res: RESPToken? = try await self.send("CONFIG", args: ["GET", "databases"])
+        if let tokenArray = try? res?.decode(as: RESPToken.Array.self) {
+            let arr = Swift.Array(tokenArray)
+            if arr.count >= 2 {
+                 return Int(fromValkeyValue: arr[1]) ?? 16
+            }
         }
         return 16 // Default
     }
     
     func dbsize() async throws -> Int {
-        let client = try await getClient()
-        return try await client?.dbsize() ?? 0
+        let res: Int? = try await self.send("DBSIZE")
+        return res ?? 0
     }
     
     func flushDB() async throws -> Bool {
-        let client = try await getClient()
-        try await client?.flushdb()
-        return true
+        let res: String? = try await self.send("FLUSHDB")
+        return res == "OK"
     }
     
     func clientKill(_ clientModel: ClientModel) async throws -> Bool {
@@ -56,9 +56,8 @@ extension RediStackClient {
     }
     
     func info() async throws -> [RedisInfoModel] {
-        let client = try await getClient()
-        let res = try await client?.info() ?? ""
-        return RedisInfoModel.parse(res)
+        let res: String? = try await self.send("INFO")
+        return RedisInfoModel.parse(res ?? "")
     }
     
     func resetState() async throws -> Bool {
@@ -70,9 +69,7 @@ extension RediStackClient {
     }
     
     func ping() async throws -> Bool {
-        let client = try await getClient()
-        let res = try await client?.ping()
-        // ping() returns PING.Response which is String or RESPBulkString
+        let res: String? = try await self.send("PING")
         return res == "PONG"
     }
 }

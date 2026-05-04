@@ -14,7 +14,8 @@ extension RediStackClient {
         logger.info("get redis config list, pattern: \(pattern)...")
         
         let res: RESPToken? = try await self.send("CONFIG", args: ["GET", pattern.isEmpty ? "*" : pattern])
-        guard case .array(let arr) = res else { return [] }
+        guard let tokenArray = try? res?.decode(as: RESPToken.Array.self) else { return [] }
+        let arr = Swift.Array(tokenArray)
         
         var configList = [RedisConfigItemModel]()
         let max: Int = arr.count / 2
@@ -27,14 +28,17 @@ extension RediStackClient {
     func configRewrite() async throws -> Bool {
         logger.info("redis config rewrite ...")
         let res: RESPToken? = try await self.send("CONFIG", args: ["REWRITE"])
-        return String(fromValkeyValue: res ?? .null) == "OK"
+        return (try? res?.decode(as: String.self)) == "OK"
     }
     
     func getConfigOne(key: String) async throws -> String? {
         logger.info("get redis config ...")
         let res: RESPToken? = try await self.send("CONFIG", args: ["GET", key])
-        if case .array(let arr) = res, arr.count >= 2 {
-            return String(fromValkeyValue: arr[1])
+        if let tokenArray = try? res?.decode(as: RESPToken.Array.self) {
+            let arr = Swift.Array(tokenArray)
+            if arr.count >= 2 {
+                return String(fromValkeyValue: arr[1])
+            }
         }
         return nil
     }
@@ -42,6 +46,6 @@ extension RediStackClient {
     func setConfig(key: String, value: String) async throws -> Bool {
         logger.info("set redis config, key: \(key), value: \(value)")
         let res: RESPToken? = try await self.send("CONFIG", args: ["SET", key, value])
-        return String(fromValkeyValue: res ?? .null) == "OK"
+        return (try? res?.decode(as: String.self)) == "OK"
     }
 }

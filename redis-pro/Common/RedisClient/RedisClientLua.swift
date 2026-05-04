@@ -40,7 +40,7 @@ extension RediStackClient {
             guard let client = try await getClient() else { return "eval error" }
             // EVAL script numkeys key [key ...] arg [arg ...]
             let res: RESPToken? = try await self.send("EVAL", args: [script] + argArr)
-            return res?.debugDescription ?? "eval error"
+            return res.map { "\($0)" } ?? "eval error"
         } catch {
             handleError(error)
         }
@@ -63,7 +63,7 @@ extension RediStackClient {
     func scriptKill() async throws -> String {
         logger.info("lua script kill")
         let res: RESPToken? = try await self.send("SCRIPT", args: ["KILL"])
-        return res?.debugDescription ?? "script kill error"
+        return res.map { "\($0)" } ?? "script kill error"
     }
     
     func scriptFlush() async throws {

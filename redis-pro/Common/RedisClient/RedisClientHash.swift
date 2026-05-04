@@ -63,7 +63,7 @@ extension RediStackClient {
         var count: Int = 0
         
         while true {
-            let res = try await hscan(key: key, cursor: cursor, keywords: keywords, count: dataCountScanCount)
+            let res = try await hscan(key: key, cursor: cursor, pattern: keywords, count: dataCountScanCount)
             logger.info("loop scan page, current cursor: \(res.0), total count: \(count)")
             cursor = res.0
             count = count + res.1.count
@@ -82,7 +82,7 @@ extension RediStackClient {
         var entries: [(String, String)] = []
         
         while true {
-            let res = try await hscan(key: key, cursor: cursor, keywords: keywords, count: dataScanCount)
+            let res = try await hscan(key: key, cursor: cursor, pattern: keywords, count: dataScanCount)
             logger.info("hash loop scan page, current cursor: \(res.0), total count: \(entries.count)")
             cursor = res.0
             entries = entries + res.1
@@ -110,11 +110,10 @@ extension RediStackClient {
         let client = try await getClient()
         let result = try await client?.hscan(ValkeyKey(key), cursor: cursor, pattern: pattern, count: count)
         
-        guard let token = result else { return (0, []) }
-        let (newCursor, elementsToken): (Int, RESPToken) = try token.decodeArrayElements()
-        let elements: [(String, String)] = try elementsToken.decodeKeyValuePairs()
+        guard let res = result else { return (0, []) }
         
-        return (newCursor, elements)
+        let elements = (try? res.members.withValues().map { (String($0.field), String($0.value)) }) ?? []
+        return (res.cursor, elements)
     }
     
     private func _hget(_ key: String, field: String) async throws -> String? {

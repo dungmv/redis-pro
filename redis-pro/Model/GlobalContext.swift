@@ -26,10 +26,10 @@ class GlobalContext:ObservableObject, CustomStringConvertible {
         self.primaryButtonText = "Ok"
         self.secondButtonText = "Cancel"
         
-        if error is BizError {
-            alertMessage = (error as! BizError).message
-        } else if error is RedisError {
-            alertMessage = (error as! RedisError).message
+        if let bizError = error as? BizError {
+            alertMessage = bizError.message
+        } else if let valkeyError = error as? ValkeyClientError {
+            alertMessage = valkeyError.message ?? "Valkey error"
         } else {
             alertMessage = "\(error)"
         }

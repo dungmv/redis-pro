@@ -118,7 +118,7 @@ extension RediStackClient {
     private func type(_ key: String) async throws -> String {
         let client = try await getClient()
         let type = try await client?.type(ValkeyKey(key))
-        return type?.description ?? RedisKeyTypeEnum.NONE.rawValue
+        return type.map { String($0) } ?? RedisKeyTypeEnum.NONE.rawValue
     }
     
     func rename(_ oldKey: String, newKey: String) async throws -> Bool {
