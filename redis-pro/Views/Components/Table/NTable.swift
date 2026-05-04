@@ -300,7 +300,9 @@ extension NTableController: NSTableViewDelegate {
         let selectIndex = tableView.selectedRow
         let selectIndexes: [Int] = Array(tableView.selectedRowIndexes)
         self.logger.info("table selection did change, select index: \(selectIndex), indexes: \(selectIndexes)")
-        self.store.send(.selectionChange(selectIndex, selectIndexes))
+        DispatchQueue.main.async {
+            self.store.send(.selectionChange(selectIndex, selectIndexes))
+        }
     }
     
 }
