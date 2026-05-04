@@ -22,7 +22,7 @@ extension RedisClient {
             var r: [(String, String)] = []
             
             if isMatchAll(page.keywords) {
-                r = try await _zrangeByScore(key, page: page)
+                r = try await _zrange(key, page: page)
                 page.total = try await _zcard(key)
             }
             else if isScan {
@@ -162,7 +162,7 @@ extension RedisClient {
         return try await client?.zscore(ValkeyKey(key), member: ele)
     }
     
-    private func _zrangeByScore(_ key: String, page: Page) async throws -> [(String, String)] {
+    private func _zrange(_ key: String, page: Page) async throws -> [(String, String)] {
         let client = try await getClient()
         
         // Use index-based range for pagination when match all
