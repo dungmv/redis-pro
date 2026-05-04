@@ -36,6 +36,9 @@ struct NTableView: NSViewControllerRepresentable {
     
     func updateNSViewController(_ nsViewController: NSViewController, context: Context) {
         logger.debug("ntable update nsview controller")
+        if let controller = nsViewController as? NTableController {
+            controller.updateStore(self.store)
+        }
     }
     
     class Coordinator: NSObject, NSTableViewDelegate, NSTableViewDataSource {
@@ -114,22 +117,7 @@ class NTableController: NSViewController{
         setupView()
         setupTableView()
         
-        self.store.publisher.defaultSelectIndex
-            .sink(receiveValue: {
-                self.logger.info("table store select index publisher, index: \($0)")
-                self.arrayController.setSelectionIndex($0)
-            })
-            .store(in: &self.cancellables)
-        
-        // 监听数据变化
-        self.store.publisher.datasource
-            .sink(receiveValue: {
-                self.logger.info("table store data source publisher, data source length: \($0.count)")
-                
-                self.datasource = $0
-                self.arrayController.setSelectionIndex(self.store.selectIndex)
-            })
-            .store(in: &self.cancellables)
+        setupSubscriptions()
         
         // init context menu
         if !store.contextMenus.isEmpty {
@@ -142,6 +130,42 @@ class NTableController: NSViewController{
             
             tableView.menu = menu
         }
+    }
+    
+    func updateStore(_ store: StoreOf<TableStore>) {
+        if self.store === store {
+            return
+        }
+        self.logger.info("table controller update store...")
+        self.store = store
+        self.cancellables.removeAll()
+        setupSubscriptions()
+    }
+    
+    func setupSubscriptions() {
+        self.store.publisher.defaultSelectIndex
+            .sink(receiveValue: { [weak self] index in
+                guard let self = self else { return }
+                self.logger.info("table store select index publisher, index: \(index)")
+                DispatchQueue.main.async {
+                    self.arrayController.setSelectionIndex(index)
+                }
+            })
+            .store(in: &self.cancellables)
+        
+        // 监听数据变化
+        self.store.publisher.datasource
+            .sink(receiveValue: { [weak self] datasource in
+                guard let self = self else { return }
+                self.logger.info("table store data source publisher, data source length: \(datasource.count)")
+                
+                DispatchQueue.main.async {
+                    self.setValue(datasource, forKey: "datasource")
+                    self.arrayController.setSelectionIndex(self.store.selectIndex)
+                    self.tableView.reloadData()
+                }
+            })
+            .store(in: &self.cancellables)
     }
     
     //    override func viewDidLayout() {
@@ -282,7 +306,6 @@ extension NTableController: NSTableViewDelegate {
         guard let tableColumn = tableColumn else {
             return nil
         }
-        
         
         guard let column = self.store.columns.filter({ $0.key == tableColumn.identifier.rawValue}).first else { return nil }
         

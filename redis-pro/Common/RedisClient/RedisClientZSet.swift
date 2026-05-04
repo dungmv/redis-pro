@@ -178,10 +178,24 @@ extension RedisClient {
         )
         
         var result: [(String, String)] = []
-        if let res = res {
-            var iterator = res.makeIterator()
-            while let memberToken = iterator.next(), let scoreToken = iterator.next() {
-                result.append((String(fromValkeyValue: memberToken), String(fromValkeyValue: scoreToken)))
+        if let tokens = res {
+            // Try to parse as nested arrays (paired result)
+            for token in tokens {
+                if case .array(let nested) = token.value {
+                    let nestedArr = Swift.Array(nested)
+                    if nestedArr.count >= 2 {
+                        result.append((String(fromValkeyValue: nestedArr[0]), String(fromValkeyValue: nestedArr[1])))
+                    }
+                }
+            }
+            
+            // If result is empty, fallback to flat array (RESP2 behavior)
+            if result.isEmpty {
+                let arr = Swift.Array(tokens)
+                var iterator = arr.makeIterator()
+                while let memberToken = iterator.next(), let scoreToken = iterator.next() {
+                    result.append((String(fromValkeyValue: memberToken), String(fromValkeyValue: scoreToken)))
+                }
             }
         }
         return result
