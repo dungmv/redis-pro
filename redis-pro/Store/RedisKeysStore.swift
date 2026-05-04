@@ -82,7 +82,7 @@ struct RedisKeysStore {
         case databaseAction(DatabaseStore.Action)
         case pageAction(PageStore.Action)
         case renameAction(RenameStore.Action)
-        case selectNode(String)
+        case selectNode(String?)
         case setRedisKeyNodes([RedisKeyNode])
         case none
     }
@@ -216,14 +216,14 @@ struct RedisKeysStore {
             case let .selectNode(keyId):
                 state.selectedKeyId = keyId
                 // Find matching key model in datasource and update selection for delete button
-                if let index = state.tableState.datasource.firstIndex(where: { ($0 as? RedisKeyModel)?.key == keyId }) {
+                if let keyId = keyId, let index = state.tableState.datasource.firstIndex(where: { ($0 as? RedisKeyModel)?.key == keyId }) {
                     state.tableState.selectIndex = index
                     state.tableState.selectIndexes = [index]
                     
                     let redisKeyModel = state.tableState.datasource[index] as! RedisKeyModel
                     return .send(.valueAction(.keyChange(redisKeyModel)))
                 } else {
-                    // If no key matched (e.g. folder selected), clear table selection
+                    // If no key matched (e.g. folder selected or deselected), clear table selection
                     state.tableState.selectIndex = -1
                     state.tableState.selectIndexes = []
                 }

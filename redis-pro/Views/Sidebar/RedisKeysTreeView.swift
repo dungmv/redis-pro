@@ -18,9 +18,7 @@ struct RedisKeysTreeView: View {
         let selection = Binding<String?>(
             get: { store.selectedKeyId },
             set: { id in
-                if let id = id {
-                    store.send(.selectNode(id))
-                }
+                store.send(.selectNode(id))
             }
         )
 
@@ -31,7 +29,7 @@ struct RedisKeysTreeView: View {
             // Native hierarchical list for virtualization and performance
             List(store.redisKeyNodes, children: \.children, selection: selection) { node in
                 TreeRow(node: node, selectedId: store.selectedKeyId)
-                    .listRowInsets(EdgeInsets(top: 0, leading: 1, bottom: 0, trailing: 4))
+                    .listRowInsets(EdgeInsets(top: 0, leading: 0, bottom: 0, trailing: 4))
                     .listRowBackground(Color.clear)
                     .listRowSeparator(.hidden)
                     .tag(node.id as String?)
@@ -102,12 +100,12 @@ struct TreeRow: View {
         HStack(spacing: 5) {
             Image(systemName: "folder.fill")
                 .font(.system(.body))
-                .foregroundStyle(isSelected ? Color.accentColor : .secondary.opacity(0.7))
+                .foregroundStyle(isSelected ? Color.primary : Color.secondary.opacity(0.8))
                 .symbolRenderingMode(.hierarchical)
             
             Text(node.name)
                 .font(.system(.body))
-                .foregroundStyle(isSelected ? .primary : Color.primary.opacity(0.9))
+                .foregroundStyle(isSelected ? Color.primary : Color.primary.opacity(0.9))
                 .lineLimit(1)
 
             Spacer(minLength: 4)
@@ -119,7 +117,6 @@ struct TreeRow: View {
                 .background(.quaternary.opacity(0.3), in: RoundedRectangle(cornerRadius: 3))
         }
         .frame(height: 20)
-        .padding(.horizontal, 4)
     }
 
     // MARK: Key Content
@@ -131,12 +128,13 @@ struct TreeRow: View {
             Text(node.name)
                 .font(.system(.body)) // Medium weight for better visibility
                 .lineLimit(1)
-                .foregroundStyle(isSelected ? .primary : Color.primary.opacity(0.9))
+                .foregroundStyle(isSelected ? Color.primary : Color.primary.opacity(0.9))
 
             Spacer(minLength: 0)
         }
         .frame(height: 22) // Slightly increased for breathing room
-        .padding(.horizontal, 2)
+        .padding(.leading, -2)
+        .padding(.trailing, 2)
     }
 }
 
