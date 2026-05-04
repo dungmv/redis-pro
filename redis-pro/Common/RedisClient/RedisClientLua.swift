@@ -9,7 +9,7 @@ import Foundation
 import Valkey
 
 // MARK: - lua script
-extension RediStackClient {
+extension RedisClient {
     func eval(_ lua: String) async throws -> String {
         logger.info("lua script eval: \(lua)")
         guard lua.count > 3 else {

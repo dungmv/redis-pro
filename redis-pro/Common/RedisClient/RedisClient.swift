@@ -1,5 +1,5 @@
 //
-//  RediStackClient.swift
+//  RedisClient.swift
 //  redis-pro
 //
 //  Created by chengpanwang on 2021/4/13.
@@ -13,7 +13,7 @@ import NIOSSH
 import ComposableArchitecture
 import Cocoa
 
-class RediStackClient {
+class RedisClient {
     let logger = Logger(label: "redis-client")
     var redisModel: RedisModel
     var appContextStore: StoreOf<AppContextStore>? = nil
@@ -199,7 +199,7 @@ struct AnyCommand: ValkeyCommand {
     }
 }
 
-extension RediStackClient {
+extension RedisClient {
     // MARK: - Lifecycle
     func close() {
         self.valkeyClient = nil

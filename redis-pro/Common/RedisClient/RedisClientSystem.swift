@@ -9,7 +9,7 @@ import Foundation
 import Valkey
 
 // MARK: - system function
-extension RediStackClient {
+extension RedisClient {
     
     func selectDB(_ database: Int) async throws -> Bool {
         self.logger.info("select db: \(database)")

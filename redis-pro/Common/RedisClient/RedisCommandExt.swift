@@ -10,4 +10,4 @@ import Foundation
 import Valkey
 
 // This file is deprecated as part of the migration to valkey-swift.
-// Custom command mapping logic has been moved directly into RediStackClient extensions.
+// Custom command mapping logic has been moved directly into RedisClient extensions.

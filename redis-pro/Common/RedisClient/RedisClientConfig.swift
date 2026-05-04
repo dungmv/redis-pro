@@ -9,7 +9,7 @@ import Foundation
 import Valkey
 
 // MARK: - config
-extension RediStackClient {
+extension RedisClient {
     func getConfigList(_ pattern: String = "*") async throws -> [RedisConfigItemModel] {
         logger.info("get redis config list, pattern: \(pattern)...")
         

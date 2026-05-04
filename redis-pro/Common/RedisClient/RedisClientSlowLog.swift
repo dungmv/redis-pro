@@ -9,7 +9,7 @@ import Foundation
 import Valkey
 
 // MARK: - slow log
-extension RediStackClient {
+extension RedisClient {
     func slowLogReset() async throws -> Bool {
         logger.info("slow log reset ...")
         let res: String? = try await self.send("SLOWLOG", args: ["RESET"])

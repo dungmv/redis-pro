@@ -9,7 +9,7 @@ import Foundation
 import Valkey
 
 // MARK: - set function
-extension RediStackClient {
+extension RedisClient {
     
     func pageSet(_ key: String, page: Page) async throws -> [String] {
         logger.info("redis set page, key: \(key), page: \(page)")

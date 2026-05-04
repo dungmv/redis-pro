@@ -14,7 +14,7 @@ import ComposableArchitecture
 
 class RedisInstanceModel: Identifiable {
     var redisModel:RedisModel
-    private var rediStackClient:RediStackClient?
+    private var redisClient:RedisClient?
     
     let logger = Logger(label: "redis-instance")
     
@@ -24,14 +24,14 @@ class RedisInstanceModel: Identifiable {
         logger.info("redis instance model init")
     }
     
-    convenience init(_ redisClient: RediStackClient) {
+    convenience init(_ redisClient: RedisClient) {
         self.init(redisModel: redisClient.redisModel)
-        self.rediStackClient = redisClient
+        self.redisClient = redisClient
     }
     
     // get client
-    func getClient() -> RediStackClient {
-        if let client = rediStackClient {
+    func getClient() -> RedisClient {
+        if let client = redisClient {
             return client
         }
         
@@ -39,13 +39,13 @@ class RedisInstanceModel: Identifiable {
     }
     
     // init redis client
-    func initRedisClient(_ redisModel: RedisModel) -> RediStackClient {
+    func initRedisClient(_ redisModel: RedisModel) -> RedisClient {
         
         logger.info("init new redis client, redisModel: \(redisModel)")
         self.redisModel = redisModel
-        let client = RediStackClient(redisModel)
+        let client = RedisClient(redisModel)
         
-        self.rediStackClient = client
+        self.redisClient = client
         return client
     }
     
@@ -74,11 +74,11 @@ class RedisInstanceModel: Identifiable {
     
     func close() -> Void {
         logger.info("redis stack client close...")
-        rediStackClient?.close()
-        rediStackClient = nil
+        redisClient?.close()
+        redisClient = nil
     }
     
     func shutdown() -> Void {
-        rediStackClient?.shutdown()
+        redisClient?.shutdown()
     }
 }

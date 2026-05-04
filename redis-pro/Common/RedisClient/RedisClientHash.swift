@@ -9,7 +9,7 @@ import Foundation
 import Valkey
 
 // MARK: - hash function
-extension RediStackClient {
+extension RedisClient {
     
     func pageHash(_ key: String, page: Page) async throws -> [RedisHashEntryModel] {
         logger.info("redis hash field page scan, key: \(key), page: \(page)")

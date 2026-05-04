@@ -7,7 +7,7 @@
 
 import Foundation
 
-extension RediStackClient {
+extension RedisClient {
     
     func isMatchAll(_ keywords:String?) -> Bool {
         guard let keywords = keywords else {

@@ -9,7 +9,7 @@ import Foundation
 import Valkey
 
 // MARK: - string operator
-extension RediStackClient {
+extension RedisClient {
 
     /**
      set value expire(seconds)

@@ -10,7 +10,7 @@ import Valkey
 import NIO
 
 // MARK: - conn operator
-extension RediStackClient {
+extension RedisClient {
     
     /*
      * 初始化redis 连接

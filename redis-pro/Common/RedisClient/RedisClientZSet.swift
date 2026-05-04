@@ -9,7 +9,7 @@ import Foundation
 import Valkey
 
 // MARK: - zset function
-extension RediStackClient {
+extension RedisClient {
     
     func pageZSet(_ key: String, page: Page) async throws -> [RedisZSetItemModel] {
         logger.info("redis zset page, key: \(key), page: \(page)")
@@ -95,11 +95,16 @@ extension RediStackClient {
     }
     
     private func zscan(_ key: String, keywords: String?, cursor: Int, count: Int? = 1) async throws -> (cursor: Int, elements: [(String, Double)]) {
-        logger.debug("redis set scan, key: \(key) cursor: \(cursor), keywords: \(String(describing: keywords)), count:\(String(describing: count))")
+        logger.debug("redis zset scan, key: \(key) cursor: \(cursor), keywords: \(String(describing: keywords)), count:\(String(describing: count))")
         let client = try await getClient()
         
         let res = try await client?.zscan(ValkeyKey(key), cursor: cursor, pattern: keywords, count: count)
-        let elements: [(String, Double)] = (try? res?.members.withScores().map { (String($0.value), $0.score) }) ?? []
+        
+        var elements: [(String, Double)] = []
+        if let members = try? res?.members.withScores() {
+            elements = members.map { (String($0.value), $0.score) }
+        }
+        
         return (res?.cursor ?? 0, elements)
     }
     
@@ -160,18 +165,18 @@ extension RediStackClient {
     private func _zrangeByScore(_ key: String, page: Page) async throws -> [(String, String)] {
         let client = try await getClient()
         
+        // Use index-based range for pagination when match all
+        // Redis ZRANGE stop is inclusive, so we use end - 1
         let res = try await client?.zrange(
             ValkeyKey(key),
             start: "\(page.start)",
-            stop: "\(page.end)",
-            sortby: .byscore,
+            stop: "\(page.end - 1)",
+            sortby: nil, // Default is by index
             rev: false,
-            limit: .init(offset: page.start, count: page.size),
+            limit: nil,
             withscores: true
         )
         
-        // zrange withscores returns RESPToken.Array which is flat [member, score, member, score, ...] in RESP2
-        // We need to parse it.
         var result: [(String, String)] = []
         if let res = res {
             var iterator = res.makeIterator()

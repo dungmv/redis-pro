@@ -1,5 +1,5 @@
 //
-//  RediStackClientStream.swift
+//  RedisClientStream.swift
 //  redis-pro
 //
 //  Created by chengpan on 2022/8/21.
@@ -10,6 +10,6 @@ import Valkey
 
 // MARK: - stream function
 // stream
-extension RediStackClient {
+extension RedisClient {
     
 }

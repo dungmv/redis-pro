@@ -10,7 +10,7 @@ import Valkey
 import Logging
 
 // MARK: - keys function
-extension RediStackClient {
+extension RedisClient {
     
     private func keyScan(cursor: Int, keywords: String?, count: Int? = 1) async throws -> (cursor: Int, keys: [String]) {
         logger.debug("redis keys scan, cursor: \(cursor), keywords: \(String(describing: keywords)), count:\(String(describing: count))")

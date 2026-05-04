@@ -9,7 +9,7 @@ import Foundation
 import Valkey
 
 // MARK: - list function
-extension RediStackClient {
+extension RedisClient {
 
     func pageList(_ key: String, page: Page) async throws -> [RedisListItemModel] {
         logger.info("redis list page, key: \(key), page: \(page)")

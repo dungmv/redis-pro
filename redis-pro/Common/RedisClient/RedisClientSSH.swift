@@ -12,7 +12,7 @@ import NIOSSH
 import Logging
 
 // MARK: - ssh
-extension RediStackClient {
+extension RedisClient {
     
     func initSSHClient() async throws -> ValkeyClient {
         let bindHost = "127.0.0.1"
