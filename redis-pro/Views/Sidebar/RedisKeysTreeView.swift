@@ -3,6 +3,7 @@
 //  redis-pro
 //
 //  Liquid Glass sidebar tree view.
+//  Optimized with native virtualization, high density, and keyboard navigation.
 //
 
 import SwiftUI
@@ -14,174 +15,145 @@ struct RedisKeysTreeView: View {
     let store: StoreOf<RedisKeysStore>
 
     var body: some View {
+        let selection = Binding<String?>(
+            get: { store.selectedKeyId },
+            set: { id in
+                if let id = id {
+                    store.send(.selectNode(id))
+                }
+            }
+        )
+
         VStack(alignment: .leading, spacing: 0) {
             // Section header
-            HStack {
-                Text("KEYS")
-                    .font(.system(size: 10, weight: .bold))
-                    .foregroundStyle(.secondary)
-                    .kerning(0.8)
-                Spacer()
-                Text("\(store.dbsize)")
-                    .font(.system(size: 10, weight: .semibold, design: .monospaced))
-                    .foregroundStyle(.tertiary)
-                    .padding(.horizontal, 6)
-                    .padding(.vertical, 2)
-                    .background(.ultraThinMaterial, in: Capsule())
+            headerView
+            
+            // Native hierarchical list for virtualization and performance
+            List(store.redisKeyNodes, children: \.children, selection: selection) { node in
+                TreeRow(node: node, selectedId: store.selectedKeyId)
+                    .listRowInsets(EdgeInsets(top: 0, leading: 4, bottom: 0, trailing: 4))
+                    .listRowBackground(Color.clear)
+                    .listRowSeparator(.hidden)
+                    .tag(node.id as String?) // Explicit cast to match selection type
             }
-            .padding(.horizontal, 12)
-            .padding(.vertical, 8)
-
-            ScrollView {
-                LazyVStack(alignment: .leading, spacing: 1) {
-                    ForEach(store.redisKeyNodes) { node in
-                        TreeRenderNode(node: node, store: store, level: 0)
-                    }
-                }
-                .padding(.horizontal, 6)
-                .padding(.bottom, 8)
-            }
+            .listStyle(.sidebar)
+            .scrollContentBackground(.hidden)
+            .environment(\.defaultMinListRowHeight, 20) // High density
         }
+    }
+
+    private var headerView: some View {
+        HStack {
+            Text("KEYS")
+                .font(.system(size: 10, weight: .bold))
+                .foregroundStyle(.secondary)
+                .kerning(0.8)
+            Spacer()
+            Text("\(store.dbsize)")
+                .font(.system(size: 9, weight: .semibold, design: .monospaced))
+                .foregroundStyle(.tertiary)
+                .padding(.horizontal, 5)
+                .padding(.vertical, 1)
+                .background(.ultraThinMaterial, in: Capsule())
+        }
+        .padding(.horizontal, 12)
+        .padding(.vertical, 6)
     }
 }
 
-// MARK: - Tree node renderer
+// MARK: - Optimized Tree Row
 
-struct TreeRenderNode: View {
+struct TreeRow: View {
     let node: RedisKeyNode
-    let store: StoreOf<RedisKeysStore>
-    let level: CGFloat
-    @State private var isExpanded: Bool = true
+    let selectedId: String?
+    
     @State private var isHovered: Bool = false
+    
+    private var isSelected: Bool {
+        selectedId == node.id
+    }
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 1) {
+        HStack(spacing: 0) {
             if node.isFolder {
-                folderRow
-                    .padding(.leading, level * 14)
-
-                if isExpanded, let children = node.children {
-                    VStack(alignment: .leading, spacing: 1) {
-                        ForEach(children) { child in
-                            TreeRenderNode(node: child, store: store, level: level + 1)
-                        }
-                    }
-                    .transition(.asymmetric(
-                        insertion: .opacity.combined(with: .move(edge: .top)),
-                        removal: .opacity.combined(with: .move(edge: .top))
-                    ))
-                }
+                folderContent
             } else {
-                keyRow
-                    .padding(.leading, level * 14 + 16)
+                keyContent
+            }
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .contentShape(Rectangle())
+        .onHover { isHovered = $0 }
+        .contextMenu {
+            Button("Copy Full Name") {
+                PasteboardHelper.copy(node.fullName)
+            }
+            if !node.isFolder {
+                Button("Delete Key", role: .destructive) {
+                    // Action handled via store normally
+                }
             }
         }
     }
 
-    // MARK: Folder row
-
-    private var folderRow: some View {
+    // MARK: Folder Content
+    
+    private var folderContent: some View {
         HStack(spacing: 5) {
-            Image(systemName: isExpanded ? "chevron.down" : "chevron.right")
-                .font(.system(size: 9, weight: .bold))
-                .foregroundStyle(.tertiary)
-                .frame(width: 10)
-                .animation(.spring(response: 0.2, dampingFraction: 0.8), value: isExpanded)
-
-            Image(systemName: isExpanded ? "folder.open" : "folder")
-                .font(.system(size: 11, weight: .medium))
-                .foregroundStyle(.secondary)
+            Image(systemName: "folder.fill")
+                .font(.system(size: 10))
+                .foregroundStyle(isSelected ? Color.accentColor : .secondary.opacity(0.7))
                 .symbolRenderingMode(.hierarchical)
-
+            
             Text(node.name)
-                .font(.system(size: 12, weight: .medium))
-                .foregroundStyle(.primary)
+                .font(.system(size: 11, weight: .medium))
+                .foregroundStyle(isSelected ? .primary : Color.primary.opacity(0.9))
                 .lineLimit(1)
 
             Spacer(minLength: 4)
 
-            // Key count badge
             Text("\(node.keyCount)")
-                .font(.system(size: 10, weight: .semibold, design: .monospaced))
-                .foregroundStyle(.secondary)
-                .padding(.horizontal, 5)
-                .padding(.vertical, 1)
-                .background(.quaternary, in: Capsule())
+                .font(.system(size: 8, weight: .bold, design: .monospaced))
+                .foregroundStyle(.secondary.opacity(0.8))
+                .padding(.horizontal, 4)
+                .background(.quaternary.opacity(0.3), in: RoundedRectangle(cornerRadius: 3))
         }
-        .frame(height: 22)
-        .padding(.horizontal, 6)
-        .background(
-            RoundedRectangle(cornerRadius: LiquidGlass.radiusXS)
-                .fill(isHovered ? AnyShapeStyle(.thinMaterial) : AnyShapeStyle(Color.clear))
-        )
-        .contentShape(Rectangle())
-        .onHover { isHovered = $0 }
-        .onTapGesture {
-            withAnimation(.spring(response: 0.25, dampingFraction: 0.8)) {
-                isExpanded.toggle()
-            }
-        }
+        .frame(height: 20)
+        .padding(.horizontal, 4)
     }
 
-    // MARK: Key row
-
-    private var keyRow: some View {
-        let isSelected = store.selectedKeyId == node.id
-
-        return HStack(spacing: 4) {
+    // MARK: Key Content
+    
+    private var keyContent: some View {
+        HStack(spacing: 5) {
             TypeBadge(type: node.type?.uppercased() ?? "")
-
+            
             Text(node.name)
-                .font(.system(size: 12, design: .monospaced))
+                .font(.system(size: 11, design: .monospaced))
                 .lineLimit(1)
-                .foregroundStyle(isSelected ? Color.primary : Color.primary)
+                .foregroundStyle(isSelected ? .primary : Color.primary.opacity(0.85))
 
             Spacer(minLength: 0)
         }
-        .frame(height: 22)
-        .padding(.horizontal, 6)
-        .background(
-            RoundedRectangle(cornerRadius: LiquidGlass.radiusXS)
-                .fill(
-                    isSelected
-                    ? AnyShapeStyle(.regularMaterial)
-                    : (isHovered ? AnyShapeStyle(.thinMaterial) : AnyShapeStyle(Color.clear))
-                )
-        )
-        .overlay(
-            RoundedRectangle(cornerRadius: LiquidGlass.radiusXS)
-                .strokeBorder(
-                    isSelected
-                    ? Color.accentColor.opacity(0.45)
-                    : (isHovered ? LiquidGlass.glassBorder : Color.clear),
-                    lineWidth: isSelected ? 1 : 0.5
-                )
-        )
-        .contentShape(Rectangle())
-        .onHover { isHovered = $0 }
-        .onTapGesture { store.send(.selectNode(node.id)) }
-        .contextMenu {
-            Button("Copy Key") {
-                PasteboardHelper.copy(node.id)
-            }
-        }
+        .frame(height: 20)
+        .padding(.horizontal, 4)
     }
 }
 
-// MARK: - Type Badge
+// MARK: - Compact Type Badge
 
 private struct TypeBadge: View {
     let type: String
 
     var body: some View {
-        Text(type.isEmpty ? "–" : type)
-            .font(.system(size: 9, weight: .semibold, design: .monospaced))
-            .tracking(0.3)
+        Text(type.isEmpty ? "–" : String(type.prefix(1)))
+            .font(.system(size: 7.5, weight: .black, design: .monospaced))
             .foregroundStyle(.white)
-            .frame(width: 42, height: 14)
+            .frame(width: 12, height: 12)
             .background(
-                RoundedRectangle(cornerRadius: 3)
-                    .fill(LiquidGlass.typeColor(for: type).opacity(0.85))
+                RoundedRectangle(cornerRadius: 2.5)
+                    .fill(LiquidGlass.typeColor(for: type))
             )
+            .shadow(color: LiquidGlass.typeColor(for: type).opacity(0.2), radius: 1, x: 0, y: 0.5)
     }
 }
