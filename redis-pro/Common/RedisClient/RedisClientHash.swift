@@ -110,10 +110,12 @@ extension RedisClient {
         let client = try await getClient()
         let result = try await client?.hscan(ValkeyKey(key), cursor: cursor, pattern: pattern, count: count)
         
-        guard let res = result else { return (0, []) }
+        var elements: [(String, String)] = []
+        if let members = try? result?.members.withValues() {
+            elements = members.map { (String($0.field), String($0.value)) }
+        }
         
-        let elements = (try? res.members.withValues().map { (String($0.field), String($0.value)) }) ?? []
-        return (res.cursor, elements)
+        return (result?.cursor ?? 0, elements)
     }
     
     private func _hget(_ key: String, field: String) async throws -> String? {
