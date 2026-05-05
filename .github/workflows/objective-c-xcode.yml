@@ -39,7 +39,6 @@ jobs:
             -configuration Debug \
             -destination "platform=macOS" \
             -derivedDataPath DerivedData \
-            -enableCodeCoverage YES \
             CODE_SIGN_IDENTITY="-" \
             CODE_SIGNING_REQUIRED=NO \
             CODE_SIGNING_ALLOWED=NO \
