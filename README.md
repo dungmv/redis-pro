@@ -1,8 +1,7 @@
 # Redis Pro
 
-English | [简体中文](./README.zh_CN.md) 
 
-![Swift5.0+](https://img.shields.io/badge/Swift-5.0%2B-orange.svg?style=flat)
+![Swift6.0+](https://img.shields.io/badge/Swift-6.0%2B-orange.svg?style=flat)
 [![release](https://img.shields.io/github/v/release/cmushroom/redis-pro?include_prereleases)](https://github.com/cmushroom/redis-pro/releases)
 ![platforms](https://img.shields.io/badge/Platforms-macOS%20-orange.svg?style=flat)
 
@@ -19,7 +18,7 @@ English | [简体中文](./README.zh_CN.md)
 - [x] **Client Management**: List and terminate client connections.
 - [x] **Real-time Monitoring**: Slow log and server info visualization.
 - [x] **Batch Operations**: Efficiently delete keys in bulk.
-- [x] **TCA Architecture**: Robust state management using The Composable Architecture.
+- [x] **Native MVVM**: Robust and high-performance state management using Swift 6 `@Observable` and SwiftUI native bindings, with zero third-party UI dependencies.
 
 ## Installation
 * **Direct Download**: Download the latest DMG from the [releases page](https://github.com/cmushroom/redis-pro/releases).
@@ -41,7 +40,7 @@ English | [简体中文](./README.zh_CN.md)
 * [swift-log](https://github.com/apple/swift-log): Standard logging for Swift.
 * [Puppy](https://github.com/sushichop/Puppy): Flexible logging backend.
 * [SwiftJSONFormatter](https://github.com/luin/SwiftJSONFormatter): JSON formatting.
-* [TCA](https://github.com/pointfreeco/swift-composable-architecture): State management.
+
 * [swift-nio-ssh](https://github.com/apple/swift-nio-ssh): Native SSH support.
 
 ## Snapshot
