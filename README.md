@@ -43,7 +43,7 @@ support macos (Intel, Apple Silicon) platform,  will support ipad os in the futu
 * redis: 3.x¹ ... 6.x
 
 ## Dependency
-* RediStack a redis client wiritten in swiftNIO 
+* [ValkeySwift](https://github.com/valkey-io/valkey-swift) a redis client wiritten in swiftNIO 
 * swift-log swift log framework, need puppy implementation
 * Puppy log framework, support console, file
 * SwiftJSONFormatter json format

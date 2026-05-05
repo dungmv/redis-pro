@@ -10,7 +10,8 @@ import SwiftUI
 struct AboutView: View {
 
     private let dependencies: [(String, String)] = [
-        ("RediStack", "https://github.com/Mordil/RediStack"),
+        ("Valkey", "https://github.com/valkey-io/valkey-swift"),
+        ("NIOSSH", "https://github.com/apple/swift-nio-ssh"),
         ("SwiftJSONFormatter", "https://github.com/luin/SwiftJSONFormatter"),
         ("Puppy", "https://github.com/sushichop/Puppy"),
         ("ComposableArchitecture", "https://github.com/pointfreeco/swift-composable-architecture"),

@@ -14,7 +14,7 @@ open class RedisClientBaseTest: RedisBaseTest {
     let logger = Logger(label: "redis-client-test")
     
     var redisModel: RedisModel!
-    var redisClient: RediStackClient!
+    var redisClient: RedisClient!
     
     open override func setUp() {
         logger.info("redis client base test setUp...")
