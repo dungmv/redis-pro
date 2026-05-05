@@ -1,54 +1,48 @@
-#  Redis Pro
+# Redis Pro
 
 English | [简体中文](./README.zh_CN.md) 
 
 ![Swift5.0+](https://img.shields.io/badge/Swift-5.0%2B-orange.svg?style=flat)
 [![release](https://img.shields.io/github/v/release/cmushroom/redis-pro?include_prereleases)](https://github.com/cmushroom/redis-pro/releases)
 ![platforms](https://img.shields.io/badge/Platforms-macOS%20-orange.svg?style=flat)
-[![Gitter](https://badges.gitter.im/redis-pro/community.svg)](https://gitter.im/redis-pro/community?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge)
 
 ## Intro
-* redis-pro is a simple and easy to use management of redis， written in SwiftUI.
-* [Sequel-Ace](https://github.com/Sequel-Ace/Sequel-Ace) and Aliyun DMS was borrowed in the development process，Sequel-Ace (Sequel-Pro) is a simple and easy to use mysql management
+* **Redis Pro** is a modern, lightweight, and high-performance Redis/Valkey management tool for macOS.
+* Built with **SwiftUI** and a premium **Liquid Glass** aesthetic (glassmorphism), it provides a native and fluid user experience.
+* Supports **Valkey** and **Redis** (3.x to 7.x) with high-performance NIO-based architecture.
 
-## Install
-* download package in release page
-[address](https://github.com/cmushroom/redis-pro/releases)
+## Features
+- [x] **Liquid Glass UI**: Modern glassmorphism design with optimized dark mode support.
+- [x] **Hierarchical Key Navigation**: Native tree view with virtualization for lightning-fast browsing of large datasets.
+- [x] **SSH Tunneling**: Secure connection support via built-in SSH tunneling.
+- [x] **Valkey & Redis Support**: Fully compatible with Valkey and Redis 3.x-7.x.
+- [x] **Client Management**: List and terminate client connections.
+- [x] **Real-time Monitoring**: Slow log and server info visualization.
+- [x] **Batch Operations**: Efficiently delete keys in bulk.
+- [x] **TCA Architecture**: Robust state management using The Composable Architecture.
 
-* homebrew
-    ```
+## Installation
+* **Direct Download**: Download the latest DMG from the [releases page](https://github.com/cmushroom/redis-pro/releases).
+* **Homebrew**:
+    ```bash
     brew install redis-pro
     ```
 
-
-
 ## Platform
-support macos (Intel, Apple Silicon) platform,  will support ipad os in the future 
+* Supports macOS 11.0+ (Intel and Apple Silicon).
 
-## Todo
-- [x] client list and kill 
-- [x] homebrew install
-- [x] slow log
-- [x] redis config update
-- [x] ssh login
-- [x] favorite delete confirm
-- [x] TCA
-- [x] delete batch
-- [ ] terminal
-- [ ] ssh key
-    
+## Roadmap
+- [ ] Terminal / CLI integration
+- [ ] SSH key-based authentication
+- [ ] iPadOS support
 
-## Version
-* macos:  >= 11.0
-* redis: 3.x¹ ... 6.x
-
-## Dependency
-* [ValkeySwift](https://github.com/valkey-io/valkey-swift) a redis client wiritten in swiftNIO 
-* swift-log swift log framework, need puppy implementation
-* Puppy log framework, support console, file
-* SwiftJSONFormatter json format
-
-
+## Dependencies
+* [ValkeySwift](https://github.com/valkey-io/valkey-swift): High-performance NIO-based Redis/Valkey client.
+* [swift-log](https://github.com/apple/swift-log): Standard logging for Swift.
+* [Puppy](https://github.com/sushichop/Puppy): Flexible logging backend.
+* [SwiftJSONFormatter](https://github.com/luin/SwiftJSONFormatter): JSON formatting.
+* [TCA](https://github.com/pointfreeco/swift-composable-architecture): State management.
+* [swift-nio-ssh](https://github.com/apple/swift-nio-ssh): Native SSH support.
 
 ## Snapshot
 login
