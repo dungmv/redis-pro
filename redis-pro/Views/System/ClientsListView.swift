@@ -3,38 +3,32 @@
 //  redis-pro
 //
 //  Created by chengpanwang on 2021/6/18.
+//  Migrated to MVVM (Swift 6)
 //
 
 import SwiftUI
 import Logging
-import ComposableArchitecture
 
 struct ClientsListView: View {
-    
-    var store:StoreOf<ClientListStore>
-    
+
+    @State var viewModel: ClientListViewModel
+
     var body: some View {
-        WithViewStore(self.store, observe: { $0 }) {viewStore in
-            VStack(alignment: .leading, spacing: MTheme.V_SPACING) {
-                
-                NTableView(store: store.scope(state: \.tableState, action: \.tableAction))
-                
-                HStack(alignment: .center , spacing: 8) {
-                    Spacer()
-                    MButton(text: "Kill Client", action: {viewStore.send(.killConfirm(viewStore.tableState.selectIndex))}, disabled: viewStore.tableState.selectIndex < 0)
-                    MButton(text: "Refresh", action: {viewStore.send(.refresh)})
-                }
-            }
-            .onAppear {
-                viewStore.send(.initial)
+        VStack(alignment: .leading, spacing: MTheme.V_SPACING) {
+            NTableView(viewModel: viewModel.table)
+
+            HStack(alignment: .center, spacing: 8) {
+                Spacer()
+                MButton(
+                    text: "Kill Client",
+                    action: { viewModel.killConfirm(viewModel.table.selectIndex) },
+                    disabled: viewModel.table.selectIndex < 0
+                )
+                MButton(text: "Refresh", action: { viewModel.refresh() })
             }
         }
+        .onAppear {
+            viewModel.initial()
+        }
     }
-    
 }
-
-//struct ClientsListView_Previews: PreviewProvider {
-//    static var previews: some View {
-//        ClientsListView()
-//    }
-//}

@@ -4,39 +4,37 @@
 //
 //  Liquid Glass sidebar tree view.
 //  Optimized with native virtualization, high density, and keyboard navigation.
+//  Migrated to MVVM (Swift 6)
 //
 
 import SwiftUI
-import ComposableArchitecture
 
 // MARK: - Root tree view
 
 struct RedisKeysTreeView: View {
-    let store: StoreOf<RedisKeysStore>
+    @State var viewModel: RedisKeysViewModel
 
     var body: some View {
         let selection = Binding<String?>(
-            get: { store.selectedKeyId },
-            set: { id in
-                store.send(.selectNode(id))
-            }
+            get: { viewModel.selectedKeyId },
+            set: { id in viewModel.selectNode(id) }
         )
 
         VStack(alignment: .leading, spacing: 0) {
             // Section header
             headerView
-            
+
             // Native hierarchical list for virtualization and performance
-            List(store.redisKeyNodes, children: \.children, selection: selection) { node in
-                TreeRow(node: node, selectedId: store.selectedKeyId)
+            List(viewModel.redisKeyNodes, children: \.children, selection: selection) { node in
+                TreeRow(node: node, selectedId: viewModel.selectedKeyId)
                     .listRowInsets(EdgeInsets(top: 0, leading: 0, bottom: 0, trailing: 4))
                     .listRowBackground(Color.clear)
                     .listRowSeparator(.hidden)
                     .tag(node.id as String?)
             }
-            .listStyle(.plain) // Use plain style for tighter control over spacing
+            .listStyle(.plain)
             .scrollContentBackground(.hidden)
-            .environment(\.defaultMinListRowHeight, 20) // High density
+            .environment(\.defaultMinListRowHeight, 20)
         }
     }
 
@@ -47,7 +45,7 @@ struct RedisKeysTreeView: View {
                 .foregroundStyle(.secondary)
                 .kerning(0.8)
             Spacer()
-            Text("\(store.dbsize)")
+            Text("\(viewModel.dbsize)")
                 .font(.system(size: 9, weight: .semibold, design: .monospaced))
                 .foregroundStyle(.tertiary)
                 .padding(.horizontal, 5)
@@ -64,9 +62,9 @@ struct RedisKeysTreeView: View {
 struct TreeRow: View {
     let node: RedisKeyNode
     let selectedId: String?
-    
+
     @State private var isHovered: Bool = false
-    
+
     private var isSelected: Bool {
         selectedId == node.id
     }
@@ -86,23 +84,18 @@ struct TreeRow: View {
             Button("Copy Full Name") {
                 PasteboardHelper.copy(node.fullName)
             }
-            if !node.isFolder {
-                Button("Delete Key", role: .destructive) {
-                    // Action handled via store normally
-                }
-            }
         }
     }
 
     // MARK: Folder Content
-    
+
     private var folderContent: some View {
         HStack(spacing: 5) {
             Image(systemName: "folder.fill")
                 .font(.system(.body))
                 .foregroundStyle(isSelected ? Color.primary : Color.secondary.opacity(0.8))
                 .symbolRenderingMode(.hierarchical)
-            
+
             Text(node.name)
                 .font(.system(.body))
                 .foregroundStyle(isSelected ? Color.primary : Color.primary.opacity(0.9))
@@ -120,19 +113,19 @@ struct TreeRow: View {
     }
 
     // MARK: Key Content
-    
+
     private var keyContent: some View {
         HStack(spacing: 6) {
             TypeBadge(type: node.type?.uppercased() ?? "")
-            
+
             Text(node.name)
-                .font(.system(.body)) // Medium weight for better visibility
+                .font(.system(.body))
                 .lineLimit(1)
                 .foregroundStyle(isSelected ? Color.primary : Color.primary.opacity(0.9))
 
             Spacer(minLength: 0)
         }
-        .frame(height: 22) // Slightly increased for breathing room
+        .frame(height: 22)
         .padding(.leading, -2)
         .padding(.trailing, 2)
     }
@@ -147,7 +140,7 @@ private struct TypeBadge: View {
         Text(type.isEmpty ? "–" : String(type.prefix(1)))
             .font(.system(.subheadline))
             .foregroundStyle(.white)
-            .frame(width: 14, height: 14) // Balanced with 12pt text
+            .frame(width: 14, height: 14)
             .background(
                 RoundedRectangle(cornerRadius: 3)
                     .fill(LiquidGlass.typeColor(for: type))

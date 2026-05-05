@@ -3,126 +3,104 @@
 //  redis-pro
 //
 //  Created by chengpan on 2022/6/4.
+//  Migrated to MVVM (Swift 6)
 //
-
 
 import Logging
 import Foundation
-import ComposableArchitecture
+import Observation
 
-private let logger = Logger(label: "redis-config-store")
+private let logger = Logger(label: "slow-log-store")
 
-@Reducer
-struct SlowLogStore {
-    
-    @ObservableState
-    struct State: Equatable {
-        
-        var slowerThan:Int = 10000
-        var maxLen:Int = 128
-        var size:Int = 50
-        var total:Int = 0
-        
-        var tableState: TableStore.State = TableStore.State(columns: [
-            .init(title: "Id", key: "id", width: 60),
-            .init(title: "Timestamp", key: "timestamp", width: 120),
-            .init(title: "Exec Time(us)", key: "execTime", width: 90),
-            .init(title: "Client", key: "client", width: 140),
-            .init(title: "Client Name", key: "clientName", width: 100),
-            .init(title: "Cmd", key: "cmd", width: 100),
-        ], datasource: [], selectIndex: -1)
-        
-        init() {
-            logger.info("slow log state init ...")
-        }
+@MainActor
+@Observable
+final class SlowLogViewModel {
+    var slowerThan: Int = 10000
+    var maxLen: Int = 128
+    var size: Int = 50
+    var total: Int = 0
+
+    let table: TableViewModel
+
+    private let redisInstance: RedisInstanceModel
+
+    init(redisInstance: RedisInstanceModel) {
+        self.redisInstance = redisInstance
+        self.table = TableViewModel(
+            columns: [
+                .init(title: "Id", key: "id", width: 60),
+                .init(title: "Timestamp", key: "timestamp", width: 120),
+                .init(title: "Exec Time(us)", key: "execTime", width: 90),
+                .init(title: "Client", key: "client", width: 140),
+                .init(title: "Client Name", key: "clientName", width: 100),
+                .init(title: "Cmd", key: "cmd", width: 100),
+            ],
+            datasource: []
+        )
+        logger.info("SlowLogViewModel init ...")
     }
 
-    enum Action:BindableAction, Equatable {
-        case initial
-        case getValue
-        case setValue([SlowLogModel], Int, Int, Int)
-        case refresh
-        case reset
-        case setSlowerThan
-        case setMaxLen
-        case setSize
-        case none
-        case tableAction(TableStore.Action)
-        case binding(BindingAction<State>)
+    func initial() {
+        logger.info("slow log initial...")
+        getValue()
     }
-    
-    @Dependency(\.redisInstance) var redisInstanceModel:RedisInstanceModel
-    let mainQueue: AnySchedulerOf<DispatchQueue> = .main
-    
-    var body: some Reducer<State, Action> {
-        BindingReducer()
-        Scope(state: \.tableState, action: \.tableAction) {
-            TableStore()
-        }
-        Reduce { state, action in
-            switch action {
-            // 初始化已设置的值
-            case .initial:
-            
-                logger.info("redis config store initial...")
-                return .run { send in
-                    await send(.getValue)
-                }
-                
-            case .refresh:
-                return .run { send in
-                    await send(.getValue)
-                }
-                
-            case .getValue:
-                let size = state.size
-                return .run { send in
-                    let datasource = try await redisInstanceModel.getClient().getSlowLog(size)
-                    let total = try await redisInstanceModel.getClient().slowLogLen()
-                    let maxLen = try await redisInstanceModel.getClient().getConfigOne(key: "slowlog-max-len")
-                    let slowerThan = try await redisInstanceModel.getClient().getConfigOne(key: "slowlog-log-slower-than")
-                    await send(.setValue(datasource, total, NumberHelper.toInt(maxLen), NumberHelper.toInt(slowerThan)))
-                }
 
-            case let .setValue(slowLogs, total, maxLen, slowerThan):
-                state.tableState.datasource = slowLogs
-                state.total = total
-                state.maxLen = maxLen
-                state.slowerThan = slowerThan
-                
-                return .none
-            case .reset:
-                return .run { send in
-                    let _ = try await redisInstanceModel.getClient().slowLogReset()
-                    await send(.refresh)
-                }
-                
-            case .setSlowerThan:
-                let slowerThan = state.slowerThan
-                return .run { send in
-                    let _ = try await redisInstanceModel.getClient().setConfig(key: "slowlog-log-slower-than", value: "\(slowerThan)")
-                    await send(.none)
-                }
-            case .setMaxLen:
-                let maxLen = state.maxLen
-                return .run { send in
-                    let _ = try await redisInstanceModel.getClient().setConfig(key: "slowlog-max-len", value: "\(maxLen)")
-                }
-                
-            case .setSize:
-                return .run { send in
-                    await send(.getValue)
-                }
-                
-                
-            // table action
-            case .tableAction:
-                return .none
-            case .binding:
-                return .none
-            case .none:
-                return .none
+    func refresh() {
+        getValue()
+    }
+
+    func getValue() {
+        let size = self.size
+        Task {
+            do {
+                let datasource = try await redisInstance.getClient().getSlowLog(size)
+                let total = try await redisInstance.getClient().slowLogLen()
+                let maxLen = try await redisInstance.getClient().getConfigOne(key: "slowlog-max-len")
+                let slowerThan = try await redisInstance.getClient().getConfigOne(key: "slowlog-log-slower-than")
+                self.table.datasource = datasource
+                self.total = total
+                self.maxLen = NumberHelper.toInt(maxLen)
+                self.slowerThan = NumberHelper.toInt(slowerThan)
+            } catch {
+                Messages.show(error)
             }
         }
+    }
+
+    func reset() {
+        Task {
+            do {
+                let _ = try await redisInstance.getClient().slowLogReset()
+                refresh()
+            } catch {
+                Messages.show(error)
+            }
+        }
+    }
+
+    func setSlowerThan() {
+        let slowerThan = self.slowerThan
+        Task {
+            do {
+                let _ = try await redisInstance.getClient().setConfig(key: "slowlog-log-slower-than", value: "\(slowerThan)")
+            } catch {
+                Messages.show(error)
+            }
+        }
+    }
+
+    func setMaxLen() {
+        let maxLen = self.maxLen
+        Task {
+            do {
+                let _ = try await redisInstance.getClient().setConfig(key: "slowlog-max-len", value: "\(maxLen)")
+            } catch {
+                Messages.show(error)
+            }
+        }
+    }
+
+    func setSize() {
+        getValue()
     }
 }

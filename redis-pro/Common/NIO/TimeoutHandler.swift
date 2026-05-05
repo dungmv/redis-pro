@@ -8,7 +8,7 @@
 import Foundation
 import NIO
 
-class TimeoutHandler: ChannelInboundHandler {
+class TimeoutHandler: ChannelInboundHandler, @unchecked Sendable {
     typealias InboundIn = ByteBuffer
 
     private var scheduledTimeout: Scheduled<Void>?

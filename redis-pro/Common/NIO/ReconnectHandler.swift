@@ -8,7 +8,7 @@
 import Foundation
 import NIO
 
-class ReconnectHandler: ChannelInboundHandler {
+class ReconnectHandler: ChannelInboundHandler, @unchecked Sendable {
     typealias InboundIn = ByteBuffer
 
     private var reconnectScheduled: Scheduled<Void>?

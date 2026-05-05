@@ -3,26 +3,23 @@
 //  redis-pro
 //
 //  Created by chengpanwang on 2021/1/25.
+//  Migrated to MVVM (Swift 6)
 //
 
 import SwiftUI
-import NIO
-import Valkey
 import Logging
-import ComposableArchitecture
-
 
 struct LoginView: View {
     private static let logger = Logger(label: "login-view")
-    
-    var store: StoreOf<AppStore>
-    
-    init(store: StoreOf<AppStore>) {
+
+    @State var viewModel: AppViewModel
+
+    init(viewModel: AppViewModel) {
         Self.logger.info("login view init...")
-        self.store = store
+        self.viewModel = viewModel
     }
-    
+
     var body: some View {
-        RedisListView(store: store.scope(state: \.favoriteState, action: \.favoriteAction))
+        RedisListView(viewModel: viewModel.favorite)
     }
 }

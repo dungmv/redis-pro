@@ -3,191 +3,161 @@
 //  redis-pro
 //
 //  Created by chengpan on 2021/12/17.
+//  Migrated to MVVM (Swift 6) — removed TCA, uses @Observable TableViewModel
 //
 
 import SwiftUI
 import Logging
 import Cocoa
 import Combine
-import ComposableArchitecture
+
+// MARK: - NTableView (NSViewControllerRepresentable)
 
 struct NTableView: NSViewControllerRepresentable {
-    
-    let store: StoreOf<TableStore>
-    
+
+    let viewModel: TableViewModel
     let logger = Logger(label: "ntable")
-    
-    
+
     func makeCoordinator() -> Coordinator {
         logger.debug("init ntable coordinator...")
         return Coordinator(self)
     }
-    
-    
+
     func makeNSViewController(context: Context) -> NSViewController {
-        let controller = NTableController(store)
-        //        controller.tableView.delegate = context.coordinator
-        //        controller.tableView.dataSource = context.coordinator
-        
+        let controller = NTableController(viewModel)
         logger.debug("ntable make nsview controller....")
         return controller
     }
-    
-    
+
     func updateNSViewController(_ nsViewController: NSViewController, context: Context) {
         logger.debug("ntable update nsview controller")
         if let controller = nsViewController as? NTableController {
-            controller.updateStore(self.store)
+            controller.updateViewModel(self.viewModel)
         }
     }
-    
+
     class Coordinator: NSObject, NSTableViewDelegate, NSTableViewDataSource {
-        
         var table: NTableView
-        
         let logger = Logger(label: "table-coordinator")
-        
-        
+
         init(_ table: NTableView) {
             self.table = table
         }
     }
 }
 
-class NTableController: NSViewController{
-    
-    //    var columns:[NTableColumn] = [NTableColumn]()
-    @objc dynamic var datasource:[AnyHashable] = []
+// MARK: - NTableController (NSViewController)
+
+class NTableController: NSViewController {
+
+    @objc dynamic var datasource: [AnyHashable] = []
     var arrayController = NSArrayController()
     var initialized = false
     let scrollView = NSScrollView()
     let tableView = NSTableView()
-    
+
     // drag
     let pasteboardType = NSPasteboard.PasteboardType.string
-    
-    var store: StoreOf<TableStore>
+
+    var viewModel: TableViewModel
     var cancellables: Set<AnyCancellable> = []
-        
+    var observationTask: Task<Void, Never>?
+
     let logger = Logger(label: "table-view-controller")
-    
-    init(_ store: StoreOf<TableStore>) {
+
+    init(_ viewModel: TableViewModel) {
         logger.info("table controller init...")
-        self.store = store
-        
-        // init table data
-        self.datasource = self.store.datasource
-        self.arrayController.setSelectionIndex(self.store.selectIndex)
-        
+        self.viewModel = viewModel
+        self.datasource = viewModel.datasource
         super.init(nibName: nil, bundle: nil)
     }
-    
+
     required init?(coder: NSCoder) {
         fatalError("init(coder:) has not been implemented")
     }
-    
+
     override func loadView() {
         self.view = NSView()
     }
-    
+
     override func viewDidLoad() {
         super.viewDidLoad()
-        if initialized {
-            return
-        }
+        if initialized { return }
         initialized = true
-        
+
         tableView.allowsEmptySelection = false
-        
-        // 设置可drag
-        if self.store.dragable {
+
+        if self.viewModel.dragable {
             tableView.registerForDraggedTypes([pasteboardType])
         }
-        // 设置是否多选
-        if self.store.multiSelect {
+        if self.viewModel.multiSelect {
             tableView.allowsMultipleSelection = true
         }
-        
-        // bind datasource, select index
+
+        // bind datasource
         arrayController.bind(.contentArray, to: self, withKeyPath: "datasource", options: nil)
-        
         tableView.bind(.content, to: arrayController, withKeyPath: "arrangedObjects", options: nil)
-        tableView.bind(.selectionIndexes, to: arrayController, withKeyPath:"selectionIndexes", options: nil)
-        
+        tableView.bind(.selectionIndexes, to: arrayController, withKeyPath: "selectionIndexes", options: nil)
+
         setupView()
         setupTableView()
-        
-        setupSubscriptions()
-        
-        // init context menu
-        if !store.contextMenus.isEmpty {
-            let menu = NSMenu()
-            store.contextMenus.forEach { item in
-                let menuItem = NSMenuItem(title: item.rawValue, action: #selector(contextMenuAction(_:)), keyEquivalent: item.ext.keyEquivalent)
-                
-                menu.addItem(menuItem)
+        startObserving()
+    }
+
+    func updateViewModel(_ newVM: TableViewModel) {
+        if self.viewModel === newVM { return }
+        logger.info("table controller update viewModel...")
+        self.viewModel = newVM
+        observationTask?.cancel()
+        startObserving()
+    }
+
+    // MARK: - Observe @Observable TableViewModel using withObservationTracking
+    func startObserving() {
+        observationTask?.cancel()
+        observationTask = Task { @MainActor [weak self] in
+            while !Task.isCancelled {
+                guard let self else { return }
+                // Capture current values
+                let datasource = self.viewModel.datasource
+                let selectIndex = self.viewModel.selectIndex
+                let defaultSelectIndex = self.viewModel.defaultSelectIndex
+
+                // Apply changes to NSTableView
+                self.updateTableView(datasource: datasource, selectIndex: selectIndex, defaultSelectIndex: defaultSelectIndex)
+
+                // Wait for next change using withObservationTracking continuation
+                await withCheckedContinuation { (continuation: CheckedContinuation<Void, Never>) in
+                    _ = withObservationTracking {
+                        _ = self.viewModel.datasource
+                        _ = self.viewModel.selectIndex
+                        _ = self.viewModel.defaultSelectIndex
+                    } onChange: {
+                        continuation.resume()
+                    }
+                }
             }
-            
-            tableView.menu = menu
         }
     }
-    
-    func updateStore(_ store: StoreOf<TableStore>) {
-        if self.store === store {
-            return
+
+    private func updateTableView(datasource: [AnyHashable], selectIndex: Int, defaultSelectIndex: Int) {
+        self.setValue(datasource, forKey: "datasource")
+        self.tableView.reloadData()
+
+        // Handle default selection
+        if defaultSelectIndex >= 0 && defaultSelectIndex < datasource.count {
+            self.arrayController.setSelectionIndex(defaultSelectIndex)
+        } else if selectIndex >= 0 && selectIndex < datasource.count {
+            self.arrayController.setSelectionIndex(selectIndex)
+        } else {
+            self.arrayController.setSelectionIndex(NSNotFound)
         }
-        self.logger.info("table controller update store...")
-        self.store = store
-        self.cancellables.removeAll()
-        setupSubscriptions()
     }
-    
-    func setupSubscriptions() {
-        self.store.publisher.defaultSelectIndex
-            .sink(receiveValue: { [weak self] index in
-                guard let self = self else { return }
-                self.logger.info("table store select index publisher, index: \(index)")
-                DispatchQueue.main.async {
-                    self.arrayController.setSelectionIndex(index)
-                }
-            })
-            .store(in: &self.cancellables)
-        
-        // 监听数据变化
-        self.store.publisher.datasource
-            .sink(receiveValue: { [weak self] datasource in
-                guard let self = self else { return }
-                self.logger.info("table store data source publisher, data source length: \(datasource.count)")
-                
-                DispatchQueue.main.async {
-                    self.setValue(datasource, forKey: "datasource")
-                    self.arrayController.setSelectionIndex(self.store.selectIndex)
-                    self.tableView.reloadData()
-                }
-            })
-            .store(in: &self.cancellables)
-    }
-    
-    //    override func viewDidLayout() {
-    //        if !initialized {
-    //            initialized = true
-    //        }
-    //    }
-    
-    /**
-     NSLayoutConstraint(item: 视图,
-     attribute: 约束属性,
-     relatedBy: 约束关系,
-     toItem: 参照视图,
-     attribute: 参照属性,
-     multiplier: 乘积,
-     constant: 约束数值)
-     */
+
     func setupView() {
-        //使用Auto Layout的方式来布局
         self.view.translatesAutoresizingMaskIntoConstraints = false
     }
-    
+
     func setupTableView() {
         self.view.addSubview(scrollView)
         self.scrollView.translatesAutoresizingMaskIntoConstraints = false
@@ -198,207 +168,145 @@ class NTableController: NSViewController{
         tableView.frame = scrollView.bounds
         tableView.delegate = self
         tableView.dataSource = self
-        
+
         tableView.usesAlternatingRowBackgroundColors = true
-        //        tableView.headerView = nil
         scrollView.backgroundColor = NSColor.clear
         scrollView.drawsBackground = false
         scrollView.autohidesScrollers = true
         scrollView.contentInsets = NSEdgeInsets(top: 0, left: -40, bottom: 0, right: 0)
         scrollView.scrollerInsets = NSEdgeInsets(top: 0, left: -40, bottom: 0, right: 0)
-        
+
         tableView.style = .fullWidth
         tableView.backgroundColor = NSColor.clear
-        
         tableView.columnAutoresizingStyle = .lastColumnOnlyAutoresizingStyle
-        
         tableView.doubleAction = #selector(onDoubleAction(_:))
-        
-        for column in store.columns {
+
+        for column in viewModel.columns {
             let col = NSTableColumn(identifier: NSUserInterfaceItemIdentifier(rawValue: column.key))
             col.width = column.width ?? column.type.width
             col.title = column.title
             tableView.addTableColumn(col)
         }
-        
-        // 最后一列自适应
+
         tableView.sizeLastColumnToFit()
-        
         scrollView.documentView = tableView
-        
-        //        scrollView.addSubview(tableView)
         scrollView.hasHorizontalScroller = false
         scrollView.hasVerticalScroller = true
+
+        // init context menu
+        if !viewModel.contextMenus.isEmpty {
+            let menu = NSMenu()
+            viewModel.contextMenus.forEach { item in
+                let menuItem = NSMenuItem(title: item.rawValue, action: #selector(contextMenuAction(_:)), keyEquivalent: item.ext.keyEquivalent)
+                menu.addItem(menuItem)
+            }
+            tableView.menu = menu
+        }
     }
-    
-    
-    
-    //MARK: table event handler
-    // 监听键盘删除事件
+
+    // MARK: - Key Events
+
     override func keyDown(with event: NSEvent) {
-        
         let selectIndex = tableView.selectedRow
         if event.specialKey == NSEvent.SpecialKey.delete {
             logger.info("on delete key down, delete index: \(selectIndex)")
-            
             if selectIndex > -1 {
-                self.store.send(.delete(selectIndex))
+                viewModel.delete(index: selectIndex)
             }
-        }
-        // cmd
-        else if event.modifierFlags.intersection(.deviceIndependentFlagsMask) == .command {
+        } else if event.modifierFlags.intersection(.deviceIndependentFlagsMask) == .command {
             if event.charactersIgnoringModifiers == "c" {
                 logger.info("on table keyboard event: copy, index: \(selectIndex)")
-                
                 if selectIndex > -1 {
-                    self.store.send(.copy(selectIndex))
+                    viewModel.copy(index: selectIndex)
                 }
-            }
-            else if event.charactersIgnoringModifiers == "e" {
+            } else if event.charactersIgnoringModifiers == "e" {
                 logger.info("on table keyboard event: edit, index: \(selectIndex)")
-                
                 if selectIndex > -1 {
-                    self.store.send(.double(selectIndex))
+                    viewModel.doubleClick(index: selectIndex)
                 }
             }
         }
     }
-    
-    
-    // double click action
+
+    // MARK: - Double Click
+
     @objc private func onDoubleAction(_ sender: AnyObject) {
         logger.info("table view on double click action, row: \(tableView.clickedRow)")
         let selectIndex = tableView.clickedRow
-        guard selectIndex > -1 && selectIndex < self.datasource.count else {
-            return
-        }
-        
-        self.store.send(.double(selectIndex))
+        guard selectIndex > -1 && selectIndex < self.datasource.count else { return }
+        viewModel.doubleClick(index: selectIndex)
     }
-    
-    
-    // context menu
+
+    // MARK: - Context Menu
+
     @objc private func contextMenuAction(_ sender: AnyObject) {
-        guard let menuItem = sender as? NSMenuItem else {
-            return
-        }
-        
+        guard let menuItem = sender as? NSMenuItem else { return }
         let index = tableView.clickedRow
-        if index < 0 {
-            return
-        }
-        
+        if index < 0 { return }
         logger.info("context menu action, menu: \(menuItem.title), index: \(index)")
         if menuItem.title == "Copy" {
-            self.store.send(.copy(index))
+            viewModel.copy(index: index)
         } else {
-            self.store.send(.contextMenu(menuItem.title, index))
+            viewModel.contextMenu(title: menuItem.title, index: index)
         }
     }
-    
 }
 
-//MARK: - NSTableViewDelegate basic opration
+// MARK: - NSTableViewDelegate
+
 extension NTableController: NSTableViewDelegate {
-    
-    // 构建单元格
+
     func tableView(_ tableView: NSTableView, viewFor tableColumn: NSTableColumn?, row: Int) -> NSView? {
-        guard let tableColumn = tableColumn else {
-            return nil
-        }
-        
-        guard let column = self.store.columns.filter({ $0.key == tableColumn.identifier.rawValue}).first else { return nil }
-        
+        guard let tableColumn = tableColumn else { return nil }
+        guard let column = self.viewModel.columns.filter({ $0.key == tableColumn.identifier.rawValue }).first else { return nil }
+
         var tableCellView = tableView.makeView(withIdentifier: NSUserInterfaceItemIdentifier(column.key), owner: self) as? TableCellView
         if tableCellView == nil {
             tableCellView = TableCellView(tableView, tableColumn: tableColumn, column: column, row: row)
         }
-        
         return tableCellView
     }
-    
+
     func tableViewSelectionDidChange(_ notification: Notification) {
-        guard let tableView = notification.object as? NSTableView else {return}
-        
+        guard let tableView = notification.object as? NSTableView else { return }
         let selectIndex = tableView.selectedRow
         let selectIndexes: [Int] = Array(tableView.selectedRowIndexes)
         self.logger.info("table selection did change, select index: \(selectIndex), indexes: \(selectIndexes)")
         DispatchQueue.main.async {
-            self.store.send(.selectionChange(selectIndex, selectIndexes))
+            self.viewModel.selectionChange(index: selectIndex, indexes: selectIndexes)
         }
     }
-    
 }
 
-//MARK: - NSTableViewDelegate drag opration
-extension NTableController: NSTableViewDataSource {
-    
-    // 获取id
-    // For the source table view
-    func tableView(_ tableView: NSTableView, pasteboardWriterForRow row: Int) -> NSPasteboardWriting? {
+// MARK: - NSTableViewDataSource (Drag)
 
-        let rowAnyObj = self.store.datasource[row]
-      
+extension NTableController: NSTableViewDataSource {
+
+    func tableView(_ tableView: NSTableView, pasteboardWriterForRow row: Int) -> NSPasteboardWriting? {
+        let rowAnyObj = self.viewModel.datasource[row]
         let value = "\(rowAnyObj.hashValue)"
-        
         let pasteboardItem = NSPasteboardItem()
         pasteboardItem.setString(value, forType: pasteboardType)
         return pasteboardItem
     }
-    
-    // For the destination table view
+
     func tableView(_ tableView: NSTableView, validateDrop info: NSDraggingInfo, proposedRow row: Int, proposedDropOperation dropOperation: NSTableView.DropOperation) -> NSDragOperation {
-        if dropOperation == .above {
-            return .move
-        } else {
-            return []
-        }
+        return dropOperation == .above ? .move : []
     }
-    
-    // For the destination table view
+
     func tableView(_ tableView: NSTableView, acceptDrop info: NSDraggingInfo, row: Int, dropOperation: NSTableView.DropOperation) -> Bool {
         guard
             let that = info.draggingPasteboard.pasteboardItems?.first,
             let theString = that.string(forType: pasteboardType),
-            let originalRow = self.store.datasource.firstIndex(where: { item in
+            let originalRow = self.viewModel.datasource.firstIndex(where: { item in
                 return "\(item.hashValue)" == theString
             })
         else { return false }
-        
-        if originalRow == row {
-            return false
-        }
-        
-        // Animate the rows
-//        tableView.beginUpdates()
-//        tableView.moveRow(at: originalRow, to: newRow)
-//        tableView.endUpdates()
-        
-        // Persist the ordering by saving your data model
-        // saveAccountsReordered(at: originalRow, to: newRow)
-        self.store.send(.dragComplete(originalRow, row))
-        logger.info("drad complete, at: \(originalRow), to: \(row)")
-        
+
+        if originalRow == row { return false }
+
+        viewModel.dragComplete(from: originalRow, to: row)
+        logger.info("drag complete, at: \(originalRow), to: \(row)")
         return true
     }
 }
-
-//struct NTable_Previews: PreviewProvider {
-//    static var columns:[NTableColumn] = [NTableColumn(type: .IMAGE, title: "icon", key: "name", width: 20),  NTableColumn(title: "name", key: "name", width: 100)]
-//    @State private static var datasource:[Any] = [RedisModel(name: "hello-test"), RedisModel(name: "hello-dev")]
-//    @State static var index = 1
-//    static var previews: some View {
-//        VStack {
-//            NTableView(columns: columns, datasource: $datasource, selectIndex: $index)
-//                .preferredColorScheme(.light)
-//
-//            Text("\(index), \(datasource.count)")
-//            Button("add", action: {
-//                self.index += 1
-//                datasource.append(RedisModel(name: "helllolsfas"))
-//            })
-//        }
-//        .frame(width: 700, height: 600, alignment: .leading)
-//        .background(Color.gray)
-//    }
-//}

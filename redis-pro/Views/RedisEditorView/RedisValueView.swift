@@ -3,21 +3,21 @@
 //  redis-pro
 //
 //  Liquid Glass key value editor container.
+//  Migrated to MVVM (Swift 6)
 //
 
 import SwiftUI
-import ComposableArchitecture
 
 struct RedisValueView: View {
-    var store: StoreOf<ValueStore>
+    @State var viewModel: ValueViewModel
 
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
-            RedisValueHeaderView(store: store.scope(state: \.keyState, action: \.keyAction))
+            RedisValueHeaderView(viewModel: viewModel.key)
 
             Divider()
 
-            RedisValueEditView(store: store)
+            RedisValueEditView(viewModel: viewModel)
         }
     }
 }

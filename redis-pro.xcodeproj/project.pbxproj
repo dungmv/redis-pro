@@ -84,7 +84,7 @@
 		43EADB0826200540003B8310 /* IconButton.swift in Sources */ = {isa = PBXBuildFile; fileRef = 43EADB0726200540003B8310 /* IconButton.swift */; };
 		43F22EE3269C2D6600A00F97 /* TextViewController.xib in Resources */ = {isa = PBXBuildFile; fileRef = 43F22EE2269C2D6600A00F97 /* TextViewController.xib */; };
 		43F22EE5269C2E0900A00F97 /* TextViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 43F22EE4269C2E0900A00F97 /* TextViewController.swift */; };
-		43F22EE9269E7F9500A00F97 /* README.zh_CN.md in Resources */ = {isa = PBXBuildFile; fileRef = 43F22EE8269E7F9500A00F97 /* README.zh_CN.md */; };
+
 		43F22EED269ED9D500A00F97 /* SlowLogView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 43F22EEC269ED9D500A00F97 /* SlowLogView.swift */; };
 		43F22EEF269EDF7B00A00F97 /* SlowLogModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 43F22EEE269EDF7B00A00F97 /* SlowLogModel.swift */; };
 		43F22EF5269FCE6000A00F97 /* DateHelper.swift in Sources */ = {isa = PBXBuildFile; fileRef = 43F22EF4269FCE6000A00F97 /* DateHelper.swift */; };
@@ -144,7 +144,7 @@
 		628F9AA2289EA7C50003B6C0 /* SSHTunnel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 628F9AA1289EA7C50003B6C0 /* SSHTunnel.swift */; };
 		628F9AA4289EAEE90003B6C0 /* RedisClientSSH.swift in Sources */ = {isa = PBXBuildFile; fileRef = 628F9AA3289EAEE90003B6C0 /* RedisClientSSH.swift */; };
 		629E0B772CE629B1001CDC77 /* Puppy in Frameworks */ = {isa = PBXBuildFile; productRef = 629E0B762CE629B1001CDC77 /* Puppy */; };
-		629E0B7F2CE62E88001CDC77 /* ComposableArchitecture in Frameworks */ = {isa = PBXBuildFile; productRef = 629E0B7E2CE62E88001CDC77 /* ComposableArchitecture */; };
+
 		62B399DE2C9EFC2C0092FB17 /* TestView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 62B399DD2C9EFC2C0092FB17 /* TestView.swift */; };
 		62B399E02CA011480092FB17 /* AppMain.swift in Sources */ = {isa = PBXBuildFile; fileRef = 62B399DF2CA011480092FB17 /* AppMain.swift */; };
 		62BDAB2E293B040C00ADA406 /* Tests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 62BDAB2D293B040C00ADA406 /* Tests.swift */; };
@@ -296,7 +296,7 @@
 		43EADB0726200540003B8310 /* IconButton.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = IconButton.swift; sourceTree = "<group>"; };
 		43F22EE2269C2D6600A00F97 /* TextViewController.xib */ = {isa = PBXFileReference; lastKnownFileType = file.xib; path = TextViewController.xib; sourceTree = "<group>"; };
 		43F22EE4269C2E0900A00F97 /* TextViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TextViewController.swift; sourceTree = "<group>"; };
-		43F22EE8269E7F9500A00F97 /* README.zh_CN.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = README.zh_CN.md; sourceTree = "<group>"; };
+
 		43F22EEC269ED9D500A00F97 /* SlowLogView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SlowLogView.swift; sourceTree = "<group>"; };
 		43F22EEE269EDF7B00A00F97 /* SlowLogModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SlowLogModel.swift; sourceTree = "<group>"; };
 		43F22EF4269FCE6000A00F97 /* DateHelper.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DateHelper.swift; sourceTree = "<group>"; };
@@ -414,7 +414,7 @@
 				5C35809E2FA8313E008E23C2 /* Valkey in Frameworks */,
 				CEA1EF4D277C56DD00D300E9 /* NIO in Frameworks */,
 				629E0B772CE629B1001CDC77 /* Puppy in Frameworks */,
-				629E0B7F2CE62E88001CDC77 /* ComposableArchitecture in Frameworks */,
+
 				CEA1EF4A277C56B100D300E9 /* NIOSSH in Frameworks */,
 				6237D032275C954A000ACD6A /* Logging in Frameworks */,
 				CEA1EF51277C56DD00D300E9 /* NIOCore in Frameworks */,
@@ -481,7 +481,7 @@
 				438BBEA82654DD3200B458BF /* Frameworks */,
 				4370534B2626E65D00D8F1B7 /* README.md */,
 				62D741B1284B51600049AB3C /* Q&A.md */,
-				43F22EE8269E7F9500A00F97 /* README.zh_CN.md */,
+
 				621531FF27775260009F0F41 /* .gitignore */,
 				431FD84226BD2F1200151934 /* CHANGELOG.md */,
 				43CD2868267091B600E11876 /* .version */,
@@ -894,7 +894,7 @@
 				CEA1EF50277C56DD00D300E9 /* NIOCore */,
 				623E46B92B663E5700C28904 /* SwiftJSONFormatter */,
 				629E0B762CE629B1001CDC77 /* Puppy */,
-				629E0B7E2CE62E88001CDC77 /* ComposableArchitecture */,
+
 				5C35809D2FA8313E008E23C2 /* Valkey */,
 			);
 			productName = "redis-pro";
@@ -954,7 +954,7 @@
 				CEA1EF4B277C56DD00D300E9 /* XCRemoteSwiftPackageReference "swift-nio" */,
 				623E46B82B663E5700C28904 /* XCRemoteSwiftPackageReference "SwiftJSONFormatter" */,
 				629E0B752CE629B1001CDC77 /* XCRemoteSwiftPackageReference "Puppy" */,
-				629E0B7D2CE62E88001CDC77 /* XCRemoteSwiftPackageReference "swift-composable-architecture" */,
+
 				437499562CE875D600869391 /* XCRemoteSwiftPackageReference "swift-syntax" */,
 				5C35809C2FA7D8CF008E23C2 /* XCRemoteSwiftPackageReference "valkey-swift" */,
 			);
@@ -977,7 +977,7 @@
 				4320AAFB25B6740A00A8E214 /* Preview Assets.xcassets in Resources */,
 				431FD84326BD2F1200151934 /* CHANGELOG.md in Resources */,
 				43CD289E26732F4C00E11876 /* Localizable.strings in Resources */,
-				43F22EE9269E7F9500A00F97 /* README.zh_CN.md in Resources */,
+
 				4320AAF825B6740A00A8E214 /* Assets.xcassets in Resources */,
 				43F22EE3269C2D6600A00F97 /* TextViewController.xib in Resources */,
 			);
@@ -1362,7 +1362,7 @@
 				MARKETING_VERSION = 3.2.0;
 				PRODUCT_BUNDLE_IDENTIFIER = "com.dungmv.redis-pro";
 				PRODUCT_NAME = "$(TARGET_NAME)";
-				SWIFT_VERSION = 5.0;
+				SWIFT_VERSION = 6.0;
 			};
 			name = Debug;
 		};
@@ -1396,7 +1396,7 @@
 				PRODUCT_BUNDLE_IDENTIFIER = "com.dungmv.redis-pro";
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				PROVISIONING_PROFILE_SPECIFIER = "";
-				SWIFT_VERSION = 5.0;
+				SWIFT_VERSION = 6.0;
 			};
 			name = Release;
 		};
@@ -1418,7 +1418,7 @@
 				SUPPORTS_MACCATALYST = NO;
 				SUPPORTS_MAC_DESIGNED_FOR_IPHONE_IPAD = NO;
 				SWIFT_EMIT_LOC_STRINGS = NO;
-				SWIFT_VERSION = 5.0;
+				SWIFT_VERSION = 6.0;
 				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/redis-pro.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/redis-pro";
 			};
 			name = Debug;
@@ -1441,7 +1441,7 @@
 				SUPPORTS_MACCATALYST = NO;
 				SUPPORTS_MAC_DESIGNED_FOR_IPHONE_IPAD = NO;
 				SWIFT_EMIT_LOC_STRINGS = NO;
-				SWIFT_VERSION = 5.0;
+				SWIFT_VERSION = 6.0;
 				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/redis-pro.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/redis-pro";
 			};
 			name = Release;
@@ -1519,16 +1519,7 @@
 				minimumVersion = 0.9.0;
 			};
 		};
-		629E0B7D2CE62E88001CDC77 /* XCRemoteSwiftPackageReference "swift-composable-architecture" */ = {
-			isa = XCRemoteSwiftPackageReference;
-			repositoryURL = "https://github.com/pointfreeco/swift-composable-architecture";
-			requirement = {
-				kind = upToNextMajorVersion;
-				minimumVersion = 1.25.5;
-			};
-			traits = (
-			);
-		};
+
 		CEA1EF48277C56B100D300E9 /* XCRemoteSwiftPackageReference "swift-nio-ssh" */ = {
 			isa = XCRemoteSwiftPackageReference;
 			repositoryURL = "https://github.com/apple/swift-nio-ssh";
@@ -1568,11 +1559,7 @@
 			package = 629E0B752CE629B1001CDC77 /* XCRemoteSwiftPackageReference "Puppy" */;
 			productName = Puppy;
 		};
-		629E0B7E2CE62E88001CDC77 /* ComposableArchitecture */ = {
-			isa = XCSwiftPackageProductDependency;
-			package = 629E0B7D2CE62E88001CDC77 /* XCRemoteSwiftPackageReference "swift-composable-architecture" */;
-			productName = ComposableArchitecture;
-		};
+
 		CEA1EF49277C56B100D300E9 /* NIOSSH */ = {
 			isa = XCSwiftPackageProductDependency;
 			package = CEA1EF48277C56B100D300E9 /* XCRemoteSwiftPackageReference "swift-nio-ssh" */;

@@ -3,29 +3,30 @@
 //  redis-pro
 //
 //  Created by chengpanwang on 2021/7/15.
+//  Fixed for Swift 6 — nonisolated global mutable state
 //
 
 import Foundation
 import Logging
 
-class DateHelper {
-    
+final class DateHelper: @unchecked Sendable {
+
     static let logger = Logger(label: "number-helper")
 
-    private static var dateTimeFormatter:DateFormatter = initDateTimeFormater()
-    
+    // Fix Swift 6: nonisolated global mutable state → use nonisolated(unsafe) or a computed var
+    nonisolated(unsafe) private static var dateTimeFormatter: DateFormatter = initDateTimeFormater()
+
     private static func initDateTimeFormater() -> DateFormatter {
         logger.info("初始化 datetime formatter...")
         let dateFormatter = DateFormatter()
-        dateFormatter.timeZone = TimeZone(abbreviation: "GMT+8") //Set timezone that you want
+        dateFormatter.timeZone = TimeZone(abbreviation: "GMT+8")
         dateFormatter.locale = NSLocale.current
-        dateFormatter.dateFormat = "yyyy-MM-dd HH:mm:ss" //Specify your format that you want
+        dateFormatter.dateFormat = "yyyy-MM-dd HH:mm:ss"
         return dateFormatter
     }
-    
-    static func formatDateTime(timestamp:Int) -> String {
+
+    static func formatDateTime(timestamp: Int) -> String {
         let date = Date(timeIntervalSince1970: TimeInterval(timestamp))
         return dateTimeFormatter.string(from: date)
     }
-    
 }

@@ -8,7 +8,7 @@
 
 import Foundation
 
-public class ClientModel:NSObject, Identifiable {
+public class ClientModel: NSObject, Identifiable, @unchecked Sendable {
     @objc public var id:String = ""
     @objc var name:String = ""
     @objc var addr:String = ""

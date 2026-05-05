@@ -3,104 +3,82 @@
 //  redis-pro
 //
 //  Created by chengpan on 2022/6/4.
+//  Migrated to MVVM (Swift 6)
 //
 
 import Logging
 import Foundation
-import ComposableArchitecture
+import Observation
 
 private let logger = Logger(label: "redis-info-store")
 
-@Reducer
-struct RedisInfoStore {
-    
-    @ObservableState
-    struct State: Equatable {
-        var section:String = "Server"
-        var tableState: TableStore.State = TableStore.State(columns: [.init(title: "Key", key: "key", width: 120), .init(title: "Value", key: "value", width: 100), .init(title: "Desc", key: "desc", width: 800)]
-                                                , datasource: [], selectIndex: -1)
-        var redisInfoModels:[RedisInfoModel] = [RedisInfoModel(section: "Server")]
-        
-        init() {
-            logger.info("redis info state init ...")
-        }
+@MainActor
+@Observable
+final class RedisInfoViewModel {
+    var section: String = "Server"
+    var redisInfoModels: [RedisInfoModel] = [RedisInfoModel(section: "Server")]
+    let table: TableViewModel
+
+    private let redisInstance: RedisInstanceModel
+
+    init(redisInstance: RedisInstanceModel) {
+        self.redisInstance = redisInstance
+        self.table = TableViewModel(
+            columns: [
+                .init(title: "Key", key: "key", width: 120),
+                .init(title: "Value", key: "value", width: 100),
+                .init(title: "Desc", key: "desc", width: 800)
+            ],
+            datasource: []
+        )
+        logger.info("RedisInfoViewModel init ...")
     }
 
-    enum Action: Equatable {
-        case initial
-        case getValue
-        case setValue([RedisInfoModel])
-        case setTab(String)
-        case refresh
-        case resetState
-        case tableAction(TableStore.Action)
+    func initial() {
+        logger.info("redis info initial...")
+        getValue()
     }
-    
-    @Dependency(\.redisInstance) var redisInstanceModel:RedisInstanceModel
-    let mainQueue: AnySchedulerOf<DispatchQueue> = .main
-    
-    
-    var body: some Reducer<State, Action> {
-        Scope(state: \.tableState, action: \.tableAction) {
-            TableStore()
-        }
-        Reduce { state, action in
-            switch action {
-            // 初始化已设置的值
-            case .initial:
-            
-                logger.info("redis info store initial...")
-                return .run { send in
-                    await send(.getValue)
-                }
-            
-            case .getValue:
-                return .run { send in
-                    let r = try await redisInstanceModel.getClient().info()
-                    return await send(.setValue(r))
-                }
-            
-            case let .setValue(redisInfos):
-                let section = redisInfos.count > 0 ? redisInfos[0].section : ""
-                state.redisInfoModels = redisInfos
-                
-                return .run { send in
-                    await send(.setTab(section))
-                }
-                
-            case let .setTab(tab):
-                state.section = tab
-                state.tableState.selectIndex = -1
-                let redisInfoModels = state.redisInfoModels
-                
-                guard redisInfoModels.count > 0 else {
-                    return .run { send in
-                        await send(.tableAction(.reset))
-                    }
-                }
-                
-                let redisInfoModel = redisInfoModels.first(where: {
-                    $0.section == tab
-                })
-                state.tableState.datasource = redisInfoModel?.infos ?? []
-                
-                return .none
-            
-            case .refresh:
-                return .run { send in
-                    await send(.getValue)
-                }
-                
-            case .resetState:
-                return .run { send in
-                    let _ = try await redisInstanceModel.getClient().resetState()
-                    return await send(.refresh)
-                }
-                
-            case .tableAction:
-                return .none
+
+    func refresh() {
+        getValue()
+    }
+
+    func getValue() {
+        Task {
+            do {
+                let r = try await redisInstance.getClient().info()
+                setValue(r)
+            } catch {
+                Messages.show(error)
             }
         }
     }
 
+    func setValue(_ redisInfos: [RedisInfoModel]) {
+        let section = redisInfos.count > 0 ? redisInfos[0].section : ""
+        redisInfoModels = redisInfos
+        setTab(section)
+    }
+
+    func setTab(_ tab: String) {
+        section = tab
+        table.selectIndex = -1
+        guard redisInfoModels.count > 0 else {
+            table.reset()
+            return
+        }
+        let redisInfoModel = redisInfoModels.first(where: { $0.section == tab })
+        table.datasource = redisInfoModel?.infos ?? []
+    }
+
+    func resetState() {
+        Task {
+            do {
+                let _ = try await redisInstance.getClient().resetState()
+                refresh()
+            } catch {
+                Messages.show(error)
+            }
+        }
+    }
 }

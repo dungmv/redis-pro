@@ -10,13 +10,12 @@ import NIO
 import Valkey
 import Logging
 import NIOSSH
-import ComposableArchitecture
 import Cocoa
 
-class RedisClient {
+class RedisClient: @unchecked Sendable {
     let logger = Logger(label: "redis-client")
     var redisModel: RedisModel
-    var appContextStore: StoreOf<AppContextStore>? = nil
+    var appContext: AppContext? = nil
     
     // Valkey Client
     var valkeyClient: ValkeyClient?
@@ -56,8 +55,8 @@ class RedisClient {
     }
     
     func loading(_ bool: Bool) {
-        DispatchQueue.main.async {
-            self.appContextStore?.send(bool ? .show : .hide)
+        Task { @MainActor in
+            bool ? self.appContext?.show() : self.appContext?.hide()
         }
     }
     
@@ -177,7 +176,7 @@ struct RESPRenderableWrapper: RESPRenderable {
 }
 
 // Custom command to support raw commands from the console
-struct AnyCommand: ValkeyCommand {
+struct AnyCommand: ValkeyCommand, @unchecked Sendable {
     typealias Response = RESPToken
     static var name: String { "ANY" }
     var keysAffected: [ValkeyKey] { [] }

@@ -3,54 +3,55 @@
 //  redis-pro
 //
 //  Liquid Glass pagination controls.
+//  Migrated to MVVM (Swift 6)
 //
 
 import SwiftUI
-import ComposableArchitecture
 
 struct PageBar: View {
-    @Bindable var store: StoreOf<PageStore>
+    @State var viewModel: PageViewModel
 
     var body: some View {
-        WithPerceptionTracking {
-            HStack(alignment: .center, spacing: 4) {
-                if store.showTotal {
-                    Text("Total: \(store.total)")
-                        .font(LiquidGlass.FONT_FOOTER)
-                        .foregroundStyle(.secondary)
-                        .lineLimit(1)
+        HStack(alignment: .center, spacing: 4) {
+            if viewModel.showTotal {
+                Text("Total: \(viewModel.total)")
+                    .font(LiquidGlass.FONT_FOOTER)
+                    .foregroundStyle(.secondary)
+                    .lineLimit(1)
+            }
+
+            Picker("", selection: Binding(
+                get: { viewModel.size },
+                set: { viewModel.updateSize($0) }
+            )) {
+                Text("10").tag(10)
+                Text("50").tag(50)
+                Text("100").tag(100)
+                Text("200").tag(200)
+            }
+            .pickerStyle(.menu)
+            .frame(width: 60)
+            .labelsHidden()
+
+            HStack(spacing: 6) {
+                MIcon(icon: "chevron.left", fontSize: 10, disabled: !viewModel.hasPrev) {
+                    viewModel.prevPage()
                 }
 
-                Picker("", selection: $store.size) {
-                    Text("10").tag(10)
-                    Text("50").tag(50)
-                    Text("100").tag(100)
-                    Text("200").tag(200)
-                }
-                .pickerStyle(.menu)
-                .frame(width: 60)
-                .labelsHidden()
+                Text("\(viewModel.current)/\(viewModel.totalPageText)")
+                    .font(LiquidGlass.FONT_FOOTER)
+                    .foregroundStyle(.secondary)
+                    .frame(minWidth: 36)
+                    .multilineTextAlignment(.center)
+                    .lineLimit(1)
 
-                HStack(spacing: 6) {
-                    MIcon(icon: "chevron.left", fontSize: 10, disabled: !store.hasPrev) {
-                        store.send(.prevPage)
-                    }
-
-                    Text("\(store.current)/\(store.totalPageText)")
-                        .font(LiquidGlass.FONT_FOOTER)
-                        .foregroundStyle(.secondary)
-                        .frame(minWidth: 36)
-                        .multilineTextAlignment(.center)
-                        .lineLimit(1)
-
-                    MIcon(icon: "chevron.right", fontSize: 10, disabled: !store.hasNext) {
-                        store.send(.nextPage)
-                    }
+                MIcon(icon: "chevron.right", fontSize: 10, disabled: !viewModel.hasNext) {
+                    viewModel.nextPage()
                 }
             }
-            .padding(.horizontal, 10)
-            .padding(.vertical, 6)
-            .glassCard(cornerRadius: LiquidGlass.radiusLG)
         }
+        .padding(.horizontal, 10)
+        .padding(.vertical, 6)
+        .glassCard(cornerRadius: LiquidGlass.radiusLG)
     }
 }

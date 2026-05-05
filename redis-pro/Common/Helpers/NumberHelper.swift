@@ -8,10 +8,10 @@
 import Foundation
 import Logging
 
-class NumberHelper {
+class NumberHelper: @unchecked Sendable {
     static let logger = Logger(label: "number-helper")
     
-    static var doubleFormatter:NumberFormatter = {
+    nonisolated(unsafe) static var doubleFormatter:NumberFormatter = {
         logger.info("NumberFormatHelper init double formatter instance ...")
         
         let formatter = NumberFormatter()
@@ -27,7 +27,7 @@ class NumberHelper {
     }()
     
     
-    static var intFormatter:NumberFormatter = {
+    nonisolated(unsafe) static var intFormatter:NumberFormatter = {
         logger.info("NumberFormatHelper init int formatter instance ...")
         
         let formatter = NumberFormatter()

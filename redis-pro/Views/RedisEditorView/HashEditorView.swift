@@ -1,64 +1,51 @@
 //
-//  KeyValueRowEditorView.swift
+//  HashEditorView.swift
 //  redis-pro
 //
 //  Created by chengpanwang on 2021/4/9.
+//  Migrated to MVVM (Swift 6)
 //
 
 import SwiftUI
 import Logging
-import ComposableArchitecture
 
 struct HashEditorView: View {
-    @Bindable var store: StoreOf<HashValueStore>
-    var keyObjectStore: StoreOf<KeyObjectStore>
+    @State var viewModel: ValueViewModel
     private let logger = Logger(label: "redis-hash-editor")
-    
-    init(store: StoreOf<ValueStore>) {
-        self.store = store.scope(state: \.hashValueState, action: \.hashValueAction)
-        self.keyObjectStore = store.scope(state: \.keyObjectState, action: \.keyObjectAction)
-    }
-    
-    
+
     var body: some View {
-    
+        let vm = viewModel.hashValue
         VStack(alignment: .leading, spacing: 0) {
-            HStack(alignment: .center , spacing: MTheme.H_SPACING) {
-                IconButton(icon: "plus", name: "Add", action: {store.send(.addNew)})
-                IconButton(icon: "trash", name: "Delete", disabled: store.tableState.selectIndex < 0, action: {store.send(.deleteConfirm(store.tableState.selectIndex))})
-            
-                SearchBar(placeholder: "Search field...", onCommit: {store.send(.search($0))})
-                PageBar(store: store.scope(state: \.pageState, action: \.pageAction))
+            HStack(alignment: .center, spacing: MTheme.H_SPACING) {
+                IconButton(icon: "plus", name: "Add", action: { vm.addNew() })
+                IconButton(icon: "trash", name: "Delete", disabled: vm.table.selectIndex < 0, action: { vm.deleteConfirm(vm.table.selectIndex) })
+
+                SearchBar(placeholder: "Search field...", onCommit: { vm.search($0) })
+                PageBar(viewModel: vm.page)
             }
             .padding(EdgeInsets(top: MTheme.V_SPACING, leading: 0, bottom: MTheme.V_SPACING, trailing: 0))
-            
-            NTableView(store: store.scope(state: \.tableState, action: \.tableAction))
+
+            NTableView(viewModel: vm.table)
 
             // footer
             HStack(alignment: .center, spacing: 0) {
-                KeyObjectBar(store: keyObjectStore)
+                KeyObjectBar(viewModel: viewModel.keyObject)
                 Spacer()
-                IconButton(icon: "arrow.clockwise", name: "Refresh", action: {store.send(.refresh)})
-
+                IconButton(icon: "arrow.clockwise", name: "Refresh", action: { vm.refresh() })
             }
             .padding(EdgeInsets(top: MTheme.V_SPACING, leading: 0, bottom: 0, trailing: 0))
         }
         .onAppear {
             logger.info("redis hash editor view appear ...")
-            store.send(.initial)
+            vm.initial()
         }
-        .sheet(isPresented: $store.editModalVisible, onDismiss: {
-        }) {
-            WithPerceptionTracking {
-                ModalView("Edit hash entry", action: {store.send(.submit)}) {
-                    VStack(alignment:.leading, spacing: 8) {
-                        FormItemText(placeholder: "Field", editable: store.isNew, value: $store.field)
-                        FormItemTextArea(placeholder: "Value", value: $store.value)
-                    }
+        .sheet(isPresented: Binding(get: { vm.editModalVisible }, set: { vm.editModalVisible = $0 })) {
+            ModalView("Edit hash entry", action: { vm.submit() }) {
+                VStack(alignment: .leading, spacing: 8) {
+                    FormItemText(placeholder: "Field", editable: vm.isNew, value: Binding(get: { vm.field }, set: { vm.field = $0 }))
+                    FormItemTextArea(placeholder: "Value", value: Binding(get: { vm.value }, set: { vm.value = $0 }))
                 }
             }
         }
-        
     }
-    
 }

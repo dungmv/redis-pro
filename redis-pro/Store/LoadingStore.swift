@@ -3,44 +3,29 @@
 //  redis-pro
 //
 //  Created by chengpan on 2022/5/3.
+//  Migrated to MVVM (Swift 6)
 //
-
 
 import Logging
 import Foundation
-import ComposableArchitecture
+import Observation
 
 private let logger = Logger(label: "loading-store")
 
-@Reducer
-struct LoadingStore {
-    
-    @ObservableState
-    struct State: Equatable {
-        var loading: Bool = false
-        
-        init() {
-            logger.info("loading state init ...")
-        }
+@MainActor
+@Observable
+final class LoadingViewModel {
+    var loading: Bool = false
+
+    init() {
+        logger.info("LoadingViewModel init ...")
     }
 
-    enum Action:Equatable {
-        case show
-        case hide
+    func show() {
+        loading = true
     }
-    
-    var body: some Reducer<State, Action> {
-        
-        Reduce { state, action in
-            switch action {
-            case .show:
-                state.loading = true
-                return .none
-            case .hide:
-                state.loading = false
-                return .none
-            }
-        }
+
+    func hide() {
+        loading = false
     }
-    
 }

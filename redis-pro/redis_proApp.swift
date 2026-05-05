@@ -3,45 +3,37 @@
 //  redis-pro
 //
 //  Created by chengpanwang on 2021/1/19.
+//  Migrated to MVVM (Swift 6) — removed TCA Store/ComposableArchitecture
 //
 
 import Foundation
 import SwiftUI
 import Logging
-import ComposableArchitecture
 
 @main
 struct redis_proApp: App {
     private let logger = Logger(label: "app")
     @AppStorage(UserDefaultsKeysEnum.AppColorScheme.rawValue)
     private var colorSchemeValue: String = ColorSchemeEnum.SYSTEM.rawValue
-    
-    // 会造成indexView 多次初始化
-//    @Environment(\.scenePhase) var scenePhase
+
     @NSApplicationDelegateAdaptor(AppDelegate.self) var appDelegate
-    
-    // settings
-    var settingsStore:StoreOf<SettingsStore> = Store(initialState: SettingsStore.State()) {
-        SettingsStore()
-    }
-//    private var store:StoreOf<AppStore>
-    private var rootStore = Store(initialState: AppRootStore.State()) {
-        AppRootStore()
-    }
+
+    private var rootViewModel = AppRootViewModel()
     private var mainWindowId = UUID().uuidString
-    
+
     // 应用启动只初始化一次
     init() {
         // logger init
         LoggerFactory().setUp()
-        rootStore.send(.addWindow(mainWindowId))
+        rootViewModel.addWindow(mainWindowId)
     }
-    
+
     var body: some Scene {
-       
         WindowGroup {
-            IndexView(store: rootStore.scope(state: \.windows[id: self.mainWindowId]!, action: \.windows[id: self.mainWindowId]))
-                .preferredColorScheme(preferredColorScheme)
+            if let appVM = rootViewModel.window(id: mainWindowId) {
+                IndexView(viewModel: appVM)
+                    .preferredColorScheme(preferredColorScheme)
+            }
         }
         .commands {
             CommandGroup(replacing: CommandGroupPlacement.toolbar) {
@@ -54,24 +46,14 @@ struct redis_proApp: App {
         .commands {
             RedisProCommands()
         }
-        
-//        WindowGroup {
-//            IndexView(settingStore: settingsStore)
-//                .onAppear {
-//                    self.settingsStore.send(.initial)
-//                }
-//        }
-//        .commands {
-//            RedisProCommands()
-//        }
-        
+
         WindowGroup("AboutView") {
             AboutView()
                 .preferredColorScheme(preferredColorScheme)
         }.handlesExternalEvents(matching: Set(arrayLiteral: "AboutView"))
-        
+
         Settings {
-            SettingsView(store: settingsStore)
+            SettingsView(viewModel: rootViewModel.windows.first?.settings ?? SettingsViewModel())
                 .preferredColorScheme(preferredColorScheme)
         }
     }
@@ -86,26 +68,24 @@ struct redis_proApp: App {
             return nil
         }
     }
-    
+
     func openNewWindow() {
         guard let currentWindow = NSApp.keyWindow else { return }
-            
+
         // 创建新窗口
         currentWindow.windowController?.newWindowForTab(nil)
-        
+
         // 获取新创建的窗口
         guard let newWindow = NSApp.windows.last,
               newWindow != currentWindow else { return }
-        
-        // 替换内容视图
-                        
+
         let windowId = UUID().uuidString
-        rootStore.send(.addWindow(windowId))
-        let store = rootStore.scope(state: \.windows[id: windowId]!, action: \.windows[id: windowId])
-      
-        let customView = IndexView(store: store)
+        rootViewModel.addWindow(windowId)
+
+        guard let appVM = rootViewModel.window(id: windowId) else { return }
+        let customView = IndexView(viewModel: appVM)
         newWindow.contentViewController = NSHostingController(rootView: customView)
-        
+
         // 添加到标签页
         currentWindow.addTabbedWindow(newWindow, ordered: .above)
     }
@@ -113,39 +93,37 @@ struct redis_proApp: App {
 
 class AppDelegate: NSObject, NSApplicationDelegate {
     let logger = Logger(label: "redis-app")
-    
+
     func applicationWillFinishLaunching(_: Notification) {
         logger.info("redis pro before launch ...")
-        
     }
-    
+
     func applicationDidFinishLaunching(_ notification: Notification) {
         logger.info("redis pro launch complete")
         logger.info("redis pro launch, scene color scheme ready...")
-        
     }
-    
-    func applicationWillTerminate(_ notification: Notification)  {
+
+    func applicationWillTerminate(_ notification: Notification) {
         logger.info("redis pro application will terminate...")
     }
-    
-    func didFinishLaunchingWithOptions(_ notification: Notification)  {
+
+    func didFinishLaunchingWithOptions(_ notification: Notification) {
         logger.info("redis didFinishLaunchingWithOptions...")
     }
-    
+
     func applicationWillUnhide(_: Notification) {
         logger.info("redis pro applicationWillUnhide...")
     }
-    func applicationDidHide(_ notification:Notification) {
+
+    func applicationDidHide(_ notification: Notification) {
         logger.info("redis pro applicationDidHide...")
     }
-    
-    
+
     func applicationWillBecomeActive(_ notification: Notification) {
         logger.info("redis applicationWillBecomeActive...")
     }
-    
-    func applicationWillResignActive(_:Notification) {
+
+    func applicationWillResignActive(_: Notification) {
         logger.info("redis pro applicationWillResignActive...")
     }
 
@@ -154,10 +132,8 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         return true
     }
 
-    func applicationShouldOpenUntitledFile(_:NSApplication) -> Bool {
+    func applicationShouldOpenUntitledFile(_: NSApplication) -> Bool {
         logger.info("redis pro applicationShouldOpenUntitledFile...")
         return true
-
     }
-    
 }

@@ -3,109 +3,110 @@
 //  redis-pro
 //
 //  Created by chengpan on 2022/4/30.
+//  Migrated to MVVM (Swift 6)
 //
 
 import Logging
 import Foundation
-import ComposableArchitecture
+import Observation
+
 private let logger = Logger(label: "table-store")
 
-@Reducer
-struct TableStore {
-    
-    @ObservableState
-    struct State: Equatable {
-        var columns: [NTableColumn] = []
-        var datasource: Array<AnyHashable> = []
-        var contextMenus: [TableContextMenu] = []
-        // 一定要设置-1, 其它值会在view 刷新时， 陷入无限循环
-        var selectIndex: Int = -1
-        var selectIndexes: [Int] = []
-        var defaultSelectIndex: Int = -1
-        var dragable: Bool = false
-        var multiSelect: Bool = false
-        
-        
-//        是否空
-        var isEmpty:Bool {
-            datasource.isEmpty
-        }
-        var isSelect:Bool {
-            selectIndex > -1
-        }
+@MainActor
+@Observable
+final class TableViewModel {
+    var columns: [NTableColumn]
+    var datasource: [AnyHashable]
+    var contextMenus: [TableContextMenu]
+    var selectIndex: Int
+    var selectIndexes: [Int]
+    var defaultSelectIndex: Int
+    var dragable: Bool
+    var multiSelect: Bool
+
+    var isEmpty: Bool { datasource.isEmpty }
+    var isSelect: Bool { selectIndex > -1 }
+
+    // Callbacks for table events (replacing TCA action propagation)
+    var onSelectionChange: ((Int, [Int]) -> Void)?
+    var onDouble: ((Int) -> Void)?
+    var onDelete: ((Int) -> Void)?
+    var onCopy: ((Int) -> Void)?
+    var onContextMenu: ((String, Int) -> Void)?
+    var onDragComplete: ((Int, Int) -> Void)?
+
+    init(
+        columns: [NTableColumn] = [],
+        datasource: [AnyHashable] = [],
+        contextMenus: [TableContextMenu] = [],
+        selectIndex: Int = -1,
+        defaultSelectIndex: Int = -1,
+        dragable: Bool = false,
+        multiSelect: Bool = false
+    ) {
+        self.columns = columns
+        self.datasource = datasource
+        self.contextMenus = contextMenus
+        self.selectIndex = selectIndex
+        self.selectIndexes = []
+        self.defaultSelectIndex = defaultSelectIndex
+        self.dragable = dragable
+        self.multiSelect = multiSelect
+        logger.info("TableViewModel init")
     }
 
-    enum Action:Equatable {
-        case setDatasource([AnyHashable])
-        case setSelectIndex(Int)
-        case selectionChange(Int, [Int])
-        case double(Int)
-        case delete(Int)
-        case copy(Int)
-        case contextMenu(String, Int)
-        case refresh
-        case reset
-        case dragComplete(Int, Int)
+    func setDatasource(_ newDatasource: [AnyHashable]) {
+        datasource = newDatasource
+        selectIndex = min(selectIndex, datasource.count - 1)
     }
-    
-    var body: some Reducer<State, Action> {
-        Reduce { state, action in
-            switch action {
-            case let .setDatasource(datasource):
-                state.datasource = datasource
-                state.selectIndex = min(state.selectIndex, state.datasource.count - 1)
-                return .none
-            
-            case let .setSelectIndex(selectIndex):
-                state.selectIndex = min(selectIndex, state.datasource.count - 1)
-                return .none
-                
-            case .refresh:
-                return .none
-                
-            case let .selectionChange(index, indexes):
-                logger.info("table view on selection change action,  index: \(index)")
-                state.selectIndex = index
-                state.selectIndexes = indexes
-                return .none
-                
-            case let .double(index):
-                logger.info("table view on double click action, index: \(index)")
-                return .none
-                
-            case let .delete(index):
-                logger.info("table view on delete action, index: \(index)")
-                return .none
-                
-            case let .copy(index):
-                logger.info("table view on copy action, index: \(index)")
-                return .none
-                
-            case let .contextMenu(sender, index):
-                logger.info("table view on context menu action, sender: \(sender), index: \(index)")
-                return .none
-                
-            case .reset:
-                state.selectIndex = -1
-                state.datasource = []
-                return .none
-            
-            case let .dragComplete(from, to):
-                
-                let f = state.datasource[from]
-                // 先删除原有的
-                state.datasource.remove(at: from)
-                
-                if from > to {
-                    state.datasource.insert(f, at: to)
-                    state.selectIndex = to
-                } else {
-                    state.datasource.insert(f, at: to - 1)
-                    state.selectIndex = to - 1
-                }
-                
-                return .none
-            }
+
+    func setSelectIndex(_ index: Int) {
+        selectIndex = min(index, datasource.count - 1)
+    }
+
+    func reset() {
+        selectIndex = -1
+        selectIndexes = []
+        datasource = []
+    }
+
+    func selectionChange(index: Int, indexes: [Int]) {
+        logger.info("table selection change, index: \(index)")
+        selectIndex = index
+        selectIndexes = indexes
+        onSelectionChange?(index, indexes)
+    }
+
+    func doubleClick(index: Int) {
+        logger.info("table double click, index: \(index)")
+        onDouble?(index)
+    }
+
+    func delete(index: Int) {
+        logger.info("table delete, index: \(index)")
+        onDelete?(index)
+    }
+
+    func copy(index: Int) {
+        logger.info("table copy, index: \(index)")
+        onCopy?(index)
+    }
+
+    func contextMenu(title: String, index: Int) {
+        logger.info("table context menu, title: \(title), index: \(index)")
+        onContextMenu?(title, index)
+    }
+
+    func dragComplete(from: Int, to: Int) {
+        let f = datasource[from]
+        datasource.remove(at: from)
+        if from > to {
+            datasource.insert(f, at: to)
+            selectIndex = to
+        } else {
+            datasource.insert(f, at: to - 1)
+            selectIndex = to - 1
         }
+        onDragComplete?(from, to)
     }
 }

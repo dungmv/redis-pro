@@ -3,31 +3,32 @@
 //  redis-pro
 //
 //  Liquid Glass connection form.
+//  Migrated to MVVM (Swift 6)
 //
 
 import SwiftUI
-import ComposableArchitecture
 
 struct LoginForm: View {
 
     @Environment(\.openURL) var openURL
-    @Bindable var store: StoreOf<LoginStore>
+    @State var viewModel: LoginViewModel
 
     var body: some View {
-        WithPerceptionTracking {
-            TabView(selection: $store.connectionType) {
-                tcpTab
-                    .tabItem { Label("TCP/IP", systemImage: "network") }
-                    .tag(RedisConnectionTypeEnum.TCP.rawValue)
+        TabView(selection: Binding(
+            get: { viewModel.connectionType },
+            set: { viewModel.connectionType = $0 }
+        )) {
+            tcpTab
+                .tabItem { Label("TCP/IP", systemImage: "network") }
+                .tag(RedisConnectionTypeEnum.TCP.rawValue)
 
-                sshTab
-                    .tabItem { Label("SSH Tunnel", systemImage: "bolt.horizontal") }
-                    .tag(RedisConnectionTypeEnum.SSH.rawValue)
-            }
-            .padding(20)
-            .frame(width: 500, height: store.height)
-            .glassWindowSurface()
+            sshTab
+                .tabItem { Label("SSH Tunnel", systemImage: "bolt.horizontal") }
+                .tag(RedisConnectionTypeEnum.SSH.rawValue)
         }
+        .padding(20)
+        .frame(width: 500, height: viewModel.height)
+        .glassWindowSurface()
     }
 
     // MARK: - TCP Tab
@@ -51,10 +52,10 @@ struct LoginForm: View {
 
                 VStack(alignment: .leading, spacing: 12) {
                     sectionHeader("SSH Configuration", icon: "lock.shield")
-                    FormItemText(label: "SSH Host", placeholder: "hostname", value: $store.sshHost)
-                    FormItemInt(label: "SSH Port", placeholder: "22", value: $store.sshPort)
-                    FormItemText(label: "SSH User", placeholder: "username", value: $store.sshUser)
-                    FormItemPassword(label: "SSH Pass", value: $store.sshPass)
+                    FormItemText(label: "SSH Host", placeholder: "hostname", value: Binding(get: { viewModel.sshHost }, set: { viewModel.sshHost = $0 }))
+                    FormItemInt(label: "SSH Port", placeholder: "22", value: Binding(get: { viewModel.sshPort }, set: { viewModel.sshPort = $0 }))
+                    FormItemText(label: "SSH User", placeholder: "username", value: Binding(get: { viewModel.sshUser }, set: { viewModel.sshUser = $0 }))
+                    FormItemPassword(label: "SSH Pass", value: Binding(get: { viewModel.sshPass }, set: { viewModel.sshPass = $0 }))
                 }
                 .sectionSurface()
                 .padding(.top, 12)
@@ -70,12 +71,12 @@ struct LoginForm: View {
     private var connectionSection: some View {
         VStack(alignment: .leading, spacing: 12) {
             sectionHeader("Connection", icon: "server.rack")
-            FormItemText(label: "Name", placeholder: "connection name", value: $store.name)
-            FormItemText(label: "Host", placeholder: "127.0.0.1", value: $store.host)
-            FormItemInt(label: "Port", placeholder: "6379", value: $store.port)
-            FormItemText(label: "User", placeholder: "default", value: $store.username)
-            FormItemPassword(label: "Password", value: $store.password)
-            FormItemInt(label: "Database", value: $store.database)
+            FormItemText(label: "Name", placeholder: "connection name", value: Binding(get: { viewModel.name }, set: { viewModel.name = $0 }))
+            FormItemText(label: "Host", placeholder: "127.0.0.1", value: Binding(get: { viewModel.host }, set: { viewModel.host = $0 }))
+            FormItemInt(label: "Port", placeholder: "6379", value: Binding(get: { viewModel.port }, set: { viewModel.port = $0 }))
+            FormItemText(label: "User", placeholder: "default", value: Binding(get: { viewModel.username }, set: { viewModel.username = $0 }))
+            FormItemPassword(label: "Password", value: Binding(get: { viewModel.password }, set: { viewModel.password = $0 }))
+            FormItemInt(label: "Database", value: Binding(get: { viewModel.database }, set: { viewModel.database = $0 }))
         }
         .sectionSurface()
     }
@@ -86,7 +87,7 @@ struct LoginForm: View {
 
             // Status + Connect row
             HStack(alignment: .center, spacing: 8) {
-                if !store.loading {
+                if !viewModel.loading {
                     Button(action: {
                         guard let url = URL(string: Const.REPO_URL) else { return }
                         openURL(url)
@@ -99,21 +100,21 @@ struct LoginForm: View {
                     .help("Open documentation")
                 }
 
-                MLoading(text: store.pingR, loadingText: "Connecting...", loading: store.loading)
-                    .help(store.pingR)
+                MLoading(text: viewModel.pingR, loadingText: "Connecting...", loading: viewModel.loading)
+                    .help(viewModel.pingR)
                     .frame(maxWidth: .infinity, alignment: .leading)
 
-                MButton(text: "Connect", action: { store.send(.connect) }, disabled: store.loading, style: .primary, keyEquivalent: .return)
+                MButton(text: "Connect", action: { viewModel.connect() }, disabled: viewModel.loading, style: .primary, keyEquivalent: .return)
                     .keyboardShortcut(.defaultAction)
             }
 
             // Action row
             HStack(spacing: 8) {
-                MButton(text: "Add to Favorites", action: { store.send(.add) })
+                MButton(text: "Add to Favorites", action: { viewModel.add() })
                 Spacer()
-                MButton(text: "Save Changes", action: { store.send(.save) })
+                MButton(text: "Save Changes", action: { viewModel.save() })
                 Spacer()
-                MButton(text: "Test Connection", action: { store.send(.testConnect) }, disabled: store.loading)
+                MButton(text: "Test Connection", action: { viewModel.testConnect() }, disabled: viewModel.loading)
             }
         }
     }

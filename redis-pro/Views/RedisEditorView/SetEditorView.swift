@@ -1,55 +1,44 @@
 //
-//  ListEditorView.swift
+//  SetEditorView.swift
 //  redis-pro
 //
 //  Created by chengpanwang on 2021/4/30.
+//  Migrated to MVVM (Swift 6)
 //
 
 import SwiftUI
 import Logging
-import ComposableArchitecture
 
 struct SetEditorView: View {
-    
-    @Bindable var  store:StoreOf<SetValueStore>
-    var keyObjectStore: StoreOf<KeyObjectStore>
+    @State var viewModel: ValueViewModel
     let logger = Logger(label: "redis-set-editor")
-    
-    init(store: StoreOf<ValueStore>) {
-        self.store = store.scope(state: \.setValueState, action: \.setValueAction)
-        self.keyObjectStore = store.scope(state: \.keyObjectState, action: \.keyObjectAction)
-    }
-    
-    var body: some View {
-        VStack(alignment: .leading, spacing: 0) {
-            HStack(alignment: .center , spacing: 4) {
-                IconButton(icon: "plus", name: "Add", action: {store.send(.addNew)})
-                IconButton(icon: "trash", name: "Delete", disabled: store.tableState.selectIndex < 0, action: {store.send(.deleteConfirm(store.tableState.selectIndex))})
 
-                SearchBar(placeholder: "Search element...", onCommit: {store.send(.search($0))})
-                PageBar(store: store.scope(state: \.pageState, action: \.pageAction))
+    var body: some View {
+        let vm = viewModel.setValue
+        VStack(alignment: .leading, spacing: 0) {
+            HStack(alignment: .center, spacing: 4) {
+                IconButton(icon: "plus", name: "Add", action: { vm.addNew() })
+                IconButton(icon: "trash", name: "Delete", disabled: vm.table.selectIndex < 0, action: { vm.deleteConfirm(vm.table.selectIndex) })
+
+                SearchBar(placeholder: "Search element...", onCommit: { vm.search($0) })
+                PageBar(viewModel: vm.page)
             }
             .padding(EdgeInsets(top: MTheme.V_SPACING, leading: 0, bottom: MTheme.V_SPACING, trailing: 0))
-            
-            NTableView(store: store.scope(state: \.tableState, action: \.tableAction))
 
-            
+            NTableView(viewModel: vm.table)
+
             // footer
             HStack(alignment: .center, spacing: MTheme.H_SPACING) {
-                KeyObjectBar(store: keyObjectStore)
+                KeyObjectBar(viewModel: viewModel.keyObject)
                 Spacer()
-                IconButton(icon: "arrow.clockwise", name: "Refresh", action: {store.send(.refresh)})
+                IconButton(icon: "arrow.clockwise", name: "Refresh", action: { vm.refresh() })
             }
             .padding(EdgeInsets(top: MTheme.V_SPACING, leading: 0, bottom: 0, trailing: 0))
         }
-        .sheet(isPresented: $store.editModalVisible, onDismiss: {
-        }) {
-            
-            WithPerceptionTracking {
-                ModalView("Edit set element", action: {store.send(.submit)}) {
-                    VStack(alignment:.leading, spacing: MTheme.V_SPACING) {
-                        FormItemTextArea(placeholder: "value", value: $store.editValue)
-                    }
+        .sheet(isPresented: Binding(get: { vm.editModalVisible }, set: { vm.editModalVisible = $0 })) {
+            ModalView("Edit set element", action: { vm.submit() }) {
+                VStack(alignment: .leading, spacing: MTheme.V_SPACING) {
+                    FormItemTextArea(placeholder: "value", value: Binding(get: { vm.editValue }, set: { vm.editValue = $0 }))
                 }
             }
         }

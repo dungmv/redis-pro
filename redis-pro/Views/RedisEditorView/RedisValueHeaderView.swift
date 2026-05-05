@@ -3,41 +3,43 @@
 //  redis-pro
 //
 //  Liquid Glass key editor toolbar.
+//  Migrated to MVVM (Swift 6)
 //
 
 import SwiftUI
 import Logging
-import ComposableArchitecture
 
 struct RedisValueHeaderView: View {
 
-    @Bindable var store: StoreOf<KeyStore>
+    @State var viewModel: KeyViewModel
     private static let logger = Logger(label: "redis-value-header")
 
     var body: some View {
-        WithPerceptionTracking {
-            HStack(alignment: .center, spacing: 12) {
-                // Key field
-                FormItemText(
-                    label: "Key",
-                    labelWidth: 36,
-                    required: true,
-                    editable: store.isNew,
-                    value: $store.key
-                )
-                .frame(maxWidth: .infinity)
-                .font(LiquidGlass.fontMono)
+        HStack(alignment: .center, spacing: 12) {
+            // Key field
+            FormItemText(
+                label: "Key",
+                labelWidth: 36,
+                required: true,
+                editable: viewModel.isNew,
+                value: Binding(get: { viewModel.key }, set: { viewModel.key = $0 })
+            )
+            .frame(maxWidth: .infinity)
+            .font(LiquidGlass.fontMono)
 
-                // Type picker
-                RedisKeyTypePicker(label: "Type", value: $store.type, disabled: !store.isNew)
+            // Type picker
+            RedisKeyTypePicker(
+                label: "Type",
+                value: Binding(get: { viewModel.type }, set: { viewModel.type = $0 }),
+                disabled: !viewModel.isNew
+            )
 
-                // TTL field
-                ttlView
-            }
-            .padding(.horizontal, 12)
-            .padding(.vertical, 8)
-            .glassToolbar()
+            // TTL field
+            ttlView
         }
+        .padding(.horizontal, 12)
+        .padding(.vertical, 8)
+        .glassToolbar()
     }
 
     private var ttlView: some View {
@@ -45,16 +47,16 @@ struct RedisValueHeaderView: View {
             FormItemInt(
                 label: "TTL(s)",
                 labelWidth: 46,
-                value: $store.ttl,
+                value: Binding(get: { viewModel.ttl }, set: { viewModel.ttl = $0 }),
                 suffix: "square.and.pencil",
-                onCommit: { store.send(.saveTtl) }
+                onCommit: { viewModel.submit() }
             )
-            .disabled(store.isNew)
+            .disabled(viewModel.isNew)
             .help("TTL in seconds, -1 = no expiry")
             .frame(width: 180)
 
             // TTL indicator chip
-            if !store.isNew {
+            if !viewModel.isNew {
                 ttlBadge
             }
         }
@@ -62,7 +64,7 @@ struct RedisValueHeaderView: View {
 
     @ViewBuilder
     private var ttlBadge: some View {
-        let ttl = store.ttl
+        let ttl = viewModel.ttl
         if ttl == -1 {
             Label("No Expiry", systemImage: "infinity")
                 .font(.system(size: 10, weight: .medium))

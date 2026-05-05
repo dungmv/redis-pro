@@ -28,7 +28,7 @@ class Icon {
         return icon
     }
     
-    static var ICON_APP = appIcon()
+    nonisolated(unsafe) static var ICON_APP = appIcon()
 }
 
 protocol TableIconImage {

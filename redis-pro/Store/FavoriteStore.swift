@@ -1,179 +1,144 @@
 //
-//  Redis.swift
+//  FavoriteStore.swift
 //  redis-pro
 //
 //  Created by chengpan on 2022/4/30.
+//  Migrated to MVVM (Swift 6)
 //
+
 import Logging
 import Foundation
-import ComposableArchitecture
+import Observation
 
 private let logger = Logger(label: "favorite-store")
 
-@Reducer
-struct FavoriteStore {
-    
-    @ObservableState
-    struct State: Equatable {
-        var tableState: TableStore.State = TableStore.State(columns: [NTableColumn(title: "FAVORITES", key: "name", width: 50, icon: .APP)], datasource: [], selectIndex: -1, dragable: true)
-        var loginState: LoginStore.State = LoginStore.State()
+@MainActor
+@Observable
+final class FavoriteViewModel {
+    let table: TableViewModel
+    let login: LoginViewModel
+
+    // Callback to AppViewModel when connection succeeds
+    var onConnectSuccess: ((RedisModel) -> Void)?
+
+    private let redisInstance: RedisInstanceModel
+
+    init(redisInstance: RedisInstanceModel) {
+        self.redisInstance = redisInstance
+        self.table = TableViewModel(
+            columns: [NTableColumn(title: "FAVORITES", key: "name", width: 50, icon: .APP)],
+            datasource: [],
+            dragable: true
+        )
+        self.login = LoginViewModel(redisInstance: redisInstance)
+        setupTableCallbacks()
+        setupLoginCallbacks()
+        logger.info("FavoriteViewModel init ...")
     }
 
-    enum Action:Equatable {
-        case getAll
-        case addNew
-        case save(RedisModel)
-        case deleteConfirm(Int)
-        case delete(Int)
-        case connect(Int)
-        case connectSuccess(RedisModel)
-        case initDefaultSelection
-        case tableAction(TableStore.Action)
-        case loginAction(LoginStore.Action)
-        case loadingAction(LoadingStore.Action)
-        case none
+    private func setupTableCallbacks() {
+        table.onSelectionChange = { [weak self] index, _ in
+            guard let self, index > -1 else { return }
+            logger.info("favorite selection change, index: \(index)")
+            let redisModel = self.table.datasource[index] as! RedisModel
+            self.login.redisModel = redisModel
+        }
+        table.onDouble = { [weak self] index in self?.connect(index) }
+        table.onDelete = { [weak self] index in self?.deleteConfirm(index) }
+        table.onCopy = { [weak self] index in
+            guard let self else { return }
+            let redisModel = self.table.datasource[index] as! RedisModel
+            PasteboardHelper.copy(redisModel.name)
+        }
+        table.onDragComplete = { [weak self] _, _ in
+            guard let self else { return }
+            let _ = RedisDefaults.save(self.table.datasource as! [RedisModel])
+        }
     }
-    
-    
-    @Dependency(\.redisInstance) var redisInstanceModel: RedisInstanceModel
-    
-    var body: some Reducer<State, Action> {
-        Scope(state: \.tableState, action: \.tableAction) {
-            TableStore()
-        }
-        Scope(state: \.loginState, action: \.loginAction) {
-            LoginStore()
-        }
-        
-        Reduce { state, action in
-            switch action {
-            // 查询所有收藏
-            case .getAll:
-                state.tableState.datasource = RedisDefaults.getAll()
-    //            state.tableState.defaultSelectIndex = 1
-                return .none
-            // 设置默认选中
-            case .initDefaultSelection:
-                var selectId:String?
-                let defaultFavorite = RedisDefaults.defaultSelectType()
-                if defaultFavorite == "last" {
-                    selectId = RedisDefaults.getLastId()
-                } else {
-                    selectId = defaultFavorite
-                }
-                
-                guard let selectId = selectId else {
-                    state.tableState.defaultSelectIndex = state.tableState.datasource.count > 0 ? 0 : -1
-                    return .none
-                }
-                
-                if let index = state.tableState.datasource.firstIndex(where: { (e) -> Bool in
-                    return (e as! RedisModel).id == selectId
-                }) {
-                    state.tableState.defaultSelectIndex = index
-                    return .none
-                }
-                
-                state.tableState.defaultSelectIndex = state.tableState.datasource.count > 0 ? 0 : -1
-                return .none
-            case .addNew:
-                return .run { send in
-                    await send(.save(RedisModel()))
-                }
-            case let .save(redisModel):
-                logger.info("save redis favorite: \(redisModel)")
-                
-                let index = RedisDefaults.save(redisModel)
-                state.tableState.selectIndex = index
-                return .run { send in
-                    await send(.getAll)
-                }
-            case let .deleteConfirm(index):
-                if state.tableState.datasource.count <= index {
-                    return .none
-                }
-                
-                let redisModel = state.tableState.datasource[index] as! RedisModel
-                
-                return .run { send in
-                    let r = await Messages.confirmAsync(String(format: NSLocalizedString("CONFIRM_FAVORITE_REDIS_TITLE'%@'", comment: ""), redisModel.name)
-                                      , message: String(format: NSLocalizedString("CONFIRM_FAVORITE_REDIS_MESSAGE'%@'", comment: ""), redisModel.name)
-                                      , primaryButton: "Delete")
-                    
-                    return await send(r ? .delete(index) : .none)
-                }
-            case let .delete(index):
-                let r = RedisDefaults.delete(index)
-                if r {
-                    state.tableState.datasource.remove(at: index)
-                    if state.tableState.datasource.count - 1 < state.tableState.selectIndex {
-                        state.tableState.selectIndex = state.tableState.datasource.count - 1
-                    }
-                }
-                logger.info("delete redis favorite")
-                return .none
-            // login
-            case let .connect(index):
-                let redisModel = state.tableState.datasource[index] as! RedisModel
-                logger.info("connect to redis server, name: \(redisModel.name), host: \(redisModel.host)")
-                
-                return .run { send in
-                    let r = await redisInstanceModel.connect(redisModel)
-                    
-                    logger.info("on connect to redis server: \(redisModel) , result: \(r)")
-                    RedisDefaults.saveLastUse(redisModel)
-                    if r {
-                        await send(.connectSuccess(redisModel))
-                    }
-                }
 
-            case let .tableAction(.copy(index)):
-                let redisModel = state.tableState.datasource[index] as! RedisModel
-                PasteboardHelper.copy(redisModel.name)
-                return .none
-            
-            case .tableAction(.dragComplete(_, _)):
-                let _ = RedisDefaults.save(state.tableState.datasource as! [RedisModel])
-                return .none
-                
-            case let .tableAction(.double(index)):
-                return .run { send in
-                    await send(.connect(index))
-                }
-            case let .tableAction(.selectionChange(index, _)):
-                guard index > -1 else { return .none }
-                
-                logger.info("redis favorite table selection change action, index: \(index)")
-                let redisModel = state.tableState.datasource[index] as! RedisModel
-                state.loginState.redisModel = redisModel
-                return .none
-            case let .tableAction(.delete(index)):
-                return .run { send in
-                    await send(.deleteConfirm(index))
-                }
-            case .tableAction:
-                logger.info("redis favorite table action \(state.tableState.selectIndex)")
-                return .none
-                
-            case .loginAction(.connect):
-                let index = state.tableState.selectIndex
-                return .run { send in
-                    await send(.connect(index))
-                }
-            case .loginAction(.save):
-                let redisModel = state.loginState.redisModel
-                return .run { send in
-                    await send(.save(redisModel))
-                }
-            case .loginAction:
-                logger.info("redis favorite table action \(state.tableState.selectIndex)")
-                return .none
-            case .loadingAction:
-                return .none
-            case .connectSuccess:
-                return .none
-            case .none:
-                return .none
+    private func setupLoginCallbacks() {
+        login.onConnect = { [weak self] in
+            guard let self else { return }
+            let index = self.table.selectIndex
+            self.connect(index)
+        }
+        login.onSave = { [weak self] in
+            guard let self else { return }
+            let model = self.login.redisModel
+            self.save(model)
+        }
+    }
+
+    func getAll() {
+        table.datasource = RedisDefaults.getAll()
+    }
+
+    func initDefaultSelection() {
+        var selectId: String?
+        let defaultFavorite = RedisDefaults.defaultSelectType()
+        if defaultFavorite == "last" {
+            selectId = RedisDefaults.getLastId()
+        } else {
+            selectId = defaultFavorite
+        }
+
+        guard let selectId else {
+            table.defaultSelectIndex = table.datasource.count > 0 ? 0 : -1
+            return
+        }
+
+        if let index = table.datasource.firstIndex(where: { ($0 as! RedisModel).id == selectId }) {
+            table.defaultSelectIndex = index
+        } else {
+            table.defaultSelectIndex = table.datasource.count > 0 ? 0 : -1
+        }
+    }
+
+    func addNew() {
+        save(RedisModel())
+    }
+
+    func save(_ redisModel: RedisModel) {
+        logger.info("save redis favorite: \(redisModel)")
+        let index = RedisDefaults.save(redisModel)
+        table.selectIndex = index
+        getAll()
+    }
+
+    func deleteConfirm(_ index: Int) {
+        if table.datasource.count <= index { return }
+        let redisModel = table.datasource[index] as! RedisModel
+        Task {
+            let r = await Messages.confirmAsync(
+                String(format: NSLocalizedString("CONFIRM_FAVORITE_REDIS_TITLE'%@'", comment: ""), redisModel.name),
+                message: String(format: NSLocalizedString("CONFIRM_FAVORITE_REDIS_MESSAGE'%@'", comment: ""), redisModel.name),
+                primaryButton: "Delete"
+            )
+            if r { self.delete(index) }
+        }
+    }
+
+    func delete(_ index: Int) {
+        let r = RedisDefaults.delete(index)
+        if r {
+            table.datasource.remove(at: index)
+            if table.datasource.count - 1 < table.selectIndex {
+                table.selectIndex = table.datasource.count - 1
+            }
+        }
+        logger.info("delete redis favorite")
+    }
+
+    func connect(_ index: Int) {
+        guard index >= 0, index < table.datasource.count else { return }
+        let redisModel = table.datasource[index] as! RedisModel
+        logger.info("connect to redis server, name: \(redisModel.name), host: \(redisModel.host)")
+        Task {
+            let r = await redisInstance.connect(redisModel)
+            logger.info("on connect to redis server: \(redisModel), result: \(r)")
+            RedisDefaults.saveLastUse(redisModel)
+            if r {
+                self.onConnectSuccess?(redisModel)
             }
         }
     }

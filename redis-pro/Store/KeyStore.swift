@@ -3,118 +3,84 @@
 //  redis-pro
 //
 //  Created by chengpanwang on 2022/5/6.
+//  Migrated to MVVM (Swift 6)
 //
+
 import Logging
 import Foundation
-import ComposableArchitecture
+import Observation
 
 private let logger = Logger(label: "key-store")
 
-@Reducer
-struct KeyStore {
-    
-    @ObservableState
-    struct State: Equatable {
-        var type: String = RedisKeyTypeEnum.STRING.rawValue
-        var key: String = ""
-        var ttl: Int = -1
+@MainActor
+@Observable
+final class KeyViewModel {
+    var type: String = RedisKeyTypeEnum.STRING.rawValue
+    var key: String = ""
+    var ttl: Int = -1
+    var isNew: Bool = false
 
-        var isNew: Bool = false
-        
-        var redisKeyModel:RedisKeyModel {
-            get {
-                let r = RedisKeyModel()
-                r.type = type
-                r.key = key
-                r.isNew = isNew
-                return r
-            }
-            set(n) {
-                type = n.type
-                key = n.key
-                isNew = n.isNew
-            }
+    var redisKeyModel: RedisKeyModel {
+        get {
+            let r = RedisKeyModel()
+            r.type = type
+            r.key = key
+            r.isNew = isNew
+            return r
         }
-        
-        init() {
-            logger.info("key state init ...")
+        set(n) {
+            type = n.type
+            key = n.key
+            isNew = n.isNew
         }
     }
 
+    private let redisInstance: RedisInstanceModel
 
-    enum Action:BindableAction, Equatable {
-        case initial
-        case refresh
-        case setKey(String)
-        case getTtl
-        case submit
-        case saveTtl
-        case setTtl(Int)
-        case setType(String)
-        case none
-        case binding(BindingAction<State>)
+    init(redisInstance: RedisInstanceModel) {
+        self.redisInstance = redisInstance
+        logger.info("KeyViewModel init ...")
     }
-    
-    @Dependency(\.redisInstance) var redisInstanceModel:RedisInstanceModel
-    var mainQueue: AnySchedulerOf<DispatchQueue> = .main
-    
-    var body: some Reducer<State, Action> {
-        BindingReducer()
-        Reduce { state, action in
-            switch action {
-            // 初始化已设置的值
-            case .initial:
-                logger.info("key store initial...")
-                return .none
-                
-            case .refresh:
-                return .run { send in
-                    await send(.getTtl)
-                }
-                
-            case let .setKey(key):
-                state.key = key
-                return .none
-            case .getTtl:
-                if state.isNew {
-                    state.ttl = -1
-                    return .none
-                }
-                
-                let key = state.key
-                return .run { send in
-                    let r = try await redisInstanceModel.getClient().ttl(key)
-                    await send(.setTtl(r))
-                }
-            case let .setTtl(ttl):
-                state.ttl = ttl
-                return .none
-            
-            case .submit:
-                return .run { send in
-                    await send(.saveTtl)
-                }
-                
-            case .saveTtl:
-                if state.isNew {
-                    return .none
-                }
-                logger.info("update redis key ttl: \(state.redisKeyModel)")
-                
-                let key = state.key
-                let ttl = state.ttl
-                return .run { send in
-                    let _ = try await redisInstanceModel.getClient().expire(key, seconds: ttl)
-                }
-                
-            case let .setType(type):
-                state.type = type
-                return .none
-            case .none:
-                return .none
-            case .binding:
-                return .none
-            }
+
+    func refresh() {
+        Task { await getTtl() }
+    }
+
+    func setKey(_ key: String) {
+        self.key = key
+    }
+
+    func getTtl() async {
+        if isNew {
+            ttl = -1
+            return
         }
+        let key = self.key
+        do {
+            let r = try await redisInstance.getClient().ttl(key)
+            ttl = r
+        } catch {
+            logger.error("getTtl error: \(error)")
+        }
+    }
+
+    func saveTtl() async {
+        if isNew { return }
+        logger.info("update redis key ttl: \(redisKeyModel)")
+        let key = self.key
+        let ttl = self.ttl
+        do {
+            let _ = try await redisInstance.getClient().expire(key, seconds: ttl)
+        } catch {
+            logger.error("saveTtl error: \(error)")
+        }
+    }
+
+    func submit() {
+        Task { await saveTtl() }
+    }
+
+    func setType(_ type: String) {
+        self.type = type
     }
 }

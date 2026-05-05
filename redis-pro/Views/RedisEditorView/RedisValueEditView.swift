@@ -3,50 +3,32 @@
 //  redis-pro
 //
 //  Created by chengpanwang on 2021/4/7.
+//  Migrated to MVVM (Swift 6)
 //
 
 import SwiftUI
 import Logging
-import ComposableArchitecture
 
 struct RedisValueEditView: View {
-    
-    var store: StoreOf<ValueStore>
-    
-    let logger = Logger(label: "redis-value-edit-view")
-    
-    var body: some View {
-            VStack(alignment: .leading, spacing: 0)  {
-                if store.keyState.type == RedisKeyTypeEnum.STRING.rawValue {
-                    StringEditorView(store: store)
-                }
-                // HASH
-                else if store.keyState.type == RedisKeyTypeEnum.HASH.rawValue {
-                    HashEditorView(store: store)
-                }
-                // LIST
-                else if store.keyState.type == RedisKeyTypeEnum.LIST.rawValue {
-                    ListEditorView(store: store)
-                }
-                // SET
-                else if store.keyState.type == RedisKeyTypeEnum.SET.rawValue {
-                    SetEditorView(store: store)
-                }
-                // ZSET
-                else if store.keyState.type == RedisKeyTypeEnum.ZSET.rawValue {
-                    ZSetEditorView(store: store)
-                } else {
-                    EmptyView()
-                }
-            }
-        
-        
-    }
-    
-}
 
-//struct RedisValueEditView_Previews: PreviewProvider {
-//    static var previews: some View {
-//        RedisValueEditView(redisKeyModel: RedisKeyModel(key: "user_session:1234", type: RedisKeyTypeEnum.STRING.rawValue))
-//    }
-//}
+    @State var viewModel: ValueViewModel
+    let logger = Logger(label: "redis-value-edit-view")
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 0) {
+            if viewModel.key.type == RedisKeyTypeEnum.STRING.rawValue {
+                StringEditorView(viewModel: viewModel)
+            } else if viewModel.key.type == RedisKeyTypeEnum.HASH.rawValue {
+                HashEditorView(viewModel: viewModel)
+            } else if viewModel.key.type == RedisKeyTypeEnum.LIST.rawValue {
+                ListEditorView(viewModel: viewModel)
+            } else if viewModel.key.type == RedisKeyTypeEnum.SET.rawValue {
+                SetEditorView(viewModel: viewModel)
+            } else if viewModel.key.type == RedisKeyTypeEnum.ZSET.rawValue {
+                ZSetEditorView(viewModel: viewModel)
+            } else {
+                EmptyView()
+            }
+        }
+    }
+}

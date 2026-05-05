@@ -3,140 +3,101 @@
 //  redis-pro
 //
 //  Created by chengpan on 2022/4/30.
+//  Migrated to MVVM (Swift 6)
 //
-
 
 import Logging
 import Foundation
-import ComposableArchitecture
+import Observation
 
 private let logger = Logger(label: "app-store")
 
-@Reducer
-struct AppStore {
-    
-    @ObservableState
-    struct State: Equatable, Identifiable {
-        var id: String = UUID().uuidString
-        var title: String = ""
-        var isConnect: Bool = false
-        @Shared(.inMemory("appContext")) var appContext = AppContextStore.State()
-        var loadingState = LoadingStore.State()
-        var favoriteState = FavoriteStore.State()
-        var settingsState = SettingsStore.State()
-        var redisKeysState = RedisKeysStore.State()
 
-        init(id: String = UUID().uuidString) {
-            self.id = id
-            logger.info("app state init ...")
+@MainActor
+@Observable
+final class AppViewModel: Identifiable {
+    nonisolated let id: String
+    var title: String = ""
+    var isConnect: Bool = false
+
+    let appContext: AppContext
+    let settings: SettingsViewModel
+    let favorite: FavoriteViewModel
+    let redisKeys: RedisKeysViewModel
+
+    private let redisInstance: RedisInstanceModel
+
+    init(id: String = UUID().uuidString, redisInstance: RedisInstanceModel, appContext: AppContext) {
+        self.id = id
+        self.redisInstance = redisInstance
+        self.appContext = appContext
+        self.settings = SettingsViewModel()
+        self.favorite = FavoriteViewModel(redisInstance: redisInstance)
+        self.redisKeys = RedisKeysViewModel(redisInstance: redisInstance)
+        setupCallbacks()
+        logger.info("AppViewModel init, id: \(id)")
+    }
+
+    private func setupCallbacks() {
+        favorite.onConnectSuccess = { [weak self] redisModel in
+            guard let self else { return }
+            logger.info("connect success, name: \(redisModel.name)")
+            self.title = redisModel.name
+            self.isConnect = true
+            self.redisKeys.database_.initial()
+            self.redisKeys.initial()
         }
     }
 
-    enum Action: Equatable {
-        case initial
-        case onStart
-        case onClose
-        case onConnect
-        case onDisconnect
-        case appContextAction(AppContextStore.Action)
-        case loadingAction(LoadingStore.Action)
-        case favoriteAction(FavoriteStore.Action)
-        case settingsAction(SettingsStore.Action)
-        case redisKeysAction(RedisKeysStore.Action)
+    func initial() {
+        logger.info("app initial...")
+        redisKeys.initial()
     }
 
-    @Dependency(\.redisInstance) var redisInstanceModel: RedisInstanceModel
-    
-    var body: some Reducer<State, Action> {
-        Scope(state: \.appContext, action: \.appContextAction) {
-            AppContextStore()
-        }
-        Scope(state: \.loadingState, action: \.loadingAction) {
-            LoadingStore()
-        }
-        Scope(state: \.settingsState, action: \.settingsAction) {
-            SettingsStore()
-        }
-        Scope(state: \.favoriteState, action: \.favoriteAction) {
-            FavoriteStore()
-        }
-        Scope(state: \.redisKeysState, action: \.redisKeysAction) {
-            RedisKeysStore()
-        }
-        
-        Reduce { state, action in
-            switch action {
-            case .initial:
-                logger.info("init app context complete...")
-                return .send(.redisKeysAction(.initial))
-            case .onStart:
-                logger.info("app store on start...")
-                return .none
-            case .onClose:
-                logger.info("app store on close...")
-                redisInstanceModel.close()
-                state.isConnect = false
-                return .none
-            case .onConnect:
-                logger.info("app store on connect...")
-                state.isConnect = true
-                return .none
-            case .onDisconnect:
-                logger.info("app store on disconnect...")
-                state.isConnect = false
-                return .none
-            case .loadingAction:
-                return .none
-            case let .favoriteAction(.connectSuccess(redisModel)):
-                state.title = redisModel.name
-                return .run { send in
-                    await send(.onConnect)
-                }
-            case .favoriteAction:
-                return .none
-            case .settingsAction:
-                return .none
-            case .redisKeysAction:
-                return .none
-            case .appContextAction:
-                return .none
-            }
-        }
+    func onStart() {
+        logger.info("app on start...")
+    }
+
+    func onClose() {
+        logger.info("app on close...")
+        redisInstance.close()
+        isConnect = false
+    }
+
+    func onConnect() {
+        logger.info("app on connect...")
+        isConnect = true
+    }
+
+    func onDisconnect() {
+        logger.info("app on disconnect...")
+        isConnect = false
     }
 }
 
-@Reducer
-struct AppRootStore {
-    @ObservableState
-    struct State {
-        var windows: IdentifiedArrayOf<AppStore.State> = []
-        var title: String = "Redis Pro"
+@MainActor
+@Observable
+final class AppRootViewModel {
+    var windows: [AppViewModel] = []
+    var title: String = "Redis Pro"
+
+    private let appContext = AppContext()
+
+    func addWindow(_ id: String) {
+        logger.info("add new window: \(id)")
+        let redisInstance = RedisInstanceModel(redisModel: RedisModel())
+        let vm = AppViewModel(id: id, redisInstance: redisInstance, appContext: appContext)
+        windows.append(vm)
     }
-    
-    enum Action {
-        case windows(IdentifiedActionOf<AppStore>)
-        case addWindow(String)
-        case close
+
+    func close() {
+        logger.info("close window")
+        windows.removeLast()
     }
-    
-    var body: some Reducer<State, Action> {
-        Reduce { state, action in
-            switch action {
-            case let .addWindow(id):
-                logger.info("add new window: \(id)")
-                    
-                state.windows.append(AppStore.State(id: id))
-                return .none
-            case .close:
-                logger.info("close window")
-                state.windows.removeLast()
-                return .none
-            case .windows(_):
-                return .none
-            }
-        }
-        .forEach(\.windows, action: \.windows) {
-            AppStore()
-        }
+
+    func window(id: String) -> AppViewModel? {
+        windows.first(where: { $0.id == id })
     }
 }
+
+

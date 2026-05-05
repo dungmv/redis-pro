@@ -3,54 +3,68 @@
 //  redis-pro
 //
 //  Created by chengpanwang on 2021/7/14.
+//  Migrated to MVVM (Swift 6)
 //
 
 import SwiftUI
 import Logging
-import ComposableArchitecture
 
 struct SlowLogView: View {
-    @Bindable var store:StoreOf<SlowLogStore>
+    @State var viewModel: SlowLogViewModel
     let logger = Logger(label: "slow-log-view")
-    
+
     var body: some View {
-    
-            VStack(alignment: .leading, spacing: MTheme.V_SPACING) {
-                // header
-                HStack(alignment: .center, spacing: MTheme.H_SPACING) {
-                    FormItemInt(label: "Slower Than(us)", labelWidth: 120, value: $store.slowerThan, suffix: "square.and.pencil", onCommit: {store.send(.setSlowerThan)})
-                        .help("REDIS_SLOW_LOG_SLOWER_THAN")
-                        .frame(width: 320)
-                    FormItemInt(label: "Max Len", value: $store.maxLen, suffix: "square.and.pencil", onCommit: {store.send(.setMaxLen)})
-                        .help("REDIS_SLOW_LOG_MAX_LEN")
-                        .frame(width: 200)
-                    
-                    FormItemInt(label: "Size", value: $store.size, suffix: "square.and.pencil", onCommit: {store.send(.setSize)})
-                        .help("REDIS_SLOW_LOG_SIZE")
-                        .frame(width: 200)
-                    
-                    Spacer()
-                    MButton(text: "Reset", action: {store.send(.reset)})
-                        .help("REDIS_SLOW_LOG_RESET")
-                }
-                
-                NTableView(store: store.scope(state: \.tableState, action: \.tableAction))
-                
-                // footer
-                HStack(alignment: .center, spacing: MTheme.H_SPACING_L) {
-                    Spacer()
-                    Text("Total: \(store.total)")
-                        .font(.system(size: 12))
-                        .help("REDIS_SLOW_LOG_TOTAL")
-                    Text("Current: \(store.tableState.datasource.count)")
-                        .font(.system(size: 12))
-                        .help("REDIS_SLOW_LOG_SIZE")
-                    IconButton(icon: "arrow.clockwise", name: "Refresh", action: {store.send(.refresh)})
-                }
-                .padding(EdgeInsets(top: 6, leading: 0, bottom: 6, trailing: 0))
-            }.onAppear {
-                store.send(.initial)
+        VStack(alignment: .leading, spacing: MTheme.V_SPACING) {
+            // header
+            HStack(alignment: .center, spacing: MTheme.H_SPACING) {
+                FormItemInt(
+                    label: "Slower Than(us)", labelWidth: 120,
+                    value: Binding(get: { viewModel.slowerThan }, set: { viewModel.slowerThan = $0 }),
+                    suffix: "square.and.pencil",
+                    onCommit: { viewModel.setSlowerThan() }
+                )
+                .help("REDIS_SLOW_LOG_SLOWER_THAN")
+                .frame(width: 320)
+                FormItemInt(
+                    label: "Max Len",
+                    value: Binding(get: { viewModel.maxLen }, set: { viewModel.maxLen = $0 }),
+                    suffix: "square.and.pencil",
+                    onCommit: { viewModel.setMaxLen() }
+                )
+                .help("REDIS_SLOW_LOG_MAX_LEN")
+                .frame(width: 200)
+
+                FormItemInt(
+                    label: "Size",
+                    value: Binding(get: { viewModel.size }, set: { viewModel.size = $0 }),
+                    suffix: "square.and.pencil",
+                    onCommit: { viewModel.setSize() }
+                )
+                .help("REDIS_SLOW_LOG_SIZE")
+                .frame(width: 200)
+
+                Spacer()
+                MButton(text: "Reset", action: { viewModel.reset() })
+                    .help("REDIS_SLOW_LOG_RESET")
             }
-        
+
+            NTableView(viewModel: viewModel.table)
+
+            // footer
+            HStack(alignment: .center, spacing: MTheme.H_SPACING_L) {
+                Spacer()
+                Text("Total: \(viewModel.total)")
+                    .font(.system(size: 12))
+                    .help("REDIS_SLOW_LOG_TOTAL")
+                Text("Current: \(viewModel.table.datasource.count)")
+                    .font(.system(size: 12))
+                    .help("REDIS_SLOW_LOG_SIZE")
+                IconButton(icon: "arrow.clockwise", name: "Refresh", action: { viewModel.refresh() })
+            }
+            .padding(EdgeInsets(top: 6, leading: 0, bottom: 6, trailing: 0))
+        }
+        .onAppear {
+            viewModel.initial()
+        }
     }
 }

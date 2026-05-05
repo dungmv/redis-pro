@@ -3,151 +3,102 @@
 //  redis-pro
 //
 //  Created by chengpan on 2022/6/4.
+//  Migrated to MVVM (Swift 6)
 //
-
 
 import Logging
 import Foundation
-import ComposableArchitecture
+import Observation
 
 private let logger = Logger(label: "redis-config-store")
 
-@Reducer
-struct RedisConfigStore {
-    
-    @ObservableState
-    struct State: Equatable {
-        
-        var editModalVisible:Bool = false
-        var editValue:String = ""
-        var pattern:String = ""
-        var editKey:String = ""
-        var editIndex = 0
-        
-        var tableState: TableStore.State = TableStore.State(
-            columns: [.init(title: "Key", key: "key", width: 200), .init(title: "Value", key: "value", width: 800)]
-            , datasource: []
-            , contextMenus: [.EDIT]
-            , selectIndex: -1)
-        
-        init() {
-            logger.info("redis config state init ...")
-        }
+@MainActor
+@Observable
+final class RedisConfigViewModel {
+    var editModalVisible: Bool = false
+    var editValue: String = ""
+    var pattern: String = ""
+    var editKey: String = ""
+    var editIndex: Int = 0
+
+    let table: TableViewModel
+
+    private let redisInstance: RedisInstanceModel
+
+    init(redisInstance: RedisInstanceModel) {
+        self.redisInstance = redisInstance
+        self.table = TableViewModel(
+            columns: [.init(title: "Key", key: "key", width: 200), .init(title: "Value", key: "value", width: 800)],
+            datasource: [],
+            contextMenus: [.EDIT]
+        )
+        setupTableCallbacks()
+        logger.info("RedisConfigViewModel init ...")
     }
 
-    enum Action:BindableAction, Equatable {
-        case initial
-        case getValue
-        case setValue([RedisConfigItemModel])
-        case refresh
-        case search(String)
-        case rewrite
-        case edit(Int)
-        case submit
-        case tableAction(TableStore.Action)
-        case binding(BindingAction<State>)
-    }
-    
-    @Dependency(\.redisInstance) var redisInstanceModel:RedisInstanceModel
-    let mainQueue: AnySchedulerOf<DispatchQueue> = .main
-    
-    var body: some Reducer<State, Action> {
-        BindingReducer()
-        Scope(state: \.tableState, action: \.tableAction) {
-            TableStore()
+    private func setupTableCallbacks() {
+        table.onContextMenu = { [weak self] title, index in
+            guard let self else { return }
+            if title == "Edit" { self.edit(index) }
         }
-        Reduce { state, action in
-            switch action {
-            // 初始化已设置的值
-            case .initial:
-            
-                logger.info("redis config store initial...")
-                return .run { send in
-                    await send(.getValue)
-                }
-            
-            case .getValue:
-                let pattern = state.pattern
-                return .run { send in
-                    do {
-                        let r = try await redisInstanceModel.getClient().getConfigList(pattern)
-                        await send(.setValue(r))
-                    } catch {
-                        Task { @MainActor in Messages.show(error) }
-                    }
-                }
-            
-            case let .setValue(redisConfigs):
-                state.tableState.datasource = redisConfigs
-                
-                return .none
-                
+        table.onDouble = { [weak self] index in self?.edit(index) }
+    }
 
-            case .refresh:
-                return .run { send in
-                    await send(.getValue)
-                }
-                
-            case let .search(keywords):
-                state.pattern = keywords
-                return .run { send in
-                    await send(.getValue)
-                }
-            
-            case .rewrite:
-                return .run { send in
-                    do {
-                        let _ = try await redisInstanceModel.getClient().configRewrite()
-                        await send(.refresh)
-                    } catch {
-                        Task { @MainActor in Messages.show(error) }
-                    }
-                }
-            case let .edit(index):
-                
-                state.editIndex = index
-                guard let item:RedisConfigItemModel = state.tableState.datasource[index] as? RedisConfigItemModel else {
-                    return .none
-                }
-                state.editKey = item.key
-                state.editValue = item.value
-                state.editModalVisible = true
-                
-                return .none
-                
-            case .submit:
-                let key = state.editKey
-                let value = state.editValue
-                
-                return .run { send in
-                    do {
-                        let _ = try await redisInstanceModel.getClient().setConfig(key: key, value: value)
-                        await send(.refresh)
-                    } catch {
-                        Task { @MainActor in Messages.show(error) }
-                    }
-                }
-                
-            // table action
-            case let .tableAction(.contextMenu(title, index)):
-              if title == "Edit" {
-                    return .run { send in
-                        await send(.edit(index))
-                    }
-                }
-                
-                return .none
-                
-            case let .tableAction(.double(index)):
-                return .run { send in
-                    await send(.edit(index))
-                }
-            case .tableAction:
-                return .none
-            case .binding:
-                return .none
+    func initial() {
+        logger.info("redis config initial...")
+        getValue()
+    }
+
+    func refresh() {
+        getValue()
+    }
+
+    func getValue() {
+        let pattern = self.pattern
+        Task {
+            do {
+                let r = try await redisInstance.getClient().getConfigList(pattern)
+                table.datasource = r
+            } catch {
+                Messages.show(error)
             }
         }
     }
-    
+
+    func search(_ keywords: String) {
+        pattern = keywords
+        getValue()
+    }
+
+    func rewrite() {
+        Task {
+            do {
+                let _ = try await redisInstance.getClient().configRewrite()
+                refresh()
+            } catch {
+                Messages.show(error)
+            }
+        }
+    }
+
+    func edit(_ index: Int) {
+        editIndex = index
+        guard let item = table.datasource[index] as? RedisConfigItemModel else { return }
+        editKey = item.key
+        editValue = item.value
+        editModalVisible = true
+    }
+
+    func submit() {
+        let key = editKey
+        let value = editValue
+        Task {
+            do {
+                let _ = try await redisInstance.getClient().setConfig(key: key, value: value)
+                refresh()
+            } catch {
+                Messages.show(error)
+            }
+        }
+    }
 }

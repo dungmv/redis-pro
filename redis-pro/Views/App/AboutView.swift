@@ -14,7 +14,7 @@ struct AboutView: View {
         ("NIOSSH", "https://github.com/apple/swift-nio-ssh"),
         ("SwiftJSONFormatter", "https://github.com/luin/SwiftJSONFormatter"),
         ("Puppy", "https://github.com/sushichop/Puppy"),
-        ("ComposableArchitecture", "https://github.com/pointfreeco/swift-composable-architecture"),
+
     ]
 
     var body: some View {

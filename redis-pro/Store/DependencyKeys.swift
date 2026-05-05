@@ -2,36 +2,8 @@
 //  DependencyKeys.swift
 //  redis-pro
 //
-//  Created by chengpan on 2023/7/2.
+//  Previously used TCA DependencyKey — replaced with direct injection.
+//  This file is kept empty for compatibility and will be removed.
 //
-
-import Foundation
-import Dependencies
-import ComposableArchitecture
-
-private enum RedisInstanceKey: DependencyKey {
-    static let liveValue = RedisInstanceModel(redisModel: RedisModel())
-}
-
-/// app 上下文
-struct AppContext {
-    let store: StoreOf<AppContextStore>
-}
-private enum AppContextKey: DependencyKey {
-    static let liveValue = Store(initialState: AppContextStore.State()) {
-        AppContextStore()
-    }
-}
-
-
-extension DependencyValues {
-    var redisInstance: RedisInstanceModel {
-        get { self[RedisInstanceKey.self] }
-        set { self[RedisInstanceKey.self] = newValue }
-    }
-    
-    var appContext: StoreOf<AppContextStore> {
-      get { self[AppContextKey.self] }
-      set { self[AppContextKey.self] = newValue }
-    }
-}
+//  All injection is now done via ViewModel init parameters.
+//

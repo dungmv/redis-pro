@@ -97,20 +97,23 @@ extension RedisClient {
     }
     
     func getTypes(_ keys: [String]) async throws -> [String: String] {
+        // Capture self as @unchecked Sendable workaround for Swift 6
+        let client = try await getClient()
         return try await withThrowingTaskGroup(of: (String, String).self) { group in
             var typeDict = [String: String]()
-            
+
             for key in keys {
-                group.addTask {
-                    let type = try await self.type(key)
-                    return (key, type)
+                group.addTask { [client] in
+                    let type = try await client?.type(ValkeyKey(key))
+                    let typeStr = type.map { String($0) } ?? RedisKeyTypeEnum.NONE.rawValue
+                    return (key, typeStr)
                 }
             }
-            
+
             for try await type in group {
                 typeDict[type.0] = type.1
             }
-            
+
             return typeDict
         }
     }

@@ -101,7 +101,7 @@ extension RedisKeyNode {
             node.keyCount = total
             return total
         }
-        propagate(root)
+        _ = propagate(root)
 
         return root.children.values
             .sorted {

@@ -3,37 +3,29 @@
 //  redis-pro
 //
 //  Liquid Glass main split view (sidebar + content).
+//  Migrated to MVVM (Swift 6)
 //
 
 import SwiftUI
 import Logging
-import ComposableArchitecture
 
 struct RedisKeysListView: View {
 
-    var appStore: StoreOf<AppStore>
-    var store: StoreOf<RedisKeysStore>
+    @State var viewModel: RedisKeysViewModel
 
     private static let logger = Logger(label: "redis-key-list-view")
 
-    init(_ store: StoreOf<AppStore>) {
-        self.appStore = store
-        self.store = store.scope(state: \.redisKeysState, action: \.redisKeysAction)
-    }
-
     var body: some View {
-        WithPerceptionTracking {
-            HSplitView {
-                // Sidebar
-                sidebarPanel
-                    .frame(minWidth: 260, idealWidth: 320, maxWidth: 440)
-                    .layoutPriority(0)
+        HSplitView {
+            // Sidebar
+            sidebarPanel
+                .frame(minWidth: 260, idealWidth: 320, maxWidth: 440)
+                .layoutPriority(0)
 
-                // Content
-                contentPanel
-                    .frame(minWidth: 560, maxWidth: .infinity, minHeight: 400, maxHeight: .infinity)
-                    .layoutPriority(1)
-            }
+            // Content
+            contentPanel
+                .frame(minWidth: 560, maxWidth: .infinity, minHeight: 400, maxHeight: .infinity)
+                .layoutPriority(1)
         }
     }
 
@@ -43,7 +35,7 @@ struct RedisKeysListView: View {
         VStack(alignment: .leading, spacing: 0) {
             sidebarHeader
             Divider()
-            RedisKeysTreeView(store: store)
+            RedisKeysTreeView(viewModel: viewModel)
             Divider()
             sidebarFooter
         }
@@ -53,20 +45,20 @@ struct RedisKeysListView: View {
         VStack(alignment: .leading, spacing: 6) {
             SearchBar(
                 placeholder: "Search keys...",
-                onCommit: { store.send(.search($0)) },
-                onChange: { store.send(.searchChange($0)) }
+                onCommit: { viewModel.search($0) },
+                onChange: { viewModel.searchChange($0) }
             )
 
             HStack(spacing: 4) {
-                IconButton(icon: "plus", name: "Add") { store.send(.addNew) }
+                IconButton(icon: "plus", name: "Add") { viewModel.addNew() }
                 IconButton(
                     icon: "trash",
                     name: "Delete",
-                    disabled: !store.tableState.isSelect
-                ) { store.send(.deleteConfirm(store.tableState.selectIndexes)) }
+                    disabled: !viewModel.table.isSelect
+                ) { viewModel.deleteConfirm(viewModel.table.selectIndexes) }
 
                 Spacer()
-                DatabasePicker(store: store.scope(state: \.databaseState, action: \.databaseAction))
+                DatabasePicker(viewModel: viewModel.database_)
             }
         }
         .padding(.horizontal, 8)
@@ -78,14 +70,14 @@ struct RedisKeysListView: View {
     private var sidebarFooter: some View {
         HStack(alignment: .center, spacing: 6) {
             Menu {
-                Button("Keys Del")     { store.send(.redisSystemAction(.setSystemView(.KEYS_DEL))) }
-                Button("Redis Info")   { store.send(.redisSystemAction(.setSystemView(.REDIS_INFO))) }
-                Button("Redis Config") { store.send(.redisSystemAction(.setSystemView(.REDIS_CONFIG))) }
-                Button("Clients")      { store.send(.redisSystemAction(.setSystemView(.CLIENT_LIST))) }
-                Button("Slow Log")     { store.send(.redisSystemAction(.setSystemView(.SLOW_LOG))) }
-                Button("Lua")          { store.send(.redisSystemAction(.setSystemView(.LUA))) }
+                Button("Keys Del")     { viewModel.redisSystem.setSystemView(.KEYS_DEL) }
+                Button("Redis Info")   { viewModel.redisSystem.setSystemView(.REDIS_INFO) }
+                Button("Redis Config") { viewModel.redisSystem.setSystemView(.REDIS_CONFIG) }
+                Button("Clients")      { viewModel.redisSystem.setSystemView(.CLIENT_LIST) }
+                Button("Slow Log")     { viewModel.redisSystem.setSystemView(.SLOW_LOG) }
+                Button("Lua")          { viewModel.redisSystem.setSystemView(.LUA) }
                 Divider()
-                Button("Flush DB", role: .destructive) { store.send(.flushDBConfirm) }
+                Button("Flush DB", role: .destructive) { viewModel.flushDBConfirm() }
             } label: {
                 Image(systemName: "ellipsis.circle")
                     .font(.system(size: 13, weight: .medium))
@@ -94,17 +86,17 @@ struct RedisKeysListView: View {
             .menuStyle(.borderlessButton)
             .frame(width: 24)
 
-            MIcon(icon: "arrow.clockwise", fontSize: 12) { store.send(.refresh) }
+            MIcon(icon: "arrow.clockwise", fontSize: 12) { viewModel.refresh() }
                 .help("Refresh keys")
 
             Spacer(minLength: 0)
 
-            Text("db: \(store.dbsize)")
+            Text("db: \(viewModel.dbsize)")
                 .font(LiquidGlass.FONT_FOOTER)
                 .foregroundStyle(.secondary)
                 .lineLimit(1)
 
-            PageBar(store: store.scope(state: \.pageState, action: \.pageAction))
+            PageBar(viewModel: viewModel.page)
         }
         .padding(.horizontal, 8)
         .padding(.vertical, 6)
@@ -115,11 +107,11 @@ struct RedisKeysListView: View {
 
     private var contentPanel: some View {
         VStack(alignment: .leading, spacing: 0) {
-            switch store.mainViewType {
+            switch viewModel.mainViewType {
             case .EDITOR:
-                RedisValueView(store: store.scope(state: \.valueState, action: \.valueAction))
+                RedisValueView(viewModel: viewModel.value)
             case .SYSTEM:
-                RedisSystemView(store: store.scope(state: \.redisSystemState, action: \.redisSystemAction))
+                RedisSystemView(viewModel: viewModel.redisSystem)
             case .NONE:
                 EmptyView()
             }

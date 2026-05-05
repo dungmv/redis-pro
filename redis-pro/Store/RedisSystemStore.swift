@@ -3,89 +3,49 @@
 //  redis-pro
 //
 //  Created by chengpan on 2022/6/4.
+//  Migrated to MVVM (Swift 6)
 //
-
 
 import Logging
 import Foundation
-import ComposableArchitecture
+import Observation
 
-enum RedisSystemViewTypeEnum{
+enum RedisSystemViewTypeEnum {
     case KEYS_DEL
     case REDIS_INFO
     case REDIS_CONFIG
     case CLIENT_LIST
     case SLOW_LOG
     case LUA
-    
 }
 
 private let logger = Logger(label: "redis-system-store")
 
-@Reducer
-struct RedisSystemStore {
-    
-    @ObservableState
-    struct State: Equatable {
-        var systemView: RedisSystemViewTypeEnum = .REDIS_INFO
-        var redisInfoState: RedisInfoStore.State = RedisInfoStore.State()
-        var redisConfigState: RedisConfigStore.State = RedisConfigStore.State()
-        var slowLogState: SlowLogStore.State = SlowLogStore.State()
-        var clientListState: ClientListStore.State = ClientListStore.State()
-        var luaState: LuaStore.State = LuaStore.State()
-        
-        init() {
-            logger.info("redis system state init ...")
-        }
+@MainActor
+@Observable
+final class RedisSystemViewModel {
+    var systemView: RedisSystemViewTypeEnum = .REDIS_INFO
+
+    let redisInfo: RedisInfoViewModel
+    let redisConfig: RedisConfigViewModel
+    let slowLog: SlowLogViewModel
+    let clientList: ClientListViewModel
+    let lua: LuaViewModel
+
+    // Callback when system view panel is opened
+    var onSetSystemView: (() -> Void)?
+
+    init(redisInstance: RedisInstanceModel) {
+        self.redisInfo = RedisInfoViewModel(redisInstance: redisInstance)
+        self.redisConfig = RedisConfigViewModel(redisInstance: redisInstance)
+        self.slowLog = SlowLogViewModel(redisInstance: redisInstance)
+        self.clientList = ClientListViewModel(redisInstance: redisInstance)
+        self.lua = LuaViewModel(redisInstance: redisInstance)
+        logger.info("RedisSystemViewModel init ...")
     }
 
-    enum Action: Equatable {
-        case initial
-        case setSystemView(RedisSystemViewTypeEnum)
-        case redisInfoAction(RedisInfoStore.Action)
-        case redisConfigAction(RedisConfigStore.Action)
-        case slowLogAction(SlowLogStore.Action)
-        case clientListAction(ClientListStore.Action)
-        case luaAction(LuaStore.Action)
-    }
-    
-    @Dependency(\.redisInstance) var redisInstanceModel:RedisInstanceModel
-    
-    var body: some Reducer<State, Action> {
-        Scope(state: \.redisInfoState, action: \.redisInfoAction) {
-            RedisInfoStore()
-        }
-        Scope(state: \.redisConfigState, action: \.redisConfigAction) {
-            RedisConfigStore()
-        }
-        Scope(state: \.slowLogState, action: \.slowLogAction) {
-            SlowLogStore()
-        }
-        Scope(state: \.clientListState, action: \.clientListAction) {
-            ClientListStore()
-        }
-        Scope(state: \.luaState, action: \.luaAction) {
-            LuaStore()
-        }
-        Reduce { state, action in
-            switch action {
-            // 初始化已设置的值
-            case .initial:
-                return .none
-            case let .setSystemView(type):
-                state.systemView = type
-                return .none
-            case .redisInfoAction:
-                return .none
-            case .redisConfigAction:
-                return .none
-            case .slowLogAction:
-                return .none
-            case .clientListAction:
-                return .none
-            case .luaAction:
-                return .none
-            }
-        }
+    func setSystemView(_ type: RedisSystemViewTypeEnum) {
+        systemView = type
+        onSetSystemView?()
     }
 }

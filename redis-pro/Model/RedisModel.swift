@@ -8,7 +8,7 @@
 import Foundation
 import SwiftUI
 
-class RedisModel: NSObject, Identifiable {
+class RedisModel: NSObject, Identifiable, @unchecked Sendable {
     @objc var id: String = UUID().uuidString
     @objc var name: String = "New Favorite"
     var host: String = "127.0.0.1"

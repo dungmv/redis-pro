@@ -3,21 +3,25 @@
 //  redis-pro
 //
 //  Created by chengpan on 2022/6/5.
+//  Migrated to MVVM (Swift 6)
 //
 
 import Logging
 import Foundation
-import ComposableArchitecture
+import Observation
 
 private let logger = Logger(label: "client-list-store")
 
-@Reducer
-struct ClientListStore {
-    
-    @ObservableState
-    struct State: Equatable {
-        
-        var tableState: TableStore.State = TableStore.State(
+@MainActor
+@Observable
+final class ClientListViewModel {
+    let table: TableViewModel
+
+    private let redisInstance: RedisInstanceModel
+
+    init(redisInstance: RedisInstanceModel) {
+        self.redisInstance = redisInstance
+        self.table = TableViewModel(
             columns: [
                 .init(title: "id", key: "id", width: 60),
                 .init(title: "name", key: "name", width: 60),
@@ -41,98 +45,64 @@ struct ClientListStore {
                 .init(title: "argv_mem", key: "argv_mem", width: 60),
                 .init(title: "tot_mem", key: "tot_mem", width: 60),
                 .init(title: "redir", key: "redir", width: 60),
-                .init(title: "user", key: "user", width: 60)
-            ]
-            , datasource: []
-            , contextMenus: [.KILL]
-            , selectIndex: -1)
-        
-        init() {
-            logger.info("client list state init ...")
+                .init(title: "user", key: "user", width: 60),
+            ],
+            datasource: [],
+            contextMenus: [.KILL]
+        )
+        setupTableCallbacks()
+        logger.info("ClientListViewModel init ...")
+    }
+
+    private func setupTableCallbacks() {
+        table.onContextMenu = { [weak self] title, index in
+            guard let self else { return }
+            if title == "Kill" { self.killConfirm(index) }
         }
     }
 
-    enum Action: Equatable {
-        case initial
-        case getValue
-        case setValue([ClientModel])
-        case refresh
-        case killConfirm(Int)
-        case kill(Int)
-        case tableAction(TableStore.Action)
-        case none
+    func initial() {
+        logger.info("client list initial...")
+        getValue()
     }
-    
-    @Dependency(\.redisInstance) var redisInstanceModel:RedisInstanceModel
-    let mainQueue: AnySchedulerOf<DispatchQueue> = .main
-    
-    var body: some Reducer<State, Action> {
-        
-        Scope(state: \.tableState, action: \.tableAction) {
-            TableStore()
-        }
-        Reduce { state, action in
-            switch action {
-            // 初始化已设置的值
-            case .initial:
-            
-                logger.info("client list store initial...")
-                return .run { send in
-                    await send(.getValue)
-                }
-            
-            case .getValue:
-                return .run { send in
-                    let r = try await redisInstanceModel.getClient().clientList()
-                    await send(.setValue(r))
-                }
-            
-            case let .setValue(clientLists):
-                state.tableState.datasource = clientLists
-                
-                return .none
-                
-            case let .killConfirm(index):
 
-                let item = state.tableState.datasource[index] as! ClientModel
-                return .run { send in
-                    let r = await Messages.confirmAsync("Kill Client?"
-                                     , message: "Are you sure you want to kill client:\(item.addr)? This operation cannot be undone."
-                                      , primaryButton: "Kill")
-                    
-                    await send(r ? .kill(index) : .none)
-                }
-                
-            case let .kill(index):
-                let client = state.tableState.datasource[index] as! ClientModel
-                logger.info("kill client, addr: \(client.addr)")
-                
-                return .run { send in
-                    let r = try await redisInstanceModel.getClient().clientKill(client)
-                    logger.info("do kill client, addr: \(client.addr), r:\(r)")
-                    
-                    await send(.refresh)
-                }
-            
-            case .refresh:
-                return .run { send in
-                    await send(.getValue)
-                }
-                
-            // table action
-            case let .tableAction(.contextMenu(title, index)):
-                if title == "Kill" {
-                    return .run { send in
-                        await send(.killConfirm(index))
-                    }
-                }
-                
-                return .none
-            case .tableAction:
-                return .none
-                
-            case .none:
-                return .none
+    func refresh() {
+        getValue()
+    }
+
+    func getValue() {
+        Task {
+            do {
+                let r = try await redisInstance.getClient().clientList()
+                table.datasource = r
+            } catch {
+                Messages.show(error)
+            }
+        }
+    }
+
+    func killConfirm(_ index: Int) {
+        let item = table.datasource[index] as! ClientModel
+        Task {
+            let r = await Messages.confirmAsync(
+                "Kill Client?",
+                message: "Are you sure you want to kill client:\(item.addr)? This operation cannot be undone.",
+                primaryButton: "Kill"
+            )
+            if r { self.kill(index) }
+        }
+    }
+
+    func kill(_ index: Int) {
+        let client = table.datasource[index] as! ClientModel
+        logger.info("kill client, addr: \(client.addr)")
+        Task {
+            do {
+                let r = try await redisInstance.getClient().clientKill(client)
+                logger.info("do kill client, addr: \(client.addr), r:\(r)")
+                refresh()
+            } catch {
+                Messages.show(error)
             }
         }
     }

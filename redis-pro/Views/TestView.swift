@@ -3,19 +3,19 @@
 //  redis-pro
 //
 //  Created by chengpan on 2024/9/21.
+//  Migrated to MVVM (Swift 6)
 //
 
 import SwiftUI
-import ComposableArchitecture
 
 struct TestView: View {
-    var store: StoreOf<AppStore>
+    @State var viewModel: AppViewModel
     var tag: String = "defaultTag"
-    
+
     var body: some View {
-        Text("Window with tag: \(store.isConnect),  id: \(store.id)")
+        Text("Window with tag: \(viewModel.isConnect),  id: \(viewModel.id)")
             .frame(width: 300, height: 200)
-        Button("connect", action: { store.send(.onConnect) })
-        Button("disconnect", action: { store.send(.onDisconnect) })
+        Button("connect", action: { viewModel.onConnect() })
+        Button("disconnect", action: { viewModel.onDisconnect() })
     }
 }

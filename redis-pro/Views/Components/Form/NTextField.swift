@@ -26,7 +26,6 @@ struct NTextField: NSViewRepresentable {
     var onChange: (() -> Void)?
     var onCommit: (() -> Void)?
     var onTabKeystroke: (() -> Void)?
-    @State private var didFocus = false
     
     let logger = Logger(label: "text-field")
     
@@ -52,7 +51,7 @@ struct NTextField: NSViewRepresentable {
         nsView.stringValue = stringValue
         nsView.isEnabled = !disabled
         
-        if autoFocus && !didFocus {
+        if autoFocus && !context.coordinator.didFocus {
             NSApplication.shared.mainWindow?.perform(
                 #selector(NSApplication.shared.mainWindow?.makeFirstResponder(_:)),
                 with: nsView,
@@ -60,7 +59,7 @@ struct NTextField: NSViewRepresentable {
             )
             
             DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
-                didFocus = true
+                context.coordinator.didFocus = true
             }
         }
         
@@ -93,8 +92,10 @@ struct NTextField: NSViewRepresentable {
     }
     
     
+    @MainActor
     class Coordinator: NSObject, NSTextFieldDelegate {
         let parent: NTextField
+        var didFocus = false
         private var editing = false
         
         
@@ -113,9 +114,9 @@ struct NTextField: NSViewRepresentable {
         
         @objc
         func handleAppDidBecomeActive(notification: Notification) {
-            if parent.autoFocus && !parent.didFocus {
+            if parent.autoFocus && !didFocus {
                 DispatchQueue.main.asyncAfter(deadline: .now() + 0.05) {
-                    self.parent.didFocus = false
+                    self.didFocus = false
                 }
             }
         }

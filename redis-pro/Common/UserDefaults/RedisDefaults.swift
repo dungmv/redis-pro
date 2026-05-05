@@ -9,10 +9,10 @@ import Foundation
 import Logging
 
 class RedisDefaults {
-    static let userDefaults = UserDefaults.standard
+    nonisolated(unsafe) static let userDefaults = UserDefaults.standard
     static let logger = Logger(label: "redis-defaults")
     
-    static var defaultRedisModels: [RedisModel] = [RedisModel()]
+    nonisolated(unsafe) static var defaultRedisModels: [RedisModel] = [RedisModel()]
     
     // 获取用户保存的redis, 如果没有自动初始化一个
     static func getAll() -> [RedisModel] {

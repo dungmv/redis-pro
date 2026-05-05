@@ -1,79 +1,45 @@
 //
-//  ObjectEncodingStore.swift
+//  KeyObjectStore.swift
 //  redis-pro
 //
 //  Created by chengpan on 2023/7/23.
+//  Migrated to MVVM (Swift 6)
 //
 
 import Logging
 import Foundation
-import ComposableArchitecture
+import Observation
 
 private let logger = Logger(label: "key-object-store")
 
-@Reducer
-struct KeyObjectStore {
-    
-    @ObservableState
-    struct State: Equatable {
-        var key: String = ""
-        var encoding: String = ""
+@MainActor
+@Observable
+final class KeyObjectViewModel {
+    var key: String = ""
+    var encoding: String = ""
 
-        var redisKeyModel:RedisKeyModel {
-            get {
-                let r = RedisKeyModel()
-                r.key = key
-                return r
-            }
-            set(n) {
-                key = n.key
-            }
-        }
-        
-        init() {
-            logger.info("key object init ...")
-        }
+    private let redisInstance: RedisInstanceModel
+
+    init(redisInstance: RedisInstanceModel) {
+        self.redisInstance = redisInstance
+        logger.info("KeyObjectViewModel init ...")
     }
 
-
-    enum Action: Equatable {
-        case initial
-        case refresh
-        case setKey(String)
-        case getEncoding
-        case setEncoding(String)
+    func refresh() {
+        Task { await getEncoding() }
     }
-    
-    @Dependency(\.redisInstance) var redisInstanceModel:RedisInstanceModel
-    
-    var body: some Reducer<State, Action> {
-        Reduce { state, action in
-            switch action {
-            // 初始化已设置的值
-            case .initial:
-                logger.info("key object initial...")
-                return .none
-                
-            case .refresh:
-                return .run { send in
-                    await send(.getEncoding)
-                }
-                
-            case let .setKey(key):
-                state.key = key
-                return .none
-                
-            case .getEncoding:
-                let key = state.key
-                return .run { send in
-                    let r = try await redisInstanceModel.getClient().objectEncoding(key)
-                    return await send(.setEncoding(r))
-                }
-                
-            case let .setEncoding(encoding):
-                state.encoding = encoding
-                return .none
-            }
+
+    func setKey(_ key: String) {
+        self.key = key
+    }
+
+    func getEncoding() async {
+        let key = self.key
+        do {
+            let r = try await redisInstance.getClient().objectEncoding(key)
+            encoding = r
+        } catch {
+            logger.error("getEncoding error: \(error)")
         }
     }
 }

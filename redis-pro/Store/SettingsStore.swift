@@ -3,110 +3,89 @@
 //  redis-pro
 //
 //  Created by chengpan on 2022/5/2.
+//  Migrated to MVVM (Swift 6)
 //
 
 import Logging
 import Foundation
 import SwiftUI
-import ComposableArchitecture
+import Observation
 
 private let logger = Logger(label: "settings-store")
-private let userDefaults = UserDefaults.standard
 
-@Reducer
-struct SettingsStore {
-    
-    @ObservableState
-    struct State: Equatable {
-        var colorSchemeValue:String = ColorSchemeEnum.SYSTEM.rawValue
-        var defaultFavorite:String = "last"
-        var stringMaxLength:Int = Const.DEFAULT_STRING_MAX_LENGTH
-        var keepalive:Int = 30
-        var redisModels: [RedisModel] = []
-        var fastPage = true
-        // 快速分页阈值, 超过这个数值后, 不再继续查询, 提高查询性能, 减少对redis影响
-        var fastPageMax = 99
-        // 搜索历史记录数量
-        var searchHistorySize = 20
+@MainActor
+@Observable
+final class SettingsViewModel {
+    var colorSchemeValue: String = ColorSchemeEnum.SYSTEM.rawValue
+    var defaultFavorite: String = "last"
+    var stringMaxLength: Int = Const.DEFAULT_STRING_MAX_LENGTH
+    var keepalive: Int = 30
+    var redisModels: [RedisModel] = []
+    var fastPage: Bool = true
+    // 快速分页阈值, 超过这个数值后, 不再继续查询, 提高查询性能, 减少对redis影响
+    var fastPageMax: Int = 99
+    // 搜索历史记录数量
+    var searchHistorySize: Int = 20
+
+    init() {
+        logger.info("SettingsViewModel init ...")
+        initial()
     }
 
-    enum Action: Equatable {
-        case initial
-        case setColorScheme(String)
-        case setDefaultFavorite(String)
-        case setStringMaxLength(Int)
-        case setSearchHistorySize(Int)
-        case setKeepalive(Int)
-        case setFastPage(Bool)
-    }
-    
-    var body: some Reducer<State, Action> {
-        Reduce { state, action in
-            switch action {
-            // 初始化已设置的值
-            case .initial:
-                
-                logger.info("settings store initial...")
-                state.colorSchemeValue = UserDefaults.standard.string(forKey: UserDefaultsKeysEnum.AppColorScheme.rawValue) ?? ColorSchemeEnum.SYSTEM.rawValue
-                
-                let stringMaxLength:String? = UserDefaults.standard.string(forKey: UserDefaultsKeysEnum.AppStringMaxLength.rawValue)
-                if let stringMaxLength = stringMaxLength {
-                    state.stringMaxLength = Int(stringMaxLength) ?? Const.DEFAULT_STRING_MAX_LENGTH
-                } else {
-                    state.stringMaxLength = Const.DEFAULT_STRING_MAX_LENGTH
-                }
-                
-                state.defaultFavorite = UserDefaults.standard.string(forKey: UserDefaultsKeysEnum.RedisFavoriteDefaultSelectType.rawValue) ?? RedisFavoriteDefaultSelectTypeEnum.LAST.rawValue
-                
-                // fast apge
-                state.fastPage = Bool(UserDefaults.standard.string(forKey: UserDefaultsKeysEnum.AppFastPage.rawValue) ?? "true") ?? true
-                
-                state.redisModels = RedisDefaults.getAll()
-                return .none
-                
-            // 显示模式设置， 明亮，暗黑，系统
-            case let .setColorScheme(colorSchemeValue):
-                logger.info("upate color scheme action, \(colorSchemeValue)")
-                state.colorSchemeValue = colorSchemeValue
-                UserDefaults.standard.set(colorSchemeValue, forKey: UserDefaultsKeysEnum.AppColorScheme.rawValue)
-                return .none
-                
-            // 默认选中设置
-            case let .setDefaultFavorite(defaultFavorite):
-                logger.info("upate default favorite action, \(defaultFavorite)")
-                
-                state.defaultFavorite = defaultFavorite
-                UserDefaults.standard.set(defaultFavorite, forKey: UserDefaultsKeysEnum.RedisFavoriteDefaultSelectType.rawValue)
-                return .none
-                
-            case let .setStringMaxLength(stringMaxLength):
-                logger.info("set stringMaxLength action, \(stringMaxLength)")
-                
-                state.stringMaxLength = stringMaxLength
-                UserDefaults.standard.set(stringMaxLength, forKey: UserDefaultsKeysEnum.AppStringMaxLength.rawValue)
-                return .none
-                
-            case let .setSearchHistorySize(searchHistorySize):
-                logger.info("set search history size action, \(searchHistorySize)")
-                
-                state.searchHistorySize = searchHistorySize
-                UserDefaults.standard.set(searchHistorySize, forKey: UserDefaultsKeysEnum.UserSearchHistory.rawValue)
-                return .none
-                
-            case let .setKeepalive(keepalive):
-                logger.info("set keepalive second action, \(keepalive)")
-                
-                state.keepalive = keepalive
-                UserDefaults.standard.set(keepalive, forKey: UserDefaultsKeysEnum.AppKeepalive.rawValue)
-                return .none
-                
-            case let .setFastPage(fastPage):
-                logger.info("set fast page action, \(fastPage)")
-                
-                state.fastPage = fastPage
-                UserDefaults.standard.set("\(fastPage)", forKey: UserDefaultsKeysEnum.AppFastPage.rawValue)
-                return .none
-            }
+    func initial() {
+        logger.info("settings initial...")
+
+        colorSchemeValue = UserDefaults.standard.string(forKey: UserDefaultsKeysEnum.AppColorScheme.rawValue)
+            ?? ColorSchemeEnum.SYSTEM.rawValue
+
+        let stringMaxLengthStr = UserDefaults.standard.string(forKey: UserDefaultsKeysEnum.AppStringMaxLength.rawValue)
+        if let s = stringMaxLengthStr {
+            stringMaxLength = Int(s) ?? Const.DEFAULT_STRING_MAX_LENGTH
+        } else {
+            stringMaxLength = Const.DEFAULT_STRING_MAX_LENGTH
         }
+
+        defaultFavorite = UserDefaults.standard.string(forKey: UserDefaultsKeysEnum.RedisFavoriteDefaultSelectType.rawValue)
+            ?? RedisFavoriteDefaultSelectTypeEnum.LAST.rawValue
+
+        fastPage = Bool(UserDefaults.standard.string(forKey: UserDefaultsKeysEnum.AppFastPage.rawValue) ?? "true") ?? true
+
+        redisModels = RedisDefaults.getAll()
+    }
+
+    func setColorScheme(_ value: String) {
+        logger.info("update color scheme, \(value)")
+        colorSchemeValue = value
+        UserDefaults.standard.set(value, forKey: UserDefaultsKeysEnum.AppColorScheme.rawValue)
+    }
+
+    func setDefaultFavorite(_ value: String) {
+        logger.info("update default favorite, \(value)")
+        defaultFavorite = value
+        UserDefaults.standard.set(value, forKey: UserDefaultsKeysEnum.RedisFavoriteDefaultSelectType.rawValue)
+    }
+
+    func setStringMaxLength(_ value: Int) {
+        logger.info("set stringMaxLength, \(value)")
+        stringMaxLength = value
+        UserDefaults.standard.set(value, forKey: UserDefaultsKeysEnum.AppStringMaxLength.rawValue)
+    }
+
+    func setSearchHistorySize(_ value: Int) {
+        logger.info("set search history size, \(value)")
+        searchHistorySize = value
+        UserDefaults.standard.set(value, forKey: UserDefaultsKeysEnum.UserSearchHistory.rawValue)
+    }
+
+    func setKeepalive(_ value: Int) {
+        logger.info("set keepalive, \(value)")
+        keepalive = value
+        UserDefaults.standard.set(value, forKey: UserDefaultsKeysEnum.AppKeepalive.rawValue)
+    }
+
+    func setFastPage(_ value: Bool) {
+        logger.info("set fast page, \(value)")
+        fastPage = value
+        UserDefaults.standard.set("\(value)", forKey: UserDefaultsKeysEnum.AppFastPage.rawValue)
     }
 }

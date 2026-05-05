@@ -3,168 +3,119 @@
 //  redis-pro
 //
 //  Created by chengpanwang on 2022/5/6.
+//  Migrated to MVVM (Swift 6)
 //
 
 import Logging
 import Foundation
 import SwiftJSONFormatter
-import ComposableArchitecture
+import Observation
 
 private let logger = Logger(label: "string-value-store")
 
-@Reducer
-struct StringValueStore {
-    
-    @ObservableState
-    struct State: Equatable  {
-        var redisKeyModel:RedisKeyModel?
-        // 是否是完整字符串, 如果设置最大显示长度, 使用getrange命令取出部分字符串, 防止长字符串过大
-        var isIntactString: Bool = true
-        var stringMaxLength:Int = -1
-        var length: Int = -1
-        var text:String = ""
+@MainActor
+@Observable
+final class StringValueViewModel {
+    var redisKeyModel: RedisKeyModel?
+    var isIntactString: Bool = true
+    var stringMaxLength: Int = -1
+    var length: Int = -1
+    var text: String = ""
+
+    // Callback for submit success
+    var onSubmitSuccess: ((Bool) -> Void)?
+    var onRefresh: (() -> Void)?
+
+    private let redisInstance: RedisInstanceModel
+
+    init(redisInstance: RedisInstanceModel) {
+        self.redisInstance = redisInstance
+        logger.info("StringValueViewModel init ...")
     }
-    
-    enum Action: BindableAction, Equatable {
-        case binding(BindingAction<State>)
-        case initial
-        case submit
-        case submitSuccess(Bool)
-        case getLength
-        case getValue
-        case getIntactString
-        case updateLength(Int)
-        case updateText(String)
-        case jsonPretty
-        case jsonMinify
-        case refresh
-        case none
+
+    func initial() {
+        logger.info("string value initial...")
+        Task { await getLength() }
     }
-    
-    
-    @Dependency(\.redisInstance) var redisInstanceModel:RedisInstanceModel
-    let mainQueue: AnySchedulerOf<DispatchQueue> = .main
-    
-    var body: some Reducer<State, Action> {
-        BindingReducer()
-        Reduce { state, action in
-            switch action {
-            case .binding:
-                return .none
-                // 初始化已设置的值
-            case .initial:
-                
-                logger.info("value store initial...")
-                return .run { send in
-                    await send(.getLength)
-                }
-                
-            case .getLength:
-                guard let redisKeyModel = state.redisKeyModel else {
-                    return .none
-                }
-                if redisKeyModel.isNew {
-                    state.text = ""
-                    return .none
-                }
-                let key = redisKeyModel.key
-                
-                return .run { send in
-                    do {
-                        let r = try await redisInstanceModel.getClient().strLen(key)
-                        await send(.updateLength(r))
-                    } catch {
-                        Task { @MainActor in Messages.show(error) }
-                    }
-                }
-                
-            case .getValue:
-                guard let redisKeyModel = state.redisKeyModel else {
-                    return .none
-                }
-                if redisKeyModel.isNew {
-                    state.text = ""
-                    return .none
-                }
-                
-                let stringMaxLength = state.stringMaxLength
-                let isIntactString = state.isIntactString
-                
-                let key = redisKeyModel.key
-                return .run { send in
-                    do {
-                        let r = isIntactString ? try await redisInstanceModel.getClient().get(key) : try await redisInstanceModel.getClient().getRange(key, end: stringMaxLength)
-                        await send(.updateText(r))
-                    } catch {
-                        Task { @MainActor in Messages.show(error) }
-                    }
-                }
-                
-            case .getIntactString:
-                state.isIntactString = true
-                return .run { send in
-                    await send(.getValue)
-                }
-                
-            case .submit:
-                guard let redisKeyModel = state.redisKeyModel else {
-                    return .none
-                }
-                
-                let key = redisKeyModel.key
-                let isNew = redisKeyModel.isNew
-                let text = state.text
-                return .run { send in
-                    do {
-                        try await redisInstanceModel.getClient().set(key, value: text)
-                        await send(.submitSuccess(isNew))
-                    } catch {
-                        Task { @MainActor in Messages.show(error) }
-                    }
-                }
-                
-            case .submitSuccess:
-                return .none
-                
-            case let .updateLength(length):
-                state.length = length
-                let stringMaxLength = RedisDefaults.getStringMaxLength()
-                
-                state.stringMaxLength = stringMaxLength
-                state.isIntactString = stringMaxLength == -1 || length <= stringMaxLength
-                return .run { send in
-                    await send(.getValue)
-                }
-                
-            case let .updateText(text):
-                state.text = text
-                return .none
-                
-            case .jsonPretty:
-                if state.text.count < 2 {
-                    Task { @MainActor in Messages.show(BizError("Invalid json format!")) }
-                    return .none
-                }
-                
-                state.text = SwiftJSONFormatter.beautify(state.text, indent: "    ")
-                return .none
-                
-            case .jsonMinify:
-                if state.text.count < 2 {
-                    Task { @MainActor in Messages.show(BizError("Invalid json format!")) }
-                    return .none
-                }
-                
-                state.text = SwiftJSONFormatter.minify(state.text)
-                return .none
-                
-            case .refresh:
-                return .run { send in
-                    await send(.getLength)
-                }
-            case .none:
-                return .none
+
+    func getLength() async {
+        guard let redisKeyModel = redisKeyModel else { return }
+        if redisKeyModel.isNew {
+            text = ""
+            return
+        }
+        let key = redisKeyModel.key
+        do {
+            let r = try await redisInstance.getClient().strLen(key)
+            await updateLength(r)
+        } catch {
+            Messages.show(error)
+        }
+    }
+
+    func getValue() async {
+        guard let redisKeyModel = redisKeyModel else { return }
+        if redisKeyModel.isNew {
+            text = ""
+            return
+        }
+        let key = redisKeyModel.key
+        do {
+            let r = isIntactString
+                ? try await redisInstance.getClient().get(key)
+                : try await redisInstance.getClient().getRange(key, end: stringMaxLength)
+            text = r
+        } catch {
+            Messages.show(error)
+        }
+    }
+
+    func getIntactString() {
+        isIntactString = true
+        Task { await getValue() }
+    }
+
+    func submit() {
+        guard let redisKeyModel = redisKeyModel else { return }
+        let key = redisKeyModel.key
+        let isNew = redisKeyModel.isNew
+        let text = self.text
+        Task {
+            do {
+                try await redisInstance.getClient().set(key, value: text)
+                onSubmitSuccess?(isNew)
+            } catch {
+                Messages.show(error)
             }
         }
+    }
+
+    func updateLength(_ length: Int) async {
+        self.length = length
+        let stringMaxLength = RedisDefaults.getStringMaxLength()
+        self.stringMaxLength = stringMaxLength
+        isIntactString = stringMaxLength == -1 || length <= stringMaxLength
+        await getValue()
+    }
+
+    func jsonPretty() {
+        if text.count < 2 {
+            Messages.show(BizError("Invalid json format!"))
+            return
+        }
+        text = SwiftJSONFormatter.beautify(text, indent: "    ")
+    }
+
+    func jsonMinify() {
+        if text.count < 2 {
+            Messages.show(BizError("Invalid json format!"))
+            return
+        }
+        text = SwiftJSONFormatter.minify(text)
+    }
+
+    func refresh() {
+        Task { await getLength() }
+        onRefresh?()
     }
 }

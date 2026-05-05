@@ -3,107 +3,79 @@
 //  redis-pro
 //
 //  Created by chengpanwang on 2022/5/6.
+//  Migrated to MVVM (Swift 6)
 //
 
 import Logging
 import Foundation
-import ComposableArchitecture
+import Observation
 
 private let logger = Logger(label: "page-store")
 
-@Reducer
-struct PageStore {
-    
-    @ObservableState
-    struct State: Equatable {
-        var showTotal: Bool = false
-        var current:Int = 1
-        var size:Int = 50
-        var total:Int = 0
-        var keywords:String = ""
-        var fastPage = true
-        var fastPageMax = 99
-        
-        /// 总页数
-        var totalPage:Int {
-            get {
-                return total < 1 ? 1 : (total % size == 0 ? total / size : total / size + 1)
-            }
+@MainActor
+@Observable
+final class PageViewModel {
+    var showTotal: Bool = false
+    var current: Int = 1
+    var size: Int = 50
+    var total: Int = 0
+    var keywords: String = ""
+    var fastPage: Bool = true
+    var fastPageMax: Int = 99
+
+    // Callbacks replacing TCA action propagation
+    var onNextPage: (() -> Void)?
+    var onPrevPage: (() -> Void)?
+    var onUpdateSize: (() -> Void)?
+
+    var totalPage: Int {
+        total < 1 ? 1 : (total % size == 0 ? total / size : total / size + 1)
+    }
+
+    var totalPageText: String {
+        if fastPage {
+            return totalPage > fastPageMax ? "\(fastPageMax)+" : "\(totalPage)"
         }
-        
-        var totalPageText: String {
-            get {
-                if fastPage {
-                    return totalPage > fastPageMax ? "\(fastPageMax)+" : "\(totalPage)"
-                }
-                return "\(totalPage)"
-            }
+        return "\(totalPage)"
+    }
+
+    var hasPrev: Bool { totalPage > 1 && current > 1 }
+    var hasNext: Bool { totalPage > 1 && current < totalPage }
+
+    var page: Page {
+        get {
+            let page = Page()
+            page.current = current
+            page.size = size
+            page.total = total
+            page.keywords = keywords
+            return page
         }
-        
-        
-        var hasPrev:Bool {
-            totalPage > 1 && current > 1
-        }
-        var hasNext:Bool {
-            totalPage > 1 && current < totalPage
-        }
-        
-        var page:Page {
-            get {
-                let page = Page()
-                page.current = current
-                page.size = size
-                page.total = total
-                page.keywords = keywords
-                
-                return page
-            }
-            set(page) {
-                current = page.current
-                size = page.size
-                total = page.total
-            }
+        set(page) {
+            current = page.current
+            size = page.size
+            total = page.total
         }
     }
-    
-    
-    enum Action: BindableAction, Equatable {
-        case binding(BindingAction<State>)
-        case initial
-        case updateSize(Int)
-        case nextPage
-        case prevPage
-        case none
+
+    init() {
+        logger.info("PageViewModel init ...")
     }
-    
-    
-    var body: some Reducer<State, Action> {
-        BindingReducer()
-        Reduce { state, action in
-            switch action {
-                // 初始化已设置的值
-            case .initial:
-                logger.info("page store initial...")
-                return .none
-                
-            case let .updateSize(size):
-                state.current = 1
-                state.size = size
-                return .none
-            case .nextPage:
-                state.current = state.current + 1
-                return .none
-            case .prevPage:
-                state.current -= 1
-                if state.current <= 1 {
-                    state.current = 1
-                }
-                return .none
-            case .none:
-                return .none
-            case .binding:
-                return .none
-            }
-        }
+
+    func nextPage() {
+        current += 1
+        onNextPage?()
+    }
+
+    func prevPage() {
+        current -= 1
+        if current <= 1 { current = 1 }
+        onPrevPage?()
+    }
+
+    func updateSize(_ newSize: Int) {
+        current = 1
+        size = newSize
+        onUpdateSize?()
     }
 }

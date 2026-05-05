@@ -10,9 +10,9 @@ import Foundation
 import NIO
 import Valkey
 import Logging
-import ComposableArchitecture
 
-class RedisInstanceModel: Identifiable {
+
+class RedisInstanceModel: Identifiable, @unchecked Sendable {
     var redisModel:RedisModel
     private var redisClient:RedisClient?
     

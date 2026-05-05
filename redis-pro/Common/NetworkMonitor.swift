@@ -3,13 +3,14 @@
 //  redis-pro
 //
 //  Created by chengpan on 2024/1/13.
+//  Fixed for Swift 6 Sendable conformance
 //
 
 import Logging
 import Foundation
 import Network
 
-class NetworkMonitor {
+final class NetworkMonitor: @unchecked Sendable {
     private let logger = Logger(label: "network-monitor")
     private var monitor: NWPathMonitor?
 
@@ -17,20 +18,17 @@ class NetworkMonitor {
         monitor = NWPathMonitor()
     }
 
-    func startMonitoring(_ callback: @escaping (Bool) async -> Void) {
-        monitor?.pathUpdateHandler = { path in
+    func startMonitoring(_ callback: @Sendable @escaping (Bool) async -> Void) {
+        monitor?.pathUpdateHandler = { [weak self] path in
+            guard let self else { return }
             if path.usesInterfaceType(.wifi) {
                 self.logger.info("WiFi status changed")
                 if path.status == .satisfied {
                     self.logger.info("WiFi is connected")
-                    Task {
-                        await callback(true)
-                    }
+                    Task { await callback(true) }
                 } else {
                     self.logger.info("WiFi is not connected")
-                    Task {
-                        await callback(false)
-                    }
+                    Task { await callback(false) }
                 }
             }
         }

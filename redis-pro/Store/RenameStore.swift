@@ -3,84 +3,56 @@
 //  redis-pro
 //
 //  Created by chengpan on 2022/5/14.
+//  Migrated to MVVM (Swift 6)
 //
 
 import Logging
 import Foundation
-import ComposableArchitecture
+import Observation
 
 private let logger = Logger(label: "rename-store")
 
-@Reducer
-struct RenameStore {
-    
-    @ObservableState
-    struct State: Equatable {
-        var key:String = ""
-        var index:Int = -1
-        var visible:Bool = false
-        var newKey:String = ""
-        
-        init() {
-            logger.info("string value state init ...")
-        }
+@MainActor
+@Observable
+final class RenameViewModel {
+    var key: String = ""
+    var index: Int = -1
+    var visible: Bool = false
+    var newKey: String = ""
+
+    // Callback when rename succeeds
+    var onSetKey: ((Int, String) -> Void)?
+
+    private let redisInstance: RedisInstanceModel
+
+    init(redisInstance: RedisInstanceModel) {
+        self.redisInstance = redisInstance
+        logger.info("RenameViewModel init ...")
     }
 
-    enum Action:BindableAction, Equatable {
-        case initial
-        case submit
-        case setKey(Int, String)
-        case setNewKey(String)
-        case hide
-        case none
-        case binding(BindingAction<State>)
+    func hide() {
+        visible = false
     }
-    
-    @Dependency(\.redisInstance) var redisInstanceModel:RedisInstanceModel
-    var mainQueue: AnySchedulerOf<DispatchQueue> = .main
-    
-    var body: some Reducer<State, Action> {
-        BindingReducer()
-        Reduce { state, action in
-            switch action {
-                // 初始化已设置的值
-            case .initial:
-                
-                logger.info("rename store initial...")
-                return .none
-            case .hide:
-                state.visible = false
-                return .none
-            case .submit:
-                let key = state.key
-                let index = state.index
-                let newKey = state.newKey
-                return .run { send in
-                    do {
-                        let r = try await redisInstanceModel.getClient().rename(key, newKey: newKey)
-                        if r {
-                            await send(.setKey(index, newKey))
-                        }
-                    } catch {
-                        Task { @MainActor in Messages.show(error) }
-                    }
+
+    func submit() {
+        let key = self.key
+        let index = self.index
+        let newKey = self.newKey
+
+        Task {
+            do {
+                let r = try await redisInstance.getClient().rename(key, newKey: newKey)
+                if r {
+                    visible = false
+                    onSetKey?(index, newKey)
                 }
-                
-            case .setKey(_, _):
-                state.visible = false
-                return .none
-            
-            case let .setNewKey(newKey):
-                state.newKey = newKey
-                return .none
-            case .none:
-                return .none
-                
-            case .binding:
-                return .none
+            } catch {
+                Messages.show(error)
             }
         }
     }
-    
-    
+
+    func setNewKey(_ value: String) {
+        newKey = value
+    }
 }

@@ -1,129 +1,106 @@
 //
-//  RedisLoginStore.swift
+//  LoginStore.swift
 //  redis-pro
 //
 //  Created by chengpan on 2022/5/1.
+//  Migrated to MVVM (Swift 6)
 //
 
 import Logging
 import Foundation
-import ComposableArchitecture
+import Observation
 
 private let logger = Logger(label: "login-store")
 
-@Reducer
-struct LoginStore {
+@MainActor
+@Observable
+final class LoginViewModel {
+    var id: String = ""
+    var name: String = ""
+    var host: String = "127.0.0.1"
+    var port: Int = 6379
+    var database: Int = 0
+    var username: String = ""
+    var password: String = ""
+    var connectionType: String = "tcp"
 
-    @ObservableState
-    struct State: Equatable {
-        var id: String = ""
-        var name:String = ""
-        var host: String = "127.0.0.1"
-        var port: Int = 6379
-        var database: Int = 0
-        var username: String = ""
-        var password: String = ""
-        var connectionType:String = "tcp"
-        
-        // ssh
-        var sshHost:String = ""
-        var sshPort:Int = 22
-        var sshUser:String = ""
-        var sshPass:String = ""
-        
-        var pingR: String = ""
-        var loading: Bool = false
-        
-        @Shared(.inMemory("appContext")) var appContext = AppContextStore.State()
-        
-        var height:CGFloat {
-            connectionType == RedisConnectionTypeEnum.SSH.rawValue ? 500 : 380
+    // ssh
+    var sshHost: String = ""
+    var sshPort: Int = 22
+    var sshUser: String = ""
+    var sshPass: String = ""
+
+    var pingR: String = ""
+    var loading: Bool = false
+
+    var height: CGFloat {
+        connectionType == RedisConnectionTypeEnum.SSH.rawValue ? 500 : 380
+    }
+
+    // Callbacks replacing TCA action propagation
+    var onConnect: (() -> Void)?
+    var onSave: (() -> Void)?
+
+    var redisModel: RedisModel {
+        get {
+            let m = RedisModel(name: name)
+            m.id = id
+            m.host = host
+            m.port = port
+            m.database = database
+            m.username = username
+            m.password = password
+            m.connectionType = connectionType
+            m.sshHost = sshHost
+            m.sshPort = sshPort
+            m.sshUser = sshUser
+            m.sshPass = sshPass
+            return m
         }
-        
-        // 方便外部使用
-        var redisModel:RedisModel {
-            get {
-                let redisModel = RedisModel(name: name)
-                redisModel.id = id
-                redisModel.host = host
-                redisModel.port = port
-                redisModel.database = database
-                redisModel.username = username
-                redisModel.password = password
-                redisModel.connectionType = connectionType
-                redisModel.sshHost = sshHost
-                redisModel.sshPort = sshPort
-                redisModel.sshUser = sshUser
-                redisModel.sshPass = sshPass
-                
-                return redisModel
-            }
-            set(n) {
-                self.id = n.id
-                self.name = n.name
-                self.host = n.host
-                self.port = n.port
-                self.database = n.database
-                self.username = n.username
-                self.password = n.password
-                self.connectionType = n.connectionType
-                self.sshHost = n.sshHost
-                self.sshPort = n.sshPort
-                self.sshUser = n.sshUser
-                self.sshPass = n.sshPass
-            }
+        set(n) {
+            id = n.id
+            name = n.name
+            host = n.host
+            port = n.port
+            database = n.database
+            username = n.username
+            password = n.password
+            connectionType = n.connectionType
+            sshHost = n.sshHost
+            sshPort = n.sshPort
+            sshUser = n.sshUser
+            sshPass = n.sshPass
         }
     }
 
-    enum Action:BindableAction,Equatable {
-        case add
-        case save
-        case testConnect
-        case connect
-        case setPingR(Bool)
-        case appContextAction(AppContextStore.Action)
-        case none
-        case binding(BindingAction<State>)
+    private let redisInstance: RedisInstanceModel
+
+    init(redisInstance: RedisInstanceModel) {
+        self.redisInstance = redisInstance
+        logger.info("LoginViewModel init ...")
     }
-    
-    @Dependency(\.redisInstance) var redisInstanceModel: RedisInstanceModel
-    
-    var body: some Reducer<State, Action> {
-        BindingReducer()
-        Scope(state: \.appContext, action: \.appContextAction) {
-            AppContextStore()
+
+    func add() {
+        id = UUID().uuidString
+        save()
+    }
+
+    func save() {
+        onSave?()
+    }
+
+    func testConnect() {
+        logger.info("test connect to redis server, name: \(name), host: \(host)")
+        loading = true
+        let model = redisModel
+        Task {
+            let r = await redisInstance.testConnect(model)
+            pingR = r ? "Connect successed!" : "Connect fail! "
+            loading = false
         }
-        Reduce { state, action in
-            switch action {
-            case .add:
-                state.id = UUID().uuidString
-                return .run { send in
-                    await send(.save)
-                }
-            case .save:
-                return .none
-            case .testConnect:
-                logger.info("test connect to redis server, name: \(state.name), host: \(state.host)")
-                state.loading = true
-                let redisModel = state.redisModel
-                
-                return .run { send in
-                    let r = await redisInstanceModel.testConnect(redisModel)
-                    await send(.setPingR(r))
-                }
-            case let .setPingR(r):
-                state.pingR =  r ? "Connect successed!" : "Connect fail! "
-                state.loading = false
-                return .none
-            case .connect:
-                return .none
-            case .none:
-                return .none
-            case .binding:
-                return .none
-            case .appContextAction:
-                return .none
-            }
-        }
+    }
+
+    func connect() {
+        onConnect?()
     }
 }
