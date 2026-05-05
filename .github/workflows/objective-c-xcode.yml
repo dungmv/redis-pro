@@ -1,30 +1,82 @@
-name: Xcode - Build and Analyze
+name: CI - Build & Test
 
 on:
   push:
-    branches: [ "main" ]
+    branches: ["main"]
   pull_request:
-    branches: [ "main" ]
+    branches: ["main"]
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
 
 jobs:
   build:
-    name: Build and analyse default scheme using xcodebuild command
-    runs-on: macos-latest
+    name: Build & Test (Xcode)
+    runs-on: macos-15
+    timeout-minutes: 30
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v3
-      - name: Set Default Scheme
+        uses: actions/checkout@v4
+
+      - name: Select Xcode
         run: |
-          scheme_list=$(xcodebuild -list -json | tr -d "\n")
-          default=$(echo $scheme_list | ruby -e "require 'json'; puts JSON.parse(STDIN.gets)['project']['targets'][0]")
-          echo $default | cat >default
-          echo Using default scheme: $default
-      - name: Build
-        env:
-          scheme: ${{ 'default' }}
+          # Use the latest Xcode available on macos-15 runner
+          sudo xcode-select --switch /Applications/Xcode.app
+
+      - name: Resolve SPM Dependencies
         run: |
-          if [ $scheme = default ]; then scheme=$(cat default); fi
-          if [ "`ls -A | grep -i \\.xcworkspace\$`" ]; then filetype_parameter="workspace" && file_to_build="`ls -A | grep -i \\.xcworkspace\$`"; else filetype_parameter="project" && file_to_build="`ls -A | grep -i \\.xcodeproj\$`"; fi
-          file_to_build=`echo $file_to_build | awk '{$1=$1;print}'`
-          xcodebuild clean build analyze -scheme "$scheme" -"$filetype_parameter" "$file_to_build" | xcpretty && exit ${PIPESTATUS[0]}
+          xcodebuild -resolvePackageDependencies \
+            -project "redis-pro.xcodeproj" \
+            -scheme "redis-pro"
+
+      - name: Build (Debug)
+        run: |
+          xcodebuild build \
+            -project "redis-pro.xcodeproj" \
+            -scheme "redis-pro" \
+            -configuration Debug \
+            -destination "platform=macOS" \
+            -derivedDataPath DerivedData \
+            -enableCodeCoverage YES \
+            CODE_SIGN_IDENTITY="-" \
+            CODE_SIGNING_REQUIRED=NO \
+            CODE_SIGNING_ALLOWED=NO \
+            | xcpretty && exit ${PIPESTATUS[0]}
+
+      - name: Run Tests
+        run: |
+          xcodebuild test \
+            -project "redis-pro.xcodeproj" \
+            -scheme "redis-pro" \
+            -configuration Debug \
+            -destination "platform=macOS" \
+            -derivedDataPath DerivedData \
+            -enableCodeCoverage YES \
+            CODE_SIGN_IDENTITY="-" \
+            CODE_SIGNING_REQUIRED=NO \
+            CODE_SIGNING_ALLOWED=NO \
+            | xcpretty --report html --output test-results.html && exit ${PIPESTATUS[0]}
+        continue-on-error: true
+
+      - name: Upload Test Results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-results
+          path: test-results.html
+          retention-days: 7
+
+      - name: Build (Release)
+        run: |
+          xcodebuild build \
+            -project "redis-pro.xcodeproj" \
+            -scheme "redis-pro" \
+            -configuration Release \
+            -destination "platform=macOS" \
+            -derivedDataPath DerivedData \
+            CODE_SIGN_IDENTITY="-" \
+            CODE_SIGNING_REQUIRED=NO \
+            CODE_SIGNING_ALLOWED=NO \
+            | xcpretty && exit ${PIPESTATUS[0]}

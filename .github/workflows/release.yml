@@ -1,0 +1,145 @@
+name: Release - Build & Publish
+
+on:
+  push:
+    tags:
+      - "v*"
+  workflow_dispatch:
+    inputs:
+      version:
+        description: "Version tag (e.g., v3.2.0)"
+        required: true
+        type: string
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: false
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    name: Create Release
+    runs-on: macos-15
+    timeout-minutes: 45
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Select Xcode
+        run: |
+          sudo xcode-select --switch /Applications/Xcode.app
+          xcodebuild -version
+
+      - name: Determine Version
+        id: version
+        run: |
+          if [[ "${{ github.event_name }}" == "push" ]]; then
+            TAG_NAME="${GITHUB_REF#refs/tags/}"
+          else
+            TAG_NAME="${{ github.event.inputs.version }}"
+          fi
+          # Strip 'v' prefix for version number
+          VERSION="${TAG_NAME#v}"
+          echo "tag=${TAG_NAME}" >> $GITHUB_OUTPUT
+          echo "version=${VERSION}" >> $GITHUB_OUTPUT
+          echo "Building release for version ${VERSION} (tag: ${TAG_NAME})"
+
+      - name: Resolve SPM Dependencies
+        run: |
+          xcodebuild -resolvePackageDependencies \
+            -project "redis-pro.xcodeproj" \
+            -scheme "redis-pro"
+
+      - name: Build & Archive
+        run: |
+          xcodebuild archive \
+            -project "redis-pro.xcodeproj" \
+            -scheme "redis-pro" \
+            -configuration Release \
+            -destination "platform=macOS" \
+            -archivePath "build/redis-pro.xcarchive" \
+            MARKETING_VERSION="${{ steps.version.outputs.version }}" \
+            CURRENT_PROJECT_VERSION="${GITHUB_RUN_NUMBER}" \
+            CODE_SIGN_IDENTITY="-" \
+            CODE_SIGNING_REQUIRED=NO \
+            CODE_SIGNING_ALLOWED=NO \
+            | xcpretty && exit ${PIPESTATUS[0]}
+
+      - name: Export App Bundle
+        run: |
+          # Copy the .app from the archive
+          APP_PATH="build/redis-pro.xcarchive/Products/Applications/redis-pro.app"
+          if [ -d "$APP_PATH" ]; then
+            echo "App found at: $APP_PATH"
+            cp -R "$APP_PATH" "redis-pro.app"
+          else
+            # Fallback: find it in DerivedData
+            find build -name "*.app" -type d
+            BUILD_APP=$(find build -name "redis-pro.app" -type d | head -1)
+            if [ -z "$BUILD_APP" ]; then
+              echo "ERROR: Could not find built .app"
+              exit 1
+            fi
+            cp -R "$BUILD_APP" "redis-pro.app"
+          fi
+
+      - name: Create DMG (optional)
+        id: dmg
+        run: |
+          # Create a DMG for distribution
+          APP_NAME="redis-pro"
+          DMG_NAME="${APP_NAME}-${{ steps.version.outputs.version }}.dmg"
+
+          # Create a temporary directory for DMG contents
+          mkdir -p dmg_staging
+          cp -R "redis-pro.app" dmg_staging/
+
+          # Create a symlink to /Applications
+          ln -s /Applications dmg_staging/Applications
+
+          # Create DMG
+          hdiutil create -volname "${APP_NAME}" \
+            -srcfolder dmg_staging \
+            -ov -format UDZO \
+            "${DMG_NAME}"
+
+          echo "dmg_name=${DMG_NAME}" >> $GITHUB_OUTPUT
+          echo "Created DMG: ${DMG_NAME}"
+
+      - name: Create ZIP Archive
+        run: |
+          ZIP_NAME="redis-pro-${{ steps.version.outputs.version }}.zip"
+          ditto -c -k --keepParent "redis-pro.app" "${ZIP_NAME}"
+          echo "Created ZIP: ${ZIP_NAME}"
+
+      - name: Generate Release Notes
+        id: release_notes
+        run: |
+          if [ -f ".version" ]; then
+            NOTES=$(python3 -c 'import json; print(json.load(open(".version")).get("releaseNotes",""))')
+          else
+            NOTES=""
+          fi
+          if [ -z "$NOTES" ]; then
+            NOTES="Auto-generated release for version ${{ steps.version.outputs.version }}"
+          fi
+          printf '%s\n' "$NOTES" > /tmp/release_notes.md
+          echo "notes_file=/tmp/release_notes.md" >> $GITHUB_OUTPUT
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ steps.version.outputs.tag }}
+          name: "Redis Pro ${{ steps.version.outputs.version }}"
+          body_path: ${{ steps.release_notes.outputs.notes_file }}
+          files: |
+            redis-pro-${{ steps.version.outputs.version }}.zip
+            ${{ steps.dmg.outputs.dmg_name }}
+          draft: false
+          prerelease: false
+          generate_release_notes: true
