@@ -13,7 +13,7 @@ struct TestView: View {
     var tag: String = "defaultTag"
 
     var body: some View {
-        Text("Window with tag: \(viewModel.isConnect),  id: \(viewModel.id)")
+        Text(verbatim: "Window with tag: \(viewModel.isConnect),  id: \(viewModel.id)")
             .frame(width: 300, height: 200)
         Button("connect", action: { viewModel.onConnect() })
         Button("disconnect", action: { viewModel.onDisconnect() })

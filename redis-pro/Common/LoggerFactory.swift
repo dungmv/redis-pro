@@ -29,8 +29,9 @@ class LoggerFactory {
     }
     
     func setUp() -> Void {
+        let puppy = self.puppy
         LoggingSystem.bootstrap {
-            var handler = PuppyLogHandler(label: $0, puppy: self.puppy)
+            var handler = PuppyLogHandler(label: $0, puppy: puppy)
             // Set the logging level.
             handler.logLevel = .info
             return handler

@@ -11,18 +11,17 @@ import Logging
 struct DataTable<Item: Identifiable & Sendable & Hashable>: View {
     @State var viewModel: TableViewModel<Item>
     @State private var selection: Item.ID?
-    
-    private let logger = Logger(label: "data-table")
 
     var body: some View {
-        List(viewModel.datasource, selection: $selection) { item in
-            HStack(spacing: 12) {
-                ForEach(viewModel.columns) { column in
+        let datasource = viewModel.datasource
+        Table(datasource, selection: $selection) {
+            TableColumnForEach(viewModel.columns) { column in
+                TableColumn(column.title) { item in
                     Text(column.content(item))
                         .lineLimit(1)
                         .truncationMode(.tail)
-                        .frame(maxWidth: column.width ?? 100, alignment: .leading)
                 }
+                .width(column.width ?? 100)
             }
         }
         .contextMenu(forSelectionType: Item.ID.self) { selectedIDs in

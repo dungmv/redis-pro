@@ -28,7 +28,7 @@ extension RedisClient {
         if let tokenArray = try? res?.decode(as: RESPToken.Array.self) {
             let arr = Swift.Array(tokenArray)
             if arr.count >= 2 {
-                 return Int(fromValkeyValue: arr[1]) ?? 16
+                return Int(fromValkeyValue: arr[1])
             }
         }
         return 16 // Default

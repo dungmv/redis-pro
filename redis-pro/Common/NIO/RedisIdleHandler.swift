@@ -18,7 +18,7 @@ class RedisIdleHandler: ChannelInboundHandler {
     
     func userInboundEventTriggered(context: ChannelHandlerContext, event: Any) {
         logger.info("redis idle handler triggerd!")
-        if let idleStateEvent = event as? IdleStateHandler.IdleStateEvent {
+        if event is IdleStateHandler.IdleStateEvent {
             logger.info("Client timed out")
             context.close(promise: nil)
         }

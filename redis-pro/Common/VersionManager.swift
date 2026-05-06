@@ -24,7 +24,7 @@ struct VersionManager {
         
         if let url = URL(string: checkUpdateUrl) {
             do {
-                let contents = try String(contentsOf: url)
+                let contents = try String(contentsOf: url, encoding: .utf8)
                 logger.info("get new version result: \(contents)")
                 if contents.count < 2 {
                     return

@@ -37,7 +37,7 @@ extension RedisClient {
             
             logger.info("eval lua script, script: \(script), args: \(argArr)")
             
-            guard let client = try await getClient() else { return "eval error" }
+            guard (try await getClient()) != nil else { return "eval error" }
             // EVAL script numkeys key [key ...] arg [arg ...]
             let res: RESPToken? = try await self.send("EVAL", args: [script] + argArr)
             return res.map { "\($0)" } ?? "eval error"

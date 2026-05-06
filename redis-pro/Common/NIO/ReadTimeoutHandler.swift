@@ -7,10 +7,10 @@
 
 import Logging
 import Foundation
-import NIO
-import NIOConcurrencyHelpers
+@preconcurrency import NIO
+@preconcurrency import NIOConcurrencyHelpers
 
-class ReadTimeoutHandler: ChannelInboundHandler {
+class ReadTimeoutHandler: ChannelInboundHandler, @unchecked Sendable {
     typealias InboundIn = Any
     
     private let timeout: TimeAmount
@@ -24,10 +24,11 @@ class ReadTimeoutHandler: ChannelInboundHandler {
     
     func channelActive(context: ChannelHandlerContext) {
         // 当通道激活时，设置读取超时事件
+        let channel = context.channel
         self.scheduledTimeout = context.eventLoop.scheduleTask(in: self.timeout) {
             // 处理读取超时逻辑，例如关闭通道或发出读取超时错误
             self.logger.info("swift nio read timed out!")
-            context.close(promise: nil)
+            channel.close(promise: nil)
             throw BizError(message: "Read timeout!")
         }
         
@@ -38,10 +39,11 @@ class ReadTimeoutHandler: ChannelInboundHandler {
     func channelRead(context: ChannelHandlerContext, data: NIOAny) {
         // 当有数据可读时，重置读取超时事件
         self.scheduledTimeout?.cancel()
+        let channel = context.channel
         self.scheduledTimeout = context.eventLoop.scheduleTask(in: self.timeout) {
             // 处理读取超时逻辑，例如关闭通道或发出读取超时错误
             self.logger.info("swift nio read timed out!")
-            context.close(promise: nil)
+            channel.close(promise: nil)
             throw BizError(message: "Read timeout!")
         }
         

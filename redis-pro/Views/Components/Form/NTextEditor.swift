@@ -36,7 +36,8 @@ struct NTextEditor: NSViewRepresentable {
     }
     
     
-    class Coordinator: NSObject, NSTextViewDelegate {
+    @MainActor
+    final class Coordinator: NSObject, NSTextViewDelegate {
         let parent: NTextEditor
         private var editing = false
         

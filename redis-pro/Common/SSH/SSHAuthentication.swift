@@ -18,7 +18,7 @@ enum SSHClientError: Swift.Error {
 }
 
 
-final class ErrorHandler: ChannelInboundHandler {
+final class ErrorHandler: ChannelInboundHandler, @unchecked Sendable {
     typealias InboundIn = Any
 
     let logger = Logger(label: "ssh-error-handler")
@@ -31,7 +31,7 @@ final class ErrorHandler: ChannelInboundHandler {
 
 
 /// A client user auth delegate that provides an interactive prompt for password-based user auth.
-final class UserPasswordDelegate: NIOSSHClientUserAuthenticationDelegate {
+final class UserPasswordDelegate: NIOSSHClientUserAuthenticationDelegate, @unchecked Sendable {
     let logger = Logger(label: "ssh-password-delegate")
     
     private var username: String
@@ -81,7 +81,7 @@ final class UserPasswordDelegate: NIOSSHClientUserAuthenticationDelegate {
 //}
 
 
-final class AcceptAllHostKeysDelegate: NIOSSHClientServerAuthenticationDelegate {
+final class AcceptAllHostKeysDelegate: NIOSSHClientServerAuthenticationDelegate, @unchecked Sendable {
     func validateHostKey(hostKey: NIOSSHPublicKey, validationCompletePromise: EventLoopPromise<Void>) {
         // Do not replicate this in your own code: validate host keys! This is a
         // choice made for expedience, not for any other reason.

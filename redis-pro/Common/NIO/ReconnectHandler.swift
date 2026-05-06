@@ -6,7 +6,7 @@
 //
 
 import Foundation
-import NIO
+@preconcurrency import NIO
 
 class ReconnectHandler: ChannelInboundHandler, @unchecked Sendable {
     typealias InboundIn = ByteBuffer
@@ -27,12 +27,13 @@ class ReconnectHandler: ChannelInboundHandler, @unchecked Sendable {
         print("Connection closed. Will attempt to reconnect in \(reconnectInterval)")
 
         // Schedule a reconnect after the specified interval
+        let channel = context.channel
         reconnectScheduled = context.eventLoop.scheduleTask(in: reconnectInterval) {
-            self.reconnect(context: context)
+            self.reconnect(channel: channel)
         }
     }
 
-    private func reconnect(context: ChannelHandlerContext) {
+    private func reconnect(channel: Channel) {
         print("Attempting to reconnect...")
 //        let newBootstrap = makeBootstrap(context: context)
 //        let newChannel = try! newBootstrap.connect(host: "your_server_host", port: your_server_port).wait()
@@ -41,7 +42,7 @@ class ReconnectHandler: ChannelInboundHandler, @unchecked Sendable {
         // ...
 
         print("Reconnection successful")
-        context.fireChannelActive()
+        channel.pipeline.fireChannelActive()
     }
 
     private func cancelReconnect() {

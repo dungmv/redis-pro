@@ -6,21 +6,21 @@
 //
 
 import Foundation
-import NIO
-import NIOSSH
+@preconcurrency import NIO
+@preconcurrency import NIOSSH
 
-final class PortForwardingServer {
+final class PortForwardingServer: @unchecked Sendable {
     private var serverChannel: Channel?
     private let serverLoop: EventLoop
     private let group: EventLoopGroup
     private let bindHost: String
     private let bindPort: Int
-    private let forwardingChannelConstructor: (Channel) -> EventLoopFuture<Void>
+    private let forwardingChannelConstructor: @Sendable (Channel) -> EventLoopFuture<Void>
 
     init(group: EventLoopGroup,
          bindHost: String,
          bindPort: Int,
-         _ forwardingChannelConstructor: @escaping (Channel) -> EventLoopFuture<Void>) {
+         _ forwardingChannelConstructor: @escaping @Sendable (Channel) -> EventLoopFuture<Void>) {
         self.serverLoop = group.next()
         self.group = group
         self.forwardingChannelConstructor = forwardingChannelConstructor
@@ -66,7 +66,7 @@ final class PortForwardingServer {
 }
 
 /// A simple handler that wraps data into SSHChannelData for forwarding.
-final class SSHWrapperHandler: ChannelDuplexHandler {
+final class SSHWrapperHandler: ChannelDuplexHandler, @unchecked Sendable {
     typealias InboundIn = SSHChannelData
     typealias InboundOut = ByteBuffer
     typealias OutboundIn = ByteBuffer
@@ -92,7 +92,7 @@ final class SSHWrapperHandler: ChannelDuplexHandler {
 
 
 
-final class GlueHandler {
+final class GlueHandler: @unchecked Sendable {
     private var partner: GlueHandler?
 
     private var context: ChannelHandlerContext?

@@ -7,8 +7,8 @@
 
 import Foundation
 import Valkey
-import NIO
-import NIOSSH
+@preconcurrency import NIO
+@preconcurrency import NIOSSH
 import Logging
 
 class SSHTunnel: @unchecked Sendable {

@@ -6,7 +6,7 @@
 //
 
 import Foundation
-import NIO
+@preconcurrency import NIO
 
 class TimeoutHandler: ChannelInboundHandler, @unchecked Sendable {
     typealias InboundIn = ByteBuffer
@@ -35,8 +35,9 @@ class TimeoutHandler: ChannelInboundHandler, @unchecked Sendable {
         cancelTimeout()
 
         // 安排一个新的超时任务
+        let channel = context.channel
         scheduledTimeout = context.eventLoop.scheduleTask(in: timeout) {
-            self.timeoutExpired(context: context)
+            self.timeoutExpired(channel: channel)
         }
     }
 
@@ -46,11 +47,11 @@ class TimeoutHandler: ChannelInboundHandler, @unchecked Sendable {
         scheduledTimeout = nil
     }
 
-    private func timeoutExpired(context: ChannelHandlerContext) {
+    private func timeoutExpired(channel: Channel) {
         // 处理超时
         // ...
 
         // 关闭连接或执行其他操作
-        context.close(promise: nil)
+        channel.close(promise: nil)
     }
 }
