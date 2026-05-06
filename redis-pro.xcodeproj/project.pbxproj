@@ -171,8 +171,8 @@
 		62D741BF288414E00049AB3C /* LuaView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 62D741BE288414E00049AB3C /* LuaView.swift */; };
 		62D741C1288415180049AB3C /* LuaStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 62D741C0288415180049AB3C /* LuaStore.swift */; };
 		62D741C3288416470049AB3C /* RedisClientLua.swift in Sources */ = {isa = PBXBuildFile; fileRef = 62D741C2288416470049AB3C /* RedisClientLua.swift */; };
-		62E274A42C849BF0007D5812 /* DataTable.swift in Sources */ = {isa = PBXBuildFile; fileRef = 62E274A32C849BF0007D5812 /* DataTable.swift */; };
 		62E274A02C849BF0007D5812 /* NSearchFieldHistory.swift in Sources */ = {isa = PBXBuildFile; fileRef = 62E2749F2C849BF0007D5812 /* NSearchFieldHistory.swift */; };
+		62E274A42C849BF0007D5812 /* DataTable.swift in Sources */ = {isa = PBXBuildFile; fileRef = 62E274A32C849BF0007D5812 /* DataTable.swift */; };
 		62E3DCAF28B0C60B00FF865A /* PasteboardHelper.swift in Sources */ = {isa = PBXBuildFile; fileRef = 62E3DCAE28B0C60B00FF865A /* PasteboardHelper.swift */; };
 		62E3DCB228B0C93A00FF865A /* TableContextMenuEnum.swift in Sources */ = {isa = PBXBuildFile; fileRef = 62E3DCB128B0C93A00FF865A /* TableContextMenuEnum.swift */; };
 		62E8F9D22765019D006A5326 /* MIntField.swift in Sources */ = {isa = PBXBuildFile; fileRef = 62E8F9D12765019D006A5326 /* MIntField.swift */; };
@@ -322,7 +322,6 @@
 		623E46C52B66542C00C28904 /* CodableTest.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CodableTest.swift; sourceTree = "<group>"; };
 		6240E0AA280303890005E793 /* RedisDefaults.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RedisDefaults.swift; sourceTree = "<group>"; };
 		624770222A515D9700A4AF74 /* DependencyKeys.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DependencyKeys.swift; sourceTree = "<group>"; };
-		62E274A32C849BF0007D5812 /* DataTable.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DataTable.swift; sourceTree = "<group>"; };
 		6252A4B527F0450200C9536A /* NTableColumn.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NTableColumn.swift; sourceTree = "<group>"; };
 		6252A4B727F04ACC00C9536A /* TableColumnType.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TableColumnType.swift; sourceTree = "<group>"; };
 		6252A4B927F0542E00C9536A /* Assert.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Assert.swift; sourceTree = "<group>"; };
@@ -378,6 +377,7 @@
 		62D741C0288415180049AB3C /* LuaStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LuaStore.swift; sourceTree = "<group>"; };
 		62D741C2288416470049AB3C /* RedisClientLua.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RedisClientLua.swift; sourceTree = "<group>"; };
 		62E2749F2C849BF0007D5812 /* NSearchFieldHistory.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NSearchFieldHistory.swift; sourceTree = "<group>"; };
+		62E274A32C849BF0007D5812 /* DataTable.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DataTable.swift; sourceTree = "<group>"; };
 		62E3DCAE28B0C60B00FF865A /* PasteboardHelper.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PasteboardHelper.swift; sourceTree = "<group>"; };
 		62E3DCB128B0C93A00FF865A /* TableContextMenuEnum.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TableContextMenuEnum.swift; sourceTree = "<group>"; };
 		62E8F9D12765019D006A5326 /* MIntField.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MIntField.swift; sourceTree = "<group>"; };

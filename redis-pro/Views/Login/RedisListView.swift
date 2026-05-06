@@ -2,7 +2,7 @@
 //  RedisListView.swift
 //  redis-pro
 //
-//  Liquid Glass connection list + login form split view.
+//  Sidebar connection list + login form split view.
 //  Migrated to MVVM (Swift 6)
 //
 
@@ -15,13 +15,27 @@ struct RedisListView: View {
 
     @State var viewModel: FavoriteViewModel
 
+    private var selection: Binding<Int?> {
+        Binding<Int?>(
+            get: {
+                let idx = viewModel.table.selectIndex
+                return idx >= 0 ? idx : nil
+            },
+            set: { newValue in
+                if let index = newValue {
+                    viewModel.table.selectionChange(index: index, indexes: [index])
+                }
+            }
+        )
+    }
+
     var body: some View {
         HSplitView {
             // ── Connection list (left sidebar) ────────────────────────
             VStack(alignment: .leading, spacing: 0) {
                 // Sidebar header
                 HStack {
-                    Text("FAVORITES")
+                    Text("CONNECTIONS")
                         .font(.system(size: 10, weight: .bold))
                         .foregroundStyle(.secondary)
                         .kerning(0.8)
@@ -33,9 +47,23 @@ struct RedisListView: View {
 
                 Divider()
 
-                // Connections table
-                NTableView(viewModel: viewModel.table)
-                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+                // Connections list (single column, no table header)
+                List(selection: selection) {
+                    ForEach(Array(viewModel.table.datasource.enumerated()), id: \.offset) { index, model in
+                        Text(model.name.isEmpty ? "New Connection" : model.name)
+                            .tag(index)
+                            .onTapGesture(count: 2) {
+                                viewModel.connect(index)
+                            }
+                    }
+                }
+                .listStyle(.sidebar)
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
+                .onDeleteCommand {
+                    if let idx = selection.wrappedValue {
+                        viewModel.deleteConfirm(idx)
+                    }
+                }
 
                 Divider()
 
@@ -58,14 +86,15 @@ struct RedisListView: View {
                 .glassToolbar()
             }
             .background(.thinMaterial)
-            .frame(minWidth: 200, idealWidth: 220)
+            .frame(minWidth: 200, idealWidth: 240, maxWidth: 320)
             .layoutPriority(0)
             .onAppear { onLoad() }
 
             // ── Login form (right panel) ───────────────────────────────
             LoginForm(viewModel: viewModel.login)
                 .background(.regularMaterial)
-                .frame(minWidth: 800, maxWidth: .infinity, minHeight: 520, maxHeight: .infinity)
+                .layoutPriority(1)
+                .frame(minWidth: 400, idealWidth: 500, maxWidth: .infinity, minHeight: 520, maxHeight: .infinity)
         }
         .glassWindowSurface()
     }
@@ -73,5 +102,10 @@ struct RedisListView: View {
     private func onLoad() {
         viewModel.getAll()
         viewModel.initDefaultSelection()
+        // Apply default selection now that datasource is loaded
+        let idx = viewModel.table.defaultSelectIndex
+        if idx >= 0, idx < viewModel.table.datasource.count {
+            viewModel.table.selectionChange(index: idx, indexes: [idx])
+        }
     }
 }

@@ -110,7 +110,7 @@ struct LoginForm: View {
 
             // Action row
             HStack(spacing: 8) {
-                MButton(text: "Add to Favorites", action: { viewModel.add() })
+                MButton(text: "Save as New", action: { viewModel.add() })
                 Spacer()
                 MButton(text: "Save Changes", action: { viewModel.save() })
                 Spacer()
