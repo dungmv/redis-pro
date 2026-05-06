@@ -8,21 +8,21 @@
 import Foundation
 import Logging
 
-class ScanModel:ObservableObject, CustomStringConvertible, Equatable {
+struct ScanModel: Sendable, Equatable {
     static func == (lhs: ScanModel, rhs: ScanModel) -> Bool {
         return lhs.cursor == rhs.cursor && lhs.size == rhs.size && lhs.keywords == rhs.keywords
     }
     
-    var current:Int = 1
-    @Published var total:Int = 0
-    @Published var cursor:Int = 0
-    @Published var size:Int = 50
-    @Published var keywords:String = ""
-    private var cursorHistory:[Int] = [Int]()
+    var current: Int = 1
+    var total: Int = 0
+    var cursor: Int = 0
+    var size: Int = 50
+    var keywords: String = ""
+    private var cursorHistory: [Int] = [Int]()
     
     let logger = Logger(label: "scan-model")
     
-    var totalPage:Int {
+    var totalPage: Int {
         if total <= 0 {
             return 1
         }
@@ -34,35 +34,32 @@ class ScanModel:ObservableObject, CustomStringConvertible, Equatable {
         }
     }
     
-    var hasNext:Bool {
+    var hasNext: Bool {
         self.cursor != 0
-//        self.current < totalPage
     }
     
-    var hasPrev:Bool {
+    var hasPrev: Bool {
         self.cursorHistory.count > 0
-//        self.current > 1
     }
-    
     
     var description: String {
         return "ScanModel:[cursor:\(cursor), size:\(size), keywords:\(keywords), history: \(cursorHistory), current: \(current)]"
     }
     
-    func reset() -> Void {
+    mutating func reset() -> Void {
         self.current = 1
         self.cursor = 0
         self.cursorHistory.removeAll()
     }
     
-    func nextPage() -> Void {
+    mutating func nextPage() -> Void {
         self.current += 1
         self.cursorHistory.append(self.cursor)
     }
     
-    func prevPage() -> Void {
+    mutating func prevPage() -> Void {
         self.current -= 1
-//
+
         if self.current <= 1 {
             self.current = 1
             self.cursor = 0

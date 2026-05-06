@@ -11,12 +11,13 @@ import Valkey
 // MARK: - set function
 extension RedisClient {
     
-    func pageSet(_ key: String, page: Page) async throws -> [String] {
+    func pageSet(_ key: String, page: Page) async throws -> ([String], Page) {
         logger.info("redis set page, key: \(key), page: \(page)")
         begin()
         defer { complete() }
         
         do {
+            var page = page
             try await assertExist(key)
             let isScan = isScan(page.keywords)
             var r: [String] = []
@@ -35,11 +36,11 @@ extension RedisClient {
                     page.total = 1
                 }
             }
-            return r
+            return (r, page)
         } catch {
             handleError(error)
         }
-        return []
+        return ([], page)
     }
     
     private func _setCountScan(_ key: String, keywords: String?) async throws -> Int {

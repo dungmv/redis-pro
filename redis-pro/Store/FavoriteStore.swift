@@ -15,7 +15,7 @@ private let logger = Logger(label: "favorite-store")
 @MainActor
 @Observable
 final class FavoriteViewModel {
-    let table: TableViewModel
+    let table: TableViewModel<RedisModel>
     let login: LoginViewModel
 
     // Callback to AppViewModel when connection succeeds
@@ -25,8 +25,8 @@ final class FavoriteViewModel {
 
     init(redisInstance: RedisInstanceModel) {
         self.redisInstance = redisInstance
-        self.table = TableViewModel(
-            columns: [NTableColumn(title: "FAVORITES", key: "name", width: 50, icon: .APP)],
+        self.table = TableViewModel<RedisModel>(
+            columns: [.init(title: "FAVORITES", width: 50, icon: .APP) { $0.name }],
             datasource: [],
             dragable: true
         )
@@ -40,19 +40,19 @@ final class FavoriteViewModel {
         table.onSelectionChange = { [weak self] index, _ in
             guard let self, index > -1 else { return }
             logger.info("favorite selection change, index: \(index)")
-            let redisModel = self.table.datasource[index] as! RedisModel
+            let redisModel = self.table.datasource[index]
             self.login.redisModel = redisModel
         }
         table.onDouble = { [weak self] index in self?.connect(index) }
         table.onDelete = { [weak self] index in self?.deleteConfirm(index) }
         table.onCopy = { [weak self] index in
             guard let self else { return }
-            let redisModel = self.table.datasource[index] as! RedisModel
+            let redisModel = self.table.datasource[index]
             PasteboardHelper.copy(redisModel.name)
         }
         table.onDragComplete = { [weak self] _, _ in
             guard let self else { return }
-            let _ = RedisDefaults.save(self.table.datasource as! [RedisModel])
+            let _ = RedisDefaults.save(self.table.datasource)
         }
     }
 
@@ -87,7 +87,7 @@ final class FavoriteViewModel {
             return
         }
 
-        if let index = table.datasource.firstIndex(where: { ($0 as! RedisModel).id == selectId }) {
+        if let index = table.datasource.firstIndex(where: { $0.id == selectId }) {
             table.defaultSelectIndex = index
         } else {
             table.defaultSelectIndex = table.datasource.count > 0 ? 0 : -1
@@ -107,7 +107,7 @@ final class FavoriteViewModel {
 
     func deleteConfirm(_ index: Int) {
         if table.datasource.count <= index { return }
-        let redisModel = table.datasource[index] as! RedisModel
+        let redisModel = table.datasource[index]
         Task {
             let r = await Messages.confirmAsync(
                 String(format: NSLocalizedString("CONFIRM_FAVORITE_REDIS_TITLE'%@'", comment: ""), redisModel.name),
@@ -131,7 +131,7 @@ final class FavoriteViewModel {
 
     func connect(_ index: Int) {
         guard index >= 0, index < table.datasource.count else { return }
-        let redisModel = table.datasource[index] as! RedisModel
+        let redisModel = table.datasource[index]
         logger.info("connect to redis server, name: \(redisModel.name), host: \(redisModel.host)")
         Task {
             let r = await redisInstance.connect(redisModel)

@@ -22,7 +22,7 @@ final class RedisKeysViewModel {
     var redisKeyNodes: [RedisKeyNode] = []
     var selectedKeyId: String? = nil
 
-    let table: TableViewModel
+    let table: TableViewModel<RedisKeyModel>
     let redisSystem: RedisSystemViewModel
     let value: ValueViewModel
     let database_: DatabaseViewModel
@@ -39,10 +39,10 @@ final class RedisKeysViewModel {
 
     init(redisInstance: RedisInstanceModel) {
         self.redisInstance = redisInstance
-        self.table = TableViewModel(
+        self.table = TableViewModel<RedisKeyModel>(
             columns: [
-                .init(type: .KEY_TYPE, title: "Type", key: "type", width: 40),
-                .init(title: "Key", key: "key", width: 50)
+                .init(type: .KEY_TYPE, title: "Type", width: 40, color: { Color(nsColor: $0.textColor) }) { $0.type },
+                .init(title: "Key", width: 50) { $0.key }
             ],
             datasource: [],
             contextMenus: [.COPY, .RENAME, .DELETE],
@@ -66,14 +66,14 @@ final class RedisKeysViewModel {
         }
         table.onCopy = { [weak self] index in
             guard let self else { return }
-            let item = self.table.datasource[index] as! RedisKeyModel
+            let item = self.table.datasource[index]
             PasteboardHelper.copy(item.key)
         }
         table.onContextMenu = { [weak self] title, index in
             guard let self else { return }
             if title == "Delete" { self.deleteConfirm([index]) }
             else if title == "Rename" {
-                let redisKeyModel = self.table.datasource[self.table.selectIndex] as! RedisKeyModel
+                let redisKeyModel = self.table.datasource[self.table.selectIndex]
                 self.rename.key = redisKeyModel.key
                 self.rename.newKey = redisKeyModel.key
                 self.rename.index = self.table.selectIndex
@@ -82,7 +82,7 @@ final class RedisKeysViewModel {
         }
         table.onDouble = { [weak self] _ in
             guard let self else { return }
-            let redisKeyModel = self.table.datasource[self.table.selectIndex] as! RedisKeyModel
+            let redisKeyModel = self.table.datasource[self.table.selectIndex]
             self.rename.key = redisKeyModel.key
             self.rename.newKey = redisKeyModel.key
             self.rename.index = self.table.selectIndex
@@ -115,7 +115,7 @@ final class RedisKeysViewModel {
         // Rename callback
         rename.onSetKey = { [weak self] index, newKey in
             guard let self else { return }
-            var datasource = self.table.datasource.compactMap { $0 as? RedisKeyModel }
+            var datasource = self.table.datasource
             let old = datasource[index]
             datasource[index] = RedisKeyModel(newKey, type: old.type)
             self.table.datasource = datasource
@@ -132,7 +132,7 @@ final class RedisKeysViewModel {
             let redisKeyModel = self.value.key.redisKeyModel
             if isNew {
                 self.table.datasource.insert(redisKeyModel, at: 0)
-                let datasource = self.table.datasource.compactMap { $0 as? RedisKeyModel }
+                let datasource = self.table.datasource
                 self.selectedKeyId = redisKeyModel.key
                 Task {
                     let nodes = RedisKeyNode.buildTree(from: datasource)
@@ -203,7 +203,7 @@ final class RedisKeysViewModel {
         getKeysTask?.cancel()
         getKeysTask = Task {
             do {
-                let page = Page()
+                var page = Page()
                 page.current = current
                 page.size = size
                 page.keywords = keywords
@@ -239,7 +239,7 @@ final class RedisKeysViewModel {
         let keywords = self.page.keywords
         
         do {
-            let page = Page()
+            var page = Page()
             page.current = current
             page.size = size
             page.keywords = keywords
@@ -260,7 +260,7 @@ final class RedisKeysViewModel {
     }
 
     func addNew() {
-        let newKey = RedisKeyModel()
+        var newKey = RedisKeyModel()
         newKey.initNew()
         value.keyChange(newKey)
     }
@@ -268,10 +268,10 @@ final class RedisKeysViewModel {
     func selectNode(_ keyId: String?) {
         selectedKeyId = keyId
         if let keyId,
-           let index = table.datasource.firstIndex(where: { ($0 as? RedisKeyModel)?.key == keyId }) {
+           let index = table.datasource.firstIndex(where: { $0.key == keyId }) {
             table.selectIndex = index
             table.selectIndexes = [index]
-            let redisKeyModel = table.datasource[index] as! RedisKeyModel
+            let redisKeyModel = table.datasource[index]
             value.keyChange(redisKeyModel)
         } else {
             table.selectIndex = -1
@@ -285,13 +285,13 @@ final class RedisKeysViewModel {
             return
         }
         mainViewType = .EDITOR
-        let redisKeyModel = table.datasource[index] as! RedisKeyModel
+        let redisKeyModel = table.datasource[index]
         value.keyChange(redisKeyModel)
     }
 
     func deleteConfirm(_ indexes: [Int]) {
         guard !indexes.isEmpty && !table.isEmpty else { return }
-        let redisKeys = indexes.map { table.datasource[$0] as! RedisKeyModel }
+        let redisKeys = indexes.map { table.datasource[$0] }
         let msg = (redisKeys.count > 3
             ? [redisKeys[0].key, "...", redisKeys[redisKeys.count - 1].key]
             : redisKeys.map { $0.key }
@@ -308,7 +308,7 @@ final class RedisKeysViewModel {
     }
 
     func deleteKey(_ indexes: [Int]) {
-        let redisKeys = indexes.map { table.datasource[$0] as! RedisKeyModel }
+        let redisKeys = indexes.map { table.datasource[$0] }
         logger.info("delete key: \(indexes)")
         Task {
             do {
@@ -325,7 +325,7 @@ final class RedisKeysViewModel {
 
     func deleteSuccess(_ indexes: [Int]) {
         indexes.sorted(by: >).forEach { table.datasource.remove(at: $0) }
-        let datasource = table.datasource.compactMap { $0 as? RedisKeyModel }
+        let datasource = table.datasource
         table.selectIndex = -1
         table.selectIndexes = []
         selectedKeyId = nil

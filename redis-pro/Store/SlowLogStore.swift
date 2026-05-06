@@ -20,20 +20,20 @@ final class SlowLogViewModel {
     var size: Int = 50
     var total: Int = 0
 
-    let table: TableViewModel
+    let table: TableViewModel<SlowLogModel>
 
     private let redisInstance: RedisInstanceModel
 
     init(redisInstance: RedisInstanceModel) {
         self.redisInstance = redisInstance
-        self.table = TableViewModel(
+        self.table = TableViewModel<SlowLogModel>(
             columns: [
-                .init(title: "Id", key: "id", width: 60),
-                .init(title: "Timestamp", key: "timestamp", width: 120),
-                .init(title: "Exec Time(us)", key: "execTime", width: 90),
-                .init(title: "Client", key: "client", width: 140),
-                .init(title: "Client Name", key: "clientName", width: 100),
-                .init(title: "Cmd", key: "cmd", width: 100),
+                .init(title: "Id", width: 60) { $0.id },
+                .init(title: "Timestamp", width: 120) { $0.timestampFormat },
+                .init(title: "Exec Time(us)", width: 90) { $0.execTime },
+                .init(title: "Client", width: 140) { $0.client },
+                .init(title: "Client Name", width: 100) { $0.clientName },
+                .init(title: "Cmd", width: 100) { $0.cmd },
             ],
             datasource: []
         )

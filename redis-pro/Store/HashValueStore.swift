@@ -23,7 +23,7 @@ final class HashValueViewModel {
     var redisKeyModel: RedisKeyModel?
 
     let page: PageViewModel
-    let table: TableViewModel
+    let table: TableViewModel<RedisHashEntryModel>
 
     var onSubmitSuccess: ((Bool) -> Void)?
     var onRefresh: (() -> Void)?
@@ -34,8 +34,11 @@ final class HashValueViewModel {
         self.redisInstance = redisInstance
         self.page = PageViewModel()
         self.page.showTotal = true
-        self.table = TableViewModel(
-            columns: [.init(title: "Field", key: "field", width: 100), .init(title: "Value", key: "value", width: 200)],
+        self.table = TableViewModel<RedisHashEntryModel>(
+            columns: [
+                .init(title: "Field", width: 100) { $0.field },
+                .init(title: "Value", width: 200) { $0.value }
+            ],
             datasource: [],
             contextMenus: [.EDIT, .DELETE, .COPY, .COPY_FIELD, .COPY_VALUE]
         )
@@ -50,16 +53,16 @@ final class HashValueViewModel {
             if title == "Delete" { self.deleteConfirm(index) }
             else if title == "Edit" { self.edit(index) }
             else if title == TableContextMenu.COPY_FIELD.rawValue {
-                let item = self.table.datasource[index] as! RedisHashEntryModel
+                let item = self.table.datasource[index]
                 PasteboardHelper.copy(item.field)
             } else if title == TableContextMenu.COPY_VALUE.rawValue {
-                let item = self.table.datasource[index] as! RedisHashEntryModel
+                let item = self.table.datasource[index]
                 PasteboardHelper.copy(item.value)
             }
         }
         table.onCopy = { [weak self] index in
             guard let self else { return }
-            let item = self.table.datasource[index] as! RedisHashEntryModel
+            let item = self.table.datasource[index]
             PasteboardHelper.copy("Field: \(item.field) \n Value: \(item.value)")
         }
         table.onDouble = { [weak self] index in self?.edit(index) }
@@ -103,15 +106,15 @@ final class HashValueViewModel {
         let keywords = self.page.keywords
         Task {
             do {
-                let page = Page()
+                var page = Page()
                 page.current = current
                 page.size = size
                 page.keywords = keywords
-                let res = try await redisInstance.getClient().pageHash(key, page: page)
+                let (res, updatedPage) = try await redisInstance.getClient().pageHash(key, page: page)
                 self.table.datasource = res
-                self.page.current = page.current
-                self.page.size = page.size
-                self.page.total = page.total
+                self.page.current = updatedPage.current
+                self.page.size = updatedPage.size
+                self.page.total = updatedPage.total
             } catch {
                 Messages.show(error)
             }
@@ -126,7 +129,7 @@ final class HashValueViewModel {
     }
 
     func edit(_ index: Int) {
-        let item = table.datasource[index] as! RedisHashEntryModel
+        let item = table.datasource[index]
         editIndex = index
         field = item.field
         value = item.value
@@ -160,7 +163,7 @@ final class HashValueViewModel {
 
     func deleteConfirm(_ index: Int) {
         guard index < table.datasource.count else { return }
-        let item = table.datasource[index] as! RedisHashEntryModel
+        let item = table.datasource[index]
         Task {
             let r = await Messages.confirmAsync(
                 String(format: NSLocalizedString("HASH_DELETE_CONFIRM_TITLE'%@'", comment: ""), item.field),
@@ -173,7 +176,7 @@ final class HashValueViewModel {
 
     func deleteKey(_ index: Int) {
         let redisKeyModel = self.redisKeyModel!
-        let item = table.datasource[index] as! RedisHashEntryModel
+        let item = table.datasource[index]
         logger.info("delete hash field, key: \(redisKeyModel.key), field: \(item.field)")
         Task {
             do {

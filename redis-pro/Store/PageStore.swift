@@ -44,7 +44,7 @@ final class PageViewModel {
 
     var page: Page {
         get {
-            let page = Page()
+            var page = Page()
             page.current = current
             page.size = size
             page.total = total

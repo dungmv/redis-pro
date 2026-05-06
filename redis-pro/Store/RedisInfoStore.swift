@@ -17,17 +17,17 @@ private let logger = Logger(label: "redis-info-store")
 final class RedisInfoViewModel {
     var section: String = "Server"
     var redisInfoModels: [RedisInfoModel] = [RedisInfoModel(section: "Server")]
-    let table: TableViewModel
+    let table: TableViewModel<RedisInfoItemModel>
 
     private let redisInstance: RedisInstanceModel
 
     init(redisInstance: RedisInstanceModel) {
         self.redisInstance = redisInstance
-        self.table = TableViewModel(
+        self.table = TableViewModel<RedisInfoItemModel>(
             columns: [
-                .init(title: "Key", key: "key", width: 120),
-                .init(title: "Value", key: "value", width: 100),
-                .init(title: "Desc", key: "desc", width: 800)
+                .init(title: "Key", width: 120) { $0.key },
+                .init(title: "Value", width: 100) { $0.value },
+                .init(title: "Desc", width: 800) { $0.desc }
             ],
             datasource: []
         )

@@ -22,7 +22,7 @@ final class KeyViewModel {
 
     var redisKeyModel: RedisKeyModel {
         get {
-            let r = RedisKeyModel()
+            var r = RedisKeyModel()
             r.type = type
             r.key = key
             r.isNew = isNew

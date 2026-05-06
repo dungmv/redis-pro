@@ -1,5 +1,5 @@
 //
-//  RedisFavoriteModel.swift
+//  RedisFavoriteViewModel.swift
 //  redis-pro
 //
 //  Created by chengpanwang on 2021/3/29.
@@ -8,14 +8,15 @@
 import Foundation
 import SwiftUI
 import Logging
-import Combine
+import Observation
 
-class RedisFavoriteModel:ObservableObject {
-    @Published var redisModels: [RedisModel] = [RedisModel](repeating: RedisModel(), count: 1)
-    var lastRedisModelId:String?
+@MainActor
+@Observable
+final class RedisFavoriteViewModel {
+    var redisModels: [RedisModel] = [RedisModel()]
+    var lastRedisModelId: String?
     
     let userDefaults = UserDefaults.standard
-    
     let logger = Logger(label: "redis-favorite-model")
     
     private func getAll() -> [Dictionary<String, Any>] {
@@ -30,7 +31,7 @@ class RedisFavoriteModel:ObservableObject {
         
         let redisDicts = getAll()
         
-        redisDicts.forEach{ (element) in
+        for element in redisDicts {
             let item = RedisModel(dictionary: element)
             redisModels.append(item)
         }
@@ -44,12 +45,12 @@ class RedisFavoriteModel:ObservableObject {
         logger.info("last select redis model id: \(String(describing: lastRedisModelId))")
     }
     
-    func saveLast(redisModel:RedisModel) -> Void {
+    func saveLast(redisModel: RedisModel) -> Void {
         userDefaults.setValue(redisModel.id, forKey: UserDefaultsKeysEnum.RedisLastUseIdKey.rawValue)
     }
     
-    func save(redisModel:RedisModel) -> Void {
-        var savedRedisList:[Dictionary<String, Any>] = getAll()
+    func save(redisModel: RedisModel) -> Void {
+        var savedRedisList: [Dictionary<String, Any>] = getAll()
         
         if let index = savedRedisList.firstIndex(where: { (e) -> Bool in
             return e["id"] as! String == redisModel.id
@@ -64,16 +65,14 @@ class RedisFavoriteModel:ObservableObject {
         logger.info("save redis to favorite complete")
     }
     
-    
-    func delete(redisModel:RedisModel) -> String? {
+    func delete(redisModel: RedisModel) -> String? {
         return delete(id: redisModel.id)
     }
     
-    
-    func delete(id:String) -> String? {
-        var savedRedisList:[Dictionary] = getAll()
+    func delete(id: String) -> String? {
+        var savedRedisList: [Dictionary] = getAll()
         
-        var nextId:String?
+        var nextId: String?
         
         if let index = savedRedisList.firstIndex(where: { (e) -> Bool in
             return e["id"] as! String == id
@@ -86,10 +85,8 @@ class RedisFavoriteModel:ObservableObject {
             userDefaults.set(savedRedisList, forKey: UserDefaultsKeysEnum.RedisFavoriteListKey.rawValue)
             logger.info("remove redis from favorite complete, id:\(id)")
             
-            
             loadAll()
         }
         return nextId
     }
-    
 }

@@ -9,14 +9,15 @@
 import Logging
 import Foundation
 import Observation
+import SwiftUI
 
 private let logger = Logger(label: "table-store")
 
 @MainActor
 @Observable
-final class TableViewModel {
-    var columns: [NTableColumn]
-    var datasource: [AnyHashable]
+final class TableViewModel<Item: Identifiable & Sendable> {
+    var columns: [NTableColumn<Item>]
+    var datasource: [Item]
     var contextMenus: [TableContextMenu]
     var selectIndex: Int
     var selectIndexes: [Int]
@@ -27,7 +28,6 @@ final class TableViewModel {
     var isEmpty: Bool { datasource.isEmpty }
     var isSelect: Bool { selectIndex > -1 }
 
-    // Callbacks for table events (replacing TCA action propagation)
     var onSelectionChange: ((Int, [Int]) -> Void)?
     var onDouble: ((Int) -> Void)?
     var onDelete: ((Int) -> Void)?
@@ -36,8 +36,8 @@ final class TableViewModel {
     var onDragComplete: ((Int, Int) -> Void)?
 
     init(
-        columns: [NTableColumn] = [],
-        datasource: [AnyHashable] = [],
+        columns: [NTableColumn<Item>] = [],
+        datasource: [Item] = [],
         contextMenus: [TableContextMenu] = [],
         selectIndex: Int = -1,
         defaultSelectIndex: Int = -1,
@@ -55,21 +55,21 @@ final class TableViewModel {
         logger.info("TableViewModel init")
     }
 
-    func setDatasource(_ newDatasource: [AnyHashable]) {
+    func setDatasource(_ newDatasource: [Item]) {
         datasource = newDatasource
         selectIndex = min(selectIndex, datasource.count - 1)
     }
-
+    
     func setSelectIndex(_ index: Int) {
         selectIndex = min(index, datasource.count - 1)
     }
-
+    
     func reset() {
         selectIndex = -1
         selectIndexes = []
         datasource = []
     }
-
+    
     func selectionChange(index: Int, indexes: [Int]) {
         logger.info("table selection change, index: \(index)")
         selectIndex = index

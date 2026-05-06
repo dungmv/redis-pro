@@ -7,7 +7,7 @@
 
 import Foundation
 
-class Page: CustomStringConvertible, Equatable {
+struct Page: Sendable, Equatable {
     static func == (lhs: Page, rhs: Page) -> Bool {
         return lhs.current == rhs.current && lhs.size == rhs.size && lhs.keywords == rhs.keywords
     }
@@ -17,21 +17,23 @@ class Page: CustomStringConvertible, Equatable {
     var total: Int = 0
     var keywords: String = ""
     
-    var totalPage:Int {
+    var totalPage: Int {
         total < 1 ? 1 : (total % size == 0 ? total / size : total / size + 1)
     }
     
     var start: Int {
-        (self.current - 1 ) * self.size
+        (self.current - 1) * self.size
     }
+    
     var end: Int {
         self.current * self.size
     }
     
-    var hasPrev:Bool {
+    var hasPrev: Bool {
         totalPage > 1 && current > 1
     }
-    var hasNext:Bool {
+    
+    var hasNext: Bool {
         totalPage > 1 && current < totalPage
     }
     
@@ -39,25 +41,23 @@ class Page: CustomStringConvertible, Equatable {
         return "Page:[current:\(current), size:\(size), total:\(total)]"
     }
     
-    
-    func reset() {
+    mutating func reset() {
         self.current = 1
         self.total = 0
     }
     
-    func firstPage() {
+    mutating func firstPage() {
         self.current = 1
     }
     
-    func nextPage() -> Void {
+    mutating func nextPage() -> Void {
         self.current += 1
     }
     
-    func prevPage() -> Void {
+    mutating func prevPage() -> Void {
         if self.current < 2 {
             return
         }
         self.current -= 1
     }
-
 }

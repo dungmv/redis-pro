@@ -12,6 +12,10 @@ import Observation
 
 private let logger = Logger(label: "set-value-store")
 
+extension String: @retroactive Identifiable {
+    public var id: String { self }
+}
+
 @MainActor
 @Observable
 final class SetValueViewModel {
@@ -22,7 +26,7 @@ final class SetValueViewModel {
     var redisKeyModel: RedisKeyModel?
 
     let page: PageViewModel
-    let table: TableViewModel
+    let table: TableViewModel<String>
 
     var onSubmitSuccess: ((Bool) -> Void)?
     var onRefresh: (() -> Void)?
@@ -33,8 +37,10 @@ final class SetValueViewModel {
         self.redisInstance = redisInstance
         self.page = PageViewModel()
         self.page.showTotal = true
-        self.table = TableViewModel(
-            columns: [.init(title: "Value", key: "self", width: 200)],
+        self.table = TableViewModel<String>(
+            columns: [
+                .init(title: "Value", width: 200) { $0 }
+            ],
             datasource: [],
             contextMenus: [.COPY, .EDIT, .DELETE]
         )
@@ -51,9 +57,7 @@ final class SetValueViewModel {
         }
         table.onCopy = { [weak self] index in
             guard let self else { return }
-            if let item = self.table.datasource[index] as? String {
-                PasteboardHelper.copy(item)
-            }
+            PasteboardHelper.copy(self.table.datasource[index])
         }
         table.onDouble = { [weak self] index in self?.edit(index) }
         table.onDelete = { [weak self] index in self?.deleteConfirm(index) }
@@ -96,15 +100,15 @@ final class SetValueViewModel {
         let keywords = self.page.keywords
         Task {
             do {
-                let page = Page()
+                var page = Page()
                 page.current = current
                 page.size = size
                 page.keywords = keywords
-                let res = try await redisInstance.getClient().pageSet(key, page: page)
+                let (res, updatedPage) = try await redisInstance.getClient().pageSet(key, page: page)
                 self.table.datasource = res
-                self.page.current = page.current
-                self.page.size = page.size
-                self.page.total = page.total
+                self.page.current = updatedPage.current
+                self.page.size = updatedPage.size
+                self.page.total = updatedPage.total
             } catch {
                 Messages.show(error)
             }
@@ -119,7 +123,7 @@ final class SetValueViewModel {
     }
 
     func edit(_ index: Int) {
-        let item = table.datasource[index] as! String
+        let item = table.datasource[index]
         editIndex = index
         editValue = item
         isNew = false
@@ -132,7 +136,7 @@ final class SetValueViewModel {
         let editValue = self.editValue
         let isNewAction = self.isNew
         let isNewKey = redisKeyModel.isNew
-        let originEle = isNewAction ? nil : table.datasource[editIndex] as? String
+        let originEle = isNewAction ? nil : table.datasource[editIndex]
         Task {
             do {
                 if isNewAction {
@@ -152,7 +156,7 @@ final class SetValueViewModel {
 
     func deleteConfirm(_ index: Int) {
         guard index < table.datasource.count else { return }
-        let item = table.datasource[index] as! String
+        let item = table.datasource[index]
         Task {
             let r = await Messages.confirmAsync(
                 String(format: NSLocalizedString("SET_DELETE_CONFIRM_TITLE", comment: ""), item),
@@ -165,7 +169,7 @@ final class SetValueViewModel {
 
     func deleteKey(_ index: Int) {
         let redisKeyModel = self.redisKeyModel!
-        let item = table.datasource[index] as! String
+        let item = table.datasource[index]
         logger.info("delete set item, key: \(redisKeyModel.key), value: \(item)")
         Task {
             do {

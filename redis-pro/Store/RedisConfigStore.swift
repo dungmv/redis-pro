@@ -21,14 +21,17 @@ final class RedisConfigViewModel {
     var editKey: String = ""
     var editIndex: Int = 0
 
-    let table: TableViewModel
+    let table: TableViewModel<RedisConfigItemModel>
 
     private let redisInstance: RedisInstanceModel
 
     init(redisInstance: RedisInstanceModel) {
         self.redisInstance = redisInstance
-        self.table = TableViewModel(
-            columns: [.init(title: "Key", key: "key", width: 200), .init(title: "Value", key: "value", width: 800)],
+        self.table = TableViewModel<RedisConfigItemModel>(
+            columns: [
+                .init(title: "Key", width: 200) { $0.key },
+                .init(title: "Value", width: 800) { $0.value }
+            ],
             datasource: [],
             contextMenus: [.EDIT]
         )
@@ -83,7 +86,7 @@ final class RedisConfigViewModel {
 
     func edit(_ index: Int) {
         editIndex = index
-        guard let item = table.datasource[index] as? RedisConfigItemModel else { return }
+        let item = table.datasource[index]
         editKey = item.key
         editValue = item.value
         editModalVisible = true

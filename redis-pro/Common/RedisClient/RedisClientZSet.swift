@@ -11,12 +11,13 @@ import Valkey
 // MARK: - zset function
 extension RedisClient {
     
-    func pageZSet(_ key: String, page: Page) async throws -> [RedisZSetItemModel] {
+    func pageZSet(_ key: String, page: Page) async throws -> ([RedisZSetItemModel], Page) {
         logger.info("redis zset page, key: \(key), page: \(page)")
         begin()
         defer { complete() }
         
         do {
+            var page = page
             try await assertExist(key)
             let isScan = isScan(page.keywords)
             var r: [(String, String)] = []
@@ -39,11 +40,11 @@ extension RedisClient {
                     page.total = 1
                 }
             }
-            return r.map { RedisZSetItemModel(value: $0.0, score: $0.1) }
+            return (r.map { RedisZSetItemModel(value: $0.0, score: $0.1) }, page)
         } catch {
             handleError(error)
         }
-        return []
+        return ([], page)
     }
     
     private func zsetCountScan(_ key: String, keywords: String?) async throws -> Int {

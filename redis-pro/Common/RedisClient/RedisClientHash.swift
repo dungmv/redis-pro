@@ -11,13 +11,14 @@ import Valkey
 // MARK: - hash function
 extension RedisClient {
     
-    func pageHash(_ key: String, page: Page) async throws -> [RedisHashEntryModel] {
+    func pageHash(_ key: String, page: Page) async throws -> ([RedisHashEntryModel], Page) {
         logger.info("redis hash field page scan, key: \(key), page: \(page)")
         
         begin()
         defer { complete() }
         
         do {
+            var page = page
             try await assertExist(key)
             let isScan = isScan(page.keywords)
             var r: [RedisHashEntryModel] = []
@@ -36,11 +37,11 @@ extension RedisClient {
                     page.total = 1
                 }
             }
-            return r
+            return (r, page)
         } catch {
             handleError(error)
         }
-        return []
+        return ([], page)
     }
     
     func hset(key: String, field: String, value: String) async throws -> Int {

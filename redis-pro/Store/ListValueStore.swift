@@ -24,7 +24,7 @@ final class ListValueViewModel {
     var redisKeyModel: RedisKeyModel?
 
     let page: PageViewModel
-    let table: TableViewModel
+    let table: TableViewModel<RedisListItemModel>
 
     var onSubmitSuccess: ((Bool) -> Void)?
     var onRefresh: (() -> Void)?
@@ -35,8 +35,11 @@ final class ListValueViewModel {
         self.redisInstance = redisInstance
         self.page = PageViewModel()
         self.page.showTotal = true
-        self.table = TableViewModel(
-            columns: [.init(title: "Index", key: "index", width: 100), .init(title: "Value", key: "value", width: 200)],
+        self.table = TableViewModel<RedisListItemModel>(
+            columns: [
+                .init(title: "Index", width: 100) { "\($0.index)" },
+                .init(title: "Value", width: 200) { $0.value }
+            ],
             datasource: [],
             contextMenus: [.COPY, .EDIT, .DELETE]
         )
@@ -53,7 +56,7 @@ final class ListValueViewModel {
         }
         table.onCopy = { [weak self] index in
             guard let self else { return }
-            let item = self.table.datasource[index] as! RedisListItemModel
+            let item = self.table.datasource[index]
             PasteboardHelper.copy(item.value)
         }
         table.onDouble = { [weak self] index in self?.edit(index) }
@@ -97,15 +100,15 @@ final class ListValueViewModel {
         let keywords = self.page.keywords
         Task {
             do {
-                let page = Page()
+                var page = Page()
                 page.current = current
                 page.size = size
                 page.keywords = keywords
-                let res = try await redisInstance.getClient().pageList(key, page: page)
+                let (res, updatedPage) = try await redisInstance.getClient().pageList(key, page: page)
                 self.table.datasource = res
-                self.page.current = page.current
-                self.page.size = page.size
-                self.page.total = page.total
+                self.page.current = updatedPage.current
+                self.page.size = updatedPage.size
+                self.page.total = updatedPage.total
             } catch {
                 Messages.show(error)
             }
@@ -122,7 +125,7 @@ final class ListValueViewModel {
 
     func edit(_ index: Int) {
         pushType = 0
-        let item = table.datasource[index] as! RedisListItemModel
+        let item = table.datasource[index]
         editIndex = index
         editValue = item.value
         isNew = false
@@ -135,7 +138,7 @@ final class ListValueViewModel {
         let editValue = self.editValue
         let isNewKey = redisKeyModel.isNew
         let pushType = self.pushType
-        let item = pushType == 0 ? table.datasource[editIndex] as? RedisListItemModel : nil
+        let item = pushType == 0 ? table.datasource[editIndex] : nil
         Task {
             do {
                 if pushType == -1 {
@@ -168,7 +171,7 @@ final class ListValueViewModel {
 
     func deleteConfirm(_ index: Int) {
         guard index < table.datasource.count else { return }
-        let item = table.datasource[index] as! RedisListItemModel
+        let item = table.datasource[index]
         Task {
             let r = await Messages.confirmAsync(
                 String(format: NSLocalizedString("LIST_DELETE_CONFIRM_TITLE'%@'", comment: ""), item.value),
@@ -181,7 +184,7 @@ final class ListValueViewModel {
 
     func deleteKey(_ index: Int) {
         let redisKeyModel = self.redisKeyModel!
-        let item = table.datasource[index] as! RedisListItemModel
+        let item = table.datasource[index]
         logger.info("delete list item, key: \(redisKeyModel.key), index: \(item.index)")
         Task {
             do {

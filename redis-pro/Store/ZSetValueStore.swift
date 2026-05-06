@@ -23,7 +23,7 @@ final class ZSetValueViewModel {
     var redisKeyModel: RedisKeyModel?
 
     let page: PageViewModel
-    let table: TableViewModel
+    let table: TableViewModel<RedisZSetItemModel>
 
     var onSubmitSuccess: ((Bool) -> Void)?
     var onRefresh: (() -> Void)?
@@ -34,8 +34,11 @@ final class ZSetValueViewModel {
         self.redisInstance = redisInstance
         self.page = PageViewModel()
         self.page.showTotal = true
-        self.table = TableViewModel(
-            columns: [.init(title: "Score", key: "score", width: 80), .init(title: "Value", key: "value", width: 200)],
+        self.table = TableViewModel<RedisZSetItemModel>(
+            columns: [
+                .init(title: "Score", width: 80) { $0.score },
+                .init(title: "Value", width: 200) { $0.value }
+            ],
             datasource: [],
             contextMenus: [.COPY, .EDIT, .DELETE]
         )
@@ -52,7 +55,7 @@ final class ZSetValueViewModel {
         }
         table.onCopy = { [weak self] index in
             guard let self else { return }
-            let item = self.table.datasource[index] as! RedisZSetItemModel
+            let item = self.table.datasource[index]
             PasteboardHelper.copy("Score: \(item.score) \nValue: \(item.value)")
         }
         table.onDouble = { [weak self] index in self?.edit(index) }
@@ -96,15 +99,15 @@ final class ZSetValueViewModel {
         let keywords = self.page.keywords
         Task {
             do {
-                let page = Page()
+                var page = Page()
                 page.current = current
                 page.size = size
                 page.keywords = keywords
-                let res = try await redisInstance.getClient().pageZSet(key, page: page)
+                let (res, updatedPage) = try await redisInstance.getClient().pageZSet(key, page: page)
                 self.table.datasource = res
-                self.page.current = page.current
-                self.page.size = page.size
-                self.page.total = page.total
+                self.page.current = updatedPage.current
+                self.page.size = updatedPage.size
+                self.page.total = updatedPage.total
             } catch {
                 Messages.show(error)
             }
@@ -120,7 +123,7 @@ final class ZSetValueViewModel {
     }
 
     func edit(_ index: Int) {
-        let item = table.datasource[index] as! RedisZSetItemModel
+        let item = table.datasource[index]
         editIndex = index
         editValue = item.value
         editScore = Double(item.score) ?? 0
@@ -135,7 +138,7 @@ final class ZSetValueViewModel {
         let editScore = self.editScore
         let isNewAction = self.isNew
         let isNewKey = redisKeyModel.isNew
-        let originEle = isNewAction ? nil : table.datasource[editIndex] as? RedisZSetItemModel
+        let originEle = isNewAction ? nil : table.datasource[editIndex]
         Task {
             do {
                 var r = false
@@ -162,7 +165,7 @@ final class ZSetValueViewModel {
 
     func deleteConfirm(_ index: Int) {
         guard index < table.datasource.count else { return }
-        let item = table.datasource[index] as! RedisZSetItemModel
+        let item = table.datasource[index]
         Task {
             let r = await Messages.confirmAsync(
                 StringHelper.format("ZSET_DELETE_CONFIRM_TITLE", item.value),
@@ -175,7 +178,7 @@ final class ZSetValueViewModel {
 
     func deleteKey(_ index: Int) {
         let redisKeyModel = self.redisKeyModel!
-        let item = table.datasource[index] as! RedisZSetItemModel
+        let item = table.datasource[index]
         logger.info("delete zset item, key: \(redisKeyModel.key), value: \(item.value)")
         Task {
             do {

@@ -7,14 +7,14 @@
 
 import Foundation
 
-public class RedisConfigItemModel:NSObject, Identifiable {
-    @objc var key:String = ""
-    @objc var value:String = ""
-    
-    override init() {
-    }
-    
-    init(key:String?, value:String?) {
+struct RedisConfigItemModel: Identifiable, Sendable, Hashable {
+    var id: String { key }
+    var key: String = ""
+    var value: String = ""
+
+    init() {}
+
+    init(key: String?, value: String?) {
         self.key = key ?? ""
         self.value = value ?? ""
     }

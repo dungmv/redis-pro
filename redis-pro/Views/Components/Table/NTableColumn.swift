@@ -3,46 +3,45 @@
 //  redis-pro
 //
 //  Created by chengpan on 2022/3/27.
+//  Migrated to SwiftUI Table — uses closure-based content instead of KVC key
 //
 
 import Foundation
-import AppKit
 import SwiftUI
-struct NTableColumn: Equatable {
-    var type:TableColumnType = .DEFAULT
-    var title:String
-    var key:String
-    var width:CGFloat?
+
+struct NTableColumn<Item>: Identifiable {
+    let id = UUID()
+    var type: TableColumnType = .DEFAULT
+    var title: String
+    var width: CGFloat?
     var icon: TableIconEnum?
-}
+    var color: ((Item) -> Color)?
+    var content: (Item) -> String
 
-
-extension NSImage.Name {
-    static let icon = NSImage.Name("icon-redis")
-}
-
-class Icon {
-    private static func appIcon() -> NSImage {
-        let icon = NSImage(named: .icon)!
-        icon.size = NSSize(width: 20, height: 20)
-        return icon
+    init(
+        type: TableColumnType = .DEFAULT,
+        title: String,
+        width: CGFloat? = nil,
+        icon: TableIconEnum? = nil,
+        color: ((Item) -> Color)? = nil,
+        content: @escaping (Item) -> String
+    ) {
+        self.type = type
+        self.title = title
+        self.width = width
+        self.icon = icon
+        self.color = color
+        self.content = content
     }
-    
-    nonisolated(unsafe) static var ICON_APP = appIcon()
 }
 
-protocol TableIconImage {
-    var image:NSImage { get }
-}
-
-
-enum TableIconEnum: TableIconImage {
+enum TableIconEnum {
     case APP
-    
-    var image: NSImage {
+
+    var swiftUIImage: Image {
         switch self {
         case .APP:
-            return Icon.ICON_APP
+            Image("icon-redis")
         }
     }
 }

@@ -43,7 +43,7 @@ final class LoginViewModel {
 
     var redisModel: RedisModel {
         get {
-            let m = RedisModel(name: name)
+            var m = RedisModel(name: name)
             m.id = id
             m.host = host
             m.port = port

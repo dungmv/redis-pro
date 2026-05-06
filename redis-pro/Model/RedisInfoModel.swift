@@ -6,36 +6,34 @@
 //
 import Foundation
 
-public class RedisInfoModel:NSObject, Identifiable {
-    public var id = UUID()
-    var section:String = ""
-    var infos:[RedisInfoItemModel] = [RedisInfoItemModel]()
-    
-    override init() {
-    }
-    
-    init(section:String) {
+struct RedisInfoModel: Identifiable, Sendable, Hashable {
+    var id = UUID()
+    var section: String = ""
+    var infos: [RedisInfoItemModel] = []
+
+    init() {}
+
+    init(section: String) {
         self.section = section
     }
-    
+
     static func parse(_ text: String) -> [RedisInfoModel] {
         var sections = [RedisInfoModel]()
-        var currentSection: RedisInfoModel?
-        
+
         text.components(separatedBy: .newlines).forEach { line in
             let trimmed = line.trimmingCharacters(in: .whitespaces)
             if trimmed.isEmpty { return }
-            
+
             if trimmed.hasPrefix("#") {
                 let sectionName = String(trimmed.dropFirst()).trimmingCharacters(in: .whitespaces)
-                currentSection = RedisInfoModel(section: sectionName)
-                sections.append(currentSection!)
-            } else if let section = currentSection {
+                sections.append(RedisInfoModel(section: sectionName))
+            } else if !sections.isEmpty {
                 let kv = trimmed.components(separatedBy: ":")
                 if kv.count >= 2 {
                     let key = kv[0].trimmingCharacters(in: .whitespaces)
                     let value = kv.dropFirst().joined(separator: ":").trimmingCharacters(in: .whitespaces)
-                    section.infos.append(RedisInfoItemModel(section: section.section, key: key, value: value))
+                    let lastIndex = sections.count - 1
+                    sections[lastIndex].infos.append(RedisInfoItemModel(section: sections[lastIndex].section, key: key, value: value))
                 }
             }
         }

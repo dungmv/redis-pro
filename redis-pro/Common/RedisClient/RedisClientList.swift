@@ -11,12 +11,13 @@ import Valkey
 // MARK: - list function
 extension RedisClient {
 
-    func pageList(_ key: String, page: Page) async throws -> [RedisListItemModel] {
+    func pageList(_ key: String, page: Page) async throws -> ([RedisListItemModel], Page) {
         logger.info("redis list page, key: \(key), page: \(page)")
         begin()
         defer { complete() }
         
         do {
+            var page = page
             let start: Int = (page.current - 1) * page.size
             let r1 = try await llen(key)
             let r2 = try await _lrange(key, start: start, stop: start + page.size - 1)
@@ -28,11 +29,11 @@ extension RedisClient {
                 result.append(RedisListItemModel(start + index, value ?? ""))
             }
      
-            return result
+            return (result, page)
         } catch {
             handleError(error)
         }
-        return []
+        return ([], page)
     }
     
     private func _lrange(_ key: String, start: Int, stop: Int) async throws -> [String?] {
