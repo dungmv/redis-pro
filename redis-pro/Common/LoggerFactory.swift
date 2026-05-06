@@ -7,35 +7,37 @@
 
 import Foundation
 import Logging
-import Puppy
 
 class LoggerFactory {
-    var puppy = Puppy.init()
-    
-    init() {
-        let console = ConsoleLogger("com.cmushroom.redis-pro.console", logFormat: LogFormatter())
 
-        let fileURL = URL(fileURLWithPath: "./redis-pro.log").absoluteURL
-        let fileRotation = try! FileRotationLogger("com.cmushroom.redis-pro.file",
-                                                   fileURL: fileURL,
-                                                   rotationConfig: RotationConfig(
-                                                    maxFileSize: 10 * 1024 * 1024,
-                                                    maxArchivedFilesCount: 5
-                                                   ))
-        self.puppy.add(console)
-        self.puppy.add(fileRotation)
-        
-        self.puppy.info("init logger complete...")
+    init() {
+        // Setup is deferred to setUp()
     }
-    
-    func setUp() -> Void {
-        let puppy = self.puppy
-        LoggingSystem.bootstrap {
-            var handler = PuppyLogHandler(label: $0, puppy: puppy)
-            // Set the logging level.
-            handler.logLevel = .info
-            return handler
+
+    func setUp() {
+        LoggingSystem.bootstrap { label in
+            var handlers: [any LogHandler] = []
+
+            // Console handler
+            var consoleHandler = ConsoleLogHandler(label: label)
+            consoleHandler.logLevel = .info
+            handlers.append(consoleHandler)
+
+            // File handler with rotation
+            let fileURL = URL(fileURLWithPath: "./redis-pro.log").absoluteURL
+            var fileHandler = FileLogHandler(
+                label: label,
+                fileURL: fileURL,
+                maxFileSize: 10 * 1024 * 1024,
+                maxArchivedFilesCount: 5
+            )
+            fileHandler.logLevel = .info
+            handlers.append(fileHandler)
+
+            return MultiplexLogHandler(handlers)
         }
 
+        let logger = Logger(label: "com.cmushroom.redis-pro")
+        logger.info("init logger complete...")
     }
 }

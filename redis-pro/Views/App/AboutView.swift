@@ -13,7 +13,7 @@ struct AboutView: View {
         ("Valkey", "https://github.com/valkey-io/valkey-swift"),
         ("NIOSSH", "https://github.com/apple/swift-nio-ssh"),
         ("SwiftJSONFormatter", "https://github.com/luin/SwiftJSONFormatter"),
-        ("Puppy", "https://github.com/sushichop/Puppy"),
+        ("swift-log", "https://github.com/apple/swift-log"),
 
     ]
 

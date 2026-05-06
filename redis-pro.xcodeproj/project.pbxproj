@@ -71,7 +71,7 @@
 		43CD28782671FA2A00E11876 /* RedisInfoModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 43CD28772671FA2A00E11876 /* RedisInfoModel.swift */; };
 		43CD287A267209D900E11876 /* RedisInfoView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 43CD2879267209D900E11876 /* RedisInfoView.swift */; };
 		43CD289E26732F4C00E11876 /* Localizable.strings in Resources */ = {isa = PBXBuildFile; fileRef = 43CD28A026732F4C00E11876 /* Localizable.strings */; };
-		43CD28AC267B67C600E11876 /* PuppyLogger.swift in Sources */ = {isa = PBXBuildFile; fileRef = 43CD28AB267B67C600E11876 /* PuppyLogger.swift */; };
+		43CD28AC267B67C600E11876 /* LogHandlers.swift in Sources */ = {isa = PBXBuildFile; fileRef = 43CD28AB267B67C600E11876 /* LogHandlers.swift */; };
 		43CD28AE267B6E0E00E11876 /* LoggerFactory.swift in Sources */ = {isa = PBXBuildFile; fileRef = 43CD28AD267B6E0E00E11876 /* LoggerFactory.swift */; };
 		43CD28B0267C6A9D00E11876 /* MainViewTypeEnum.swift in Sources */ = {isa = PBXBuildFile; fileRef = 43CD28AF267C6A9D00E11876 /* MainViewTypeEnum.swift */; };
 		43CD28B2267C6D0800E11876 /* ClientsListView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 43CD28B1267C6D0800E11876 /* ClientsListView.swift */; };
@@ -139,7 +139,6 @@
 		628F9AA02896A3FB0003B6C0 /* RedisCommandExt.swift in Sources */ = {isa = PBXBuildFile; fileRef = 628F9A9F2896A3FB0003B6C0 /* RedisCommandExt.swift */; };
 		628F9AA2289EA7C50003B6C0 /* SSHTunnel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 628F9AA1289EA7C50003B6C0 /* SSHTunnel.swift */; };
 		628F9AA4289EAEE90003B6C0 /* RedisClientSSH.swift in Sources */ = {isa = PBXBuildFile; fileRef = 628F9AA3289EAEE90003B6C0 /* RedisClientSSH.swift */; };
-		629E0B772CE629B1001CDC77 /* Puppy in Frameworks */ = {isa = PBXBuildFile; productRef = 629E0B762CE629B1001CDC77 /* Puppy */; };
 		62B399DE2C9EFC2C0092FB17 /* TestView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 62B399DD2C9EFC2C0092FB17 /* TestView.swift */; };
 		62B399E02CA011480092FB17 /* AppMain.swift in Sources */ = {isa = PBXBuildFile; fileRef = 62B399DF2CA011480092FB17 /* AppMain.swift */; };
 		62BDAB2E293B040C00ADA406 /* Tests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 62BDAB2D293B040C00ADA406 /* Tests.swift */; };
@@ -279,7 +278,7 @@
 		43CD2879267209D900E11876 /* RedisInfoView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RedisInfoView.swift; sourceTree = "<group>"; };
 		43CD289F26732F4C00E11876 /* zh-Hans */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = "zh-Hans"; path = "zh-Hans.lproj/Localizable.strings"; sourceTree = "<group>"; };
 		43CD28A126732F5000E11876 /* en */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = en; path = en.lproj/Localizable.strings; sourceTree = "<group>"; };
-		43CD28AB267B67C600E11876 /* PuppyLogger.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PuppyLogger.swift; sourceTree = "<group>"; };
+		43CD28AB267B67C600E11876 /* LogHandlers.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LogHandlers.swift; sourceTree = "<group>"; };
 		43CD28AD267B6E0E00E11876 /* LoggerFactory.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LoggerFactory.swift; sourceTree = "<group>"; };
 		43CD28AF267C6A9D00E11876 /* MainViewTypeEnum.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MainViewTypeEnum.swift; sourceTree = "<group>"; };
 		43CD28B1267C6D0800E11876 /* ClientsListView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ClientsListView.swift; sourceTree = "<group>"; };
@@ -405,7 +404,6 @@
 			files = (
 				5C35809E2FA8313E008E23C2 /* Valkey in Frameworks */,
 				CEA1EF4D277C56DD00D300E9 /* NIO in Frameworks */,
-				629E0B772CE629B1001CDC77 /* Puppy in Frameworks */,
 				CEA1EF4A277C56B100D300E9 /* NIOSSH in Frameworks */,
 				6237D032275C954A000ACD6A /* Logging in Frameworks */,
 				CEA1EF51277C56DD00D300E9 /* NIOCore in Frameworks */,
@@ -569,7 +567,7 @@
 				437BC2442645272E00E2C84D /* DoubleFormatter.swift */,
 				437BC24626452AE400E2C84D /* StringFormatter.swift */,
 				43CD286D2670A03800E11876 /* VersionManager.swift */,
-				43CD28AB267B67C600E11876 /* PuppyLogger.swift */,
+				43CD28AB267B67C600E11876 /* LogHandlers.swift */,
 				43CD28AD267B6E0E00E11876 /* LoggerFactory.swift */,
 				43CD28B5267C7CF400E11876 /* Objects.swift */,
 				4301C82E26B0EEB800C08E19 /* Stopwatch.swift */,
@@ -880,7 +878,6 @@
 				CEA1EF4E277C56DD00D300E9 /* NIOConcurrencyHelpers */,
 				CEA1EF50277C56DD00D300E9 /* NIOCore */,
 				623E46B92B663E5700C28904 /* SwiftJSONFormatter */,
-				629E0B762CE629B1001CDC77 /* Puppy */,
 				5C35809D2FA8313E008E23C2 /* Valkey */,
 			);
 			productName = "redis-pro";
@@ -939,7 +936,6 @@
 				CEA1EF48277C56B100D300E9 /* XCRemoteSwiftPackageReference "swift-nio-ssh" */,
 				CEA1EF4B277C56DD00D300E9 /* XCRemoteSwiftPackageReference "swift-nio" */,
 				623E46B82B663E5700C28904 /* XCRemoteSwiftPackageReference "SwiftJSONFormatter" */,
-				629E0B752CE629B1001CDC77 /* XCRemoteSwiftPackageReference "Puppy" */,
 				437499562CE875D600869391 /* XCRemoteSwiftPackageReference "swift-syntax" */,
 				5C35809C2FA7D8CF008E23C2 /* XCRemoteSwiftPackageReference "valkey-swift" */,
 			);
@@ -1070,7 +1066,7 @@
 				437BC24E26461E2100E2C84D /* NumberHelper.swift in Sources */,
 				62E8F9D92765F197006A5326 /* MPasswordField.swift in Sources */,
 				431266F5261D912500FB6B69 /* StringEditorView.swift in Sources */,
-				43CD28AC267B67C600E11876 /* PuppyLogger.swift in Sources */,
+				43CD28AC267B67C600E11876 /* LogHandlers.swift in Sources */,
 				43F22EF5269FCE6000A00F97 /* DateHelper.swift in Sources */,
 				4314A34126243ED500053FEE /* PageBar.swift in Sources */,
 				62CB3D7D2619AF990061E8C3 /* RedisKeyModel.swift in Sources */,
@@ -1493,14 +1489,6 @@
 				minimumVersion = 2.0.0;
 			};
 		};
-		629E0B752CE629B1001CDC77 /* XCRemoteSwiftPackageReference "Puppy" */ = {
-			isa = XCRemoteSwiftPackageReference;
-			repositoryURL = "https://github.com/sushichop/Puppy.git";
-			requirement = {
-				kind = upToNextMajorVersion;
-				minimumVersion = 0.9.0;
-			};
-		};
 		CEA1EF48277C56B100D300E9 /* XCRemoteSwiftPackageReference "swift-nio-ssh" */ = {
 			isa = XCRemoteSwiftPackageReference;
 			repositoryURL = "https://github.com/apple/swift-nio-ssh";
@@ -1534,11 +1522,6 @@
 			isa = XCSwiftPackageProductDependency;
 			package = 623E46B82B663E5700C28904 /* XCRemoteSwiftPackageReference "SwiftJSONFormatter" */;
 			productName = SwiftJSONFormatter;
-		};
-		629E0B762CE629B1001CDC77 /* Puppy */ = {
-			isa = XCSwiftPackageProductDependency;
-			package = 629E0B752CE629B1001CDC77 /* XCRemoteSwiftPackageReference "Puppy" */;
-			productName = Puppy;
 		};
 		CEA1EF49277C56B100D300E9 /* NIOSSH */ = {
 			isa = XCSwiftPackageProductDependency;
