@@ -11,13 +11,25 @@ import Logging
 
 struct StringEditorView: View {
     @State var viewModel: ValueViewModel
+    @State private var showHighlightedPreview: Bool = false
     private let logger = Logger(label: "string-editor")
 
     var body: some View {
         let vm = viewModel.stringValue
         VStack(alignment: .leading, spacing: 0) {
             VStack(alignment: .leading, spacing: MTheme.V_SPACING) {
-                MTextEditor(text: Binding(get: { vm.text }, set: { vm.text = $0 }))
+                if showHighlightedPreview {
+                    ScrollView {
+                        Text(JSONHighlighter.highlight(vm.text))
+                            .font(.body.monospaced())
+                            .multilineTextAlignment(.leading)
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                            .padding(EdgeInsets(top: 4, leading: 8, bottom: 4, trailing: 8))
+                    }
+                    .background(Color(NSColor.textBackgroundColor))
+                } else {
+                    MTextEditor(text: Binding(get: { vm.text }, set: { vm.text = $0 }))
+                }
             }
             .background(Color(NSColor.textBackgroundColor))
 
@@ -38,6 +50,11 @@ struct StringEditorView: View {
                     Button("Json Minify", action: { vm.jsonMinify() })
                 })
                 .frame(width: 80)
+                Toggle(isOn: $showHighlightedPreview) {
+                    Image(systemName: "paintpalette")
+                }
+                .toggleStyle(.button)
+                .help("Toggle JSON syntax highlighting preview")
                 IconButton(icon: "arrow.clockwise", name: "Refresh", action: { vm.refresh() })
                 IconButton(icon: "checkmark", name: "Submit", disabled: !vm.isIntactString, action: { vm.submit() })
             }

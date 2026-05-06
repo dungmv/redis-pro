@@ -112,7 +112,6 @@
 		6237D032275C954A000ACD6A /* Logging in Frameworks */ = {isa = PBXBuildFile; productRef = 6237D031275C954A000ACD6A /* Logging */; };
 		6237D034275CFF1F000ACD6A /* NIntField.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6237D033275CFF1F000ACD6A /* NIntField.swift */; };
 		623E46B72B5D0F6000C28904 /* RedisIdleHandler.swift in Sources */ = {isa = PBXBuildFile; fileRef = 623E46B62B5D0F6000C28904 /* RedisIdleHandler.swift */; };
-		623E46BA2B663E5700C28904 /* SwiftJSONFormatter in Frameworks */ = {isa = PBXBuildFile; productRef = 623E46B92B663E5700C28904 /* SwiftJSONFormatter */; };
 		623E46C12B6651FE00C28904 /* VersionModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 623E46C02B6651FE00C28904 /* VersionModel.swift */; };
 		623E46C62B66542C00C28904 /* CodableTest.swift in Sources */ = {isa = PBXBuildFile; fileRef = 623E46C52B66542C00C28904 /* CodableTest.swift */; };
 		6240E0AB280303890005E793 /* RedisDefaults.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6240E0AA280303890005E793 /* RedisDefaults.swift */; };
@@ -181,6 +180,9 @@
 		62F44FE62AADAD2000714D98 /* FormText.swift in Sources */ = {isa = PBXBuildFile; fileRef = 62F44FE52AADAD2000714D98 /* FormText.swift */; };
 		62FD85DB2A7E680E005DE558 /* KeysDelStoreTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 62FD85DA2A7E680E005DE558 /* KeysDelStoreTests.swift */; };
 		62FD85DD2A7E6A46005DE558 /* StoreBaseTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 62FD85DC2A7E6A46005DE558 /* StoreBaseTests.swift */; };
+		A10000030000000000000003 /* SwiftTreeSitter in Frameworks */ = {isa = PBXBuildFile; productRef = A10000020000000000000002 /* SwiftTreeSitter */; };
+		A20000030000000000000003 /* TreeSitterJSON in Frameworks */ = {isa = PBXBuildFile; productRef = A20000020000000000000002 /* TreeSitterJSON */; };
+		A30000020000000000000002 /* JSONHighlighter.swift in Sources */ = {isa = PBXBuildFile; fileRef = A30000010000000000000001 /* JSONHighlighter.swift */; };
 		CE3A187D282525AB00988515 /* KeyStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = CE3A187C282525AB00988515 /* KeyStore.swift */; };
 		CE3A18812825367000988515 /* ValueStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = CE3A18802825367000988515 /* ValueStore.swift */; };
 		CE3A1883282536BB00988515 /* StringValueStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = CE3A1882282536BB00988515 /* StringValueStore.swift */; };
@@ -386,6 +388,7 @@
 		62F44FE52AADAD2000714D98 /* FormText.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FormText.swift; sourceTree = "<group>"; };
 		62FD85DA2A7E680E005DE558 /* KeysDelStoreTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KeysDelStoreTests.swift; sourceTree = "<group>"; };
 		62FD85DC2A7E6A46005DE558 /* StoreBaseTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StoreBaseTests.swift; sourceTree = "<group>"; };
+		A30000010000000000000001 /* JSONHighlighter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = JSONHighlighter.swift; sourceTree = "<group>"; };
 		CE3A187C282525AB00988515 /* KeyStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KeyStore.swift; sourceTree = "<group>"; };
 		CE3A18802825367000988515 /* ValueStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ValueStore.swift; sourceTree = "<group>"; };
 		CE3A1882282536BB00988515 /* StringValueStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StringValueStore.swift; sourceTree = "<group>"; };
@@ -408,7 +411,8 @@
 				6237D032275C954A000ACD6A /* Logging in Frameworks */,
 				CEA1EF51277C56DD00D300E9 /* NIOCore in Frameworks */,
 				CEA1EF4F277C56DD00D300E9 /* NIOConcurrencyHelpers in Frameworks */,
-				623E46BA2B663E5700C28904 /* SwiftJSONFormatter in Frameworks */,
+				A10000030000000000000003 /* SwiftTreeSitter in Frameworks */,
+				A20000030000000000000003 /* TreeSitterJSON in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -562,6 +566,7 @@
 				43CD286F2670C3BC00E11876 /* Settings */,
 				62D1BA9428435C0C00F41CAD /* Helpers */,
 				431266D7261C66E100FB6B69 /* LiquidGlass.swift */,
+				A30000010000000000000001 /* JSONHighlighter.swift */,
 				4373C50025C2E75B002B700E /* BizError.swift */,
 				4397288B2643E43800803BE9 /* Const.swift */,
 				437BC2442645272E00E2C84D /* DoubleFormatter.swift */,
@@ -877,7 +882,8 @@
 				CEA1EF4C277C56DD00D300E9 /* NIO */,
 				CEA1EF4E277C56DD00D300E9 /* NIOConcurrencyHelpers */,
 				CEA1EF50277C56DD00D300E9 /* NIOCore */,
-				623E46B92B663E5700C28904 /* SwiftJSONFormatter */,
+				A10000020000000000000002 /* SwiftTreeSitter */,
+				A20000020000000000000002 /* TreeSitterJSON */,
 				5C35809D2FA8313E008E23C2 /* Valkey */,
 			);
 			productName = "redis-pro";
@@ -935,7 +941,8 @@
 				6237D030275C954A000ACD6A /* XCRemoteSwiftPackageReference "swift-log" */,
 				CEA1EF48277C56B100D300E9 /* XCRemoteSwiftPackageReference "swift-nio-ssh" */,
 				CEA1EF4B277C56DD00D300E9 /* XCRemoteSwiftPackageReference "swift-nio" */,
-				623E46B82B663E5700C28904 /* XCRemoteSwiftPackageReference "SwiftJSONFormatter" */,
+				A10000010000000000000001 /* XCRemoteSwiftPackageReference "SwiftTreeSitter" */,
+				A20000010000000000000001 /* XCRemoteSwiftPackageReference "tree-sitter-json" */,
 				437499562CE875D600869391 /* XCRemoteSwiftPackageReference "swift-syntax" */,
 				5C35809C2FA7D8CF008E23C2 /* XCRemoteSwiftPackageReference "valkey-swift" */,
 			);
@@ -1008,6 +1015,7 @@
 				43CD28B6267C7CF400E11876 /* Objects.swift in Sources */,
 				4314A34C26258A4300053FEE /* Page.swift in Sources */,
 				431266D8261C66E100FB6B69 /* LiquidGlass.swift in Sources */,
+				A30000020000000000000002 /* JSONHighlighter.swift in Sources */,
 				62283B282B5283C100782720 /* ReadTimeoutHandler.swift in Sources */,
 				437C0937264952B300F1904C /* MTabView.swift in Sources */,
 				CE3A187D282525AB00988515 /* KeyStore.swift in Sources */,
@@ -1481,12 +1489,20 @@
 				minimumVersion = 1.6.3;
 			};
 		};
-		623E46B82B663E5700C28904 /* XCRemoteSwiftPackageReference "SwiftJSONFormatter" */ = {
+		A10000010000000000000001 /* XCRemoteSwiftPackageReference "SwiftTreeSitter" */ = {
 			isa = XCRemoteSwiftPackageReference;
-			repositoryURL = "https://github.com/luin/SwiftJSONFormatter";
+			repositoryURL = "https://github.com/tree-sitter/swift-tree-sitter";
 			requirement = {
 				kind = upToNextMajorVersion;
-				minimumVersion = 2.0.0;
+				minimumVersion = 0.8.0;
+			};
+		};
+		A20000010000000000000001 /* XCRemoteSwiftPackageReference "tree-sitter-json" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/tree-sitter/tree-sitter-json";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 0.24.0;
 			};
 		};
 		CEA1EF48277C56B100D300E9 /* XCRemoteSwiftPackageReference "swift-nio-ssh" */ = {
@@ -1518,10 +1534,15 @@
 			package = 6237D030275C954A000ACD6A /* XCRemoteSwiftPackageReference "swift-log" */;
 			productName = Logging;
 		};
-		623E46B92B663E5700C28904 /* SwiftJSONFormatter */ = {
+		A10000020000000000000002 /* SwiftTreeSitter */ = {
 			isa = XCSwiftPackageProductDependency;
-			package = 623E46B82B663E5700C28904 /* XCRemoteSwiftPackageReference "SwiftJSONFormatter" */;
-			productName = SwiftJSONFormatter;
+			package = A10000010000000000000001 /* XCRemoteSwiftPackageReference "SwiftTreeSitter" */;
+			productName = SwiftTreeSitter;
+		};
+		A20000020000000000000002 /* TreeSitterJSON */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = A20000010000000000000001 /* XCRemoteSwiftPackageReference "tree-sitter-json" */;
+			productName = TreeSitterJSON;
 		};
 		CEA1EF49277C56B100D300E9 /* NIOSSH */ = {
 			isa = XCSwiftPackageProductDependency;

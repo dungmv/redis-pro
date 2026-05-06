@@ -8,7 +8,7 @@
 
 import Logging
 import Foundation
-import SwiftJSONFormatter
+
 import Observation
 
 private let logger = Logger(label: "string-value-store")
@@ -103,7 +103,14 @@ final class StringValueViewModel {
             Messages.show(BizError("Invalid json format!"))
             return
         }
-        text = SwiftJSONFormatter.beautify(text, indent: "    ")
+        guard let data = text.data(using: .utf8),
+              let json = try? JSONSerialization.jsonObject(with: data),
+              let prettyData = try? JSONSerialization.data(withJSONObject: json, options: .prettyPrinted),
+              let prettyString = String(data: prettyData, encoding: .utf8) else {
+            Messages.show(BizError("Invalid json format!"))
+            return
+        }
+        text = prettyString
     }
 
     func jsonMinify() {
@@ -111,7 +118,14 @@ final class StringValueViewModel {
             Messages.show(BizError("Invalid json format!"))
             return
         }
-        text = SwiftJSONFormatter.minify(text)
+        guard let data = text.data(using: .utf8),
+              let json = try? JSONSerialization.jsonObject(with: data),
+              let minData = try? JSONSerialization.data(withJSONObject: json, options: []),
+              let minString = String(data: minData, encoding: .utf8) else {
+            Messages.show(BizError("Invalid json format!"))
+            return
+        }
+        text = minString
     }
 
     func refresh() {

@@ -12,7 +12,8 @@ struct AboutView: View {
     private let dependencies: [(String, String)] = [
         ("Valkey", "https://github.com/valkey-io/valkey-swift"),
         ("NIOSSH", "https://github.com/apple/swift-nio-ssh"),
-        ("SwiftJSONFormatter", "https://github.com/luin/SwiftJSONFormatter"),
+        ("SwiftTreeSitter", "https://github.com/tree-sitter/swift-tree-sitter"),
+        ("TreeSitterJSON", "https://github.com/tree-sitter/tree-sitter-json"),
         ("swift-log", "https://github.com/apple/swift-log"),
 
     ]
