@@ -95,7 +95,7 @@ extension RedisClient {
         return Array(elements[start..<end]).map { ($0.0, "\($0.1)") }
     }
     
-    private func zscan(_ key: String, keywords: String?, cursor: Int, count: Int? = 1) async throws -> (cursor: Int, elements: [(String, Double)]) {
+    func zscan(_ key: String, keywords: String?, cursor: Int, count: Int? = 1) async throws -> (cursor: Int, elements: [(String, Double)]) {
         logger.debug("redis zset scan, key: \(key) cursor: \(cursor), keywords: \(String(describing: keywords)), count:\(String(describing: count))")
         let client = try await getClient()
         

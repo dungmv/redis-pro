@@ -82,9 +82,17 @@ struct TreeRow: View {
         .contentShape(Rectangle())
         .onHover { isHovered = $0 }
         .contextMenu {
-            Button("Copy Full Name") {
+            Button("Copy Key Name") {
                 PasteboardHelper.copy(node.fullName)
             }
+            if !node.isFolder {
+                Button {
+                    viewModel.copyValue(node)
+                } label: {
+                    Label("Copy Value", systemImage: "doc.on.doc")
+                }
+            }
+
             Divider()
             Button(role: .destructive) {
                 viewModel.deleteNodeConfirm(node)

@@ -91,7 +91,7 @@ extension RedisClient {
         return Array(elements[start..<end])
     }
     
-    private func _sscan(_ key: String, keywords: String?, cursor: Int, count: Int = 1) async throws -> (cursor: Int, elements: [String]) {
+    func _sscan(_ key: String, keywords: String?, cursor: Int, count: Int = 1) async throws -> (cursor: Int, elements: [String]) {
         logger.debug("redis set scan, key: \(key) cursor: \(cursor), keywords: \(String(describing: keywords)), count:\(String(describing: count))")
         let client = try await getClient()
         

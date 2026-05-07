@@ -136,4 +136,57 @@ extension RedisClient {
         
         return redisKeyModels
     }
+
+    func getValue(_ key: String, type: String) async throws -> String {
+        logger.info("get value, key: \(key), type: \(type)")
+        
+        switch type {
+        case RedisKeyTypeEnum.STRING.rawValue:
+            return try await get(key)
+        case RedisKeyTypeEnum.HASH.rawValue:
+            var cursor = 0
+            var allEntries: [String: String] = [:]
+            repeat {
+                let res = try await hscan(key: key, cursor: cursor, pattern: nil, count: 2000)
+                cursor = res.0
+                for (f, v) in res.1 {
+                    allEntries[f] = v
+                }
+            } while cursor != 0
+            let jsonData = try JSONSerialization.data(withJSONObject: allEntries, options: [.prettyPrinted, .sortedKeys])
+            return String(data: jsonData, encoding: .utf8) ?? ""
+            
+        case RedisKeyTypeEnum.LIST.rawValue:
+            let elements = try await _lrange(key, start: 0, stop: -1)
+            let jsonData = try JSONSerialization.data(withJSONObject: elements.compactMap { $0 }, options: [.prettyPrinted])
+            return String(data: jsonData, encoding: .utf8) ?? ""
+            
+        case RedisKeyTypeEnum.SET.rawValue:
+            var cursor = 0
+            var allElements: [String] = []
+            repeat {
+                let res = try await _sscan(key, keywords: nil, cursor: cursor, count: 2000)
+                cursor = res.cursor
+                allElements.append(contentsOf: res.elements)
+            } while cursor != 0
+            let jsonData = try JSONSerialization.data(withJSONObject: allElements, options: [.prettyPrinted])
+            return String(data: jsonData, encoding: .utf8) ?? ""
+            
+        case RedisKeyTypeEnum.ZSET.rawValue:
+            var cursor = 0
+            var allElements: [[String: Any]] = []
+            repeat {
+                let res = try await zscan(key, keywords: nil, cursor: cursor, count: 2000)
+                cursor = res.cursor
+                for (v, s) in res.elements {
+                    allElements.append(["value": v, "score": s])
+                }
+            } while cursor != 0
+            let jsonData = try JSONSerialization.data(withJSONObject: allElements, options: [.prettyPrinted])
+            return String(data: jsonData, encoding: .utf8) ?? ""
+            
+        default:
+            return ""
+        }
+    }
 }

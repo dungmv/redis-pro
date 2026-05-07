@@ -107,7 +107,7 @@ extension RedisClient {
         return try await client?.hlen(ValkeyKey(key)) ?? 0
     }
     
-    private    func hscan(key: String, cursor: Int, pattern: String?, count: Int?) async throws -> (Int, [(String, String)]) {
+    func hscan(key: String, cursor: Int, pattern: String?, count: Int?) async throws -> (Int, [(String, String)]) {
         let client = try await getClient()
         let result = try await client?.hscan(ValkeyKey(key), cursor: cursor, pattern: pattern, count: count)
         

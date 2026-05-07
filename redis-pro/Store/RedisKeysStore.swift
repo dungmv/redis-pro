@@ -326,6 +326,17 @@ final class RedisKeysViewModel {
         deleteConfirm(indexes)
     }
 
+    func copyValue(_ node: RedisKeyNode) {
+        Task {
+            do {
+                let value = try await redisInstance.getClient().getValue(node.fullName, type: node.type ?? "string")
+                PasteboardHelper.copy(value)
+            } catch {
+                Messages.show(error)
+            }
+        }
+    }
+
     func deleteKey(_ indexes: [Int]) {
         let redisKeys = indexes.map { table.datasource[$0] }
         logger.info("delete key: \(indexes)")

@@ -36,7 +36,7 @@ extension RedisClient {
         return ([], page)
     }
     
-    private func _lrange(_ key: String, start: Int, stop: Int) async throws -> [String?] {
+    func _lrange(_ key: String, start: Int, stop: Int) async throws -> [String?] {
         logger.debug("redis list range, key: \(key)")
         guard let client = try await getClient() else { return [] }
         
