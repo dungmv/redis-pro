@@ -37,7 +37,7 @@ final class ListValueViewModel {
         self.page.showTotal = true
         self.table = TableViewModel<RedisListItemModel>(
             columns: [
-                .init(title: "Index", width: 100) { "\($0.index)" },
+                .init(title: "Index", width: 120) { "\($0.index)" },
                 .init(title: "Value") { $0.value }
             ],
             datasource: [],

@@ -36,7 +36,7 @@ final class ZSetValueViewModel {
         self.page.showTotal = true
         self.table = TableViewModel<RedisZSetItemModel>(
             columns: [
-                .init(title: "Score", width: 80) { $0.score },
+                .init(title: "Score", width: 120) { $0.score },
                 .init(title: "Value") { $0.value }
             ],
             datasource: [],

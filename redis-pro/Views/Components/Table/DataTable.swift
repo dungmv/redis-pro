@@ -16,9 +16,16 @@ struct DataTable<Item: Identifiable & Sendable & Hashable>: View {
         Table(viewModel.datasource, selection: $selection) {
             TableColumnForEach(viewModel.columns) { column in
                 TableColumn(column.title) { item in
-                    Text(column.content(item))
-                        .lineLimit(1)
-                        .truncationMode(.tail)
+                    if column.width == nil {
+                        Text(column.content(item))
+                            .lineLimit(1)
+                            .truncationMode(.tail)
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                    } else {
+                        Text(column.content(item))
+                            .lineLimit(1)
+                            .truncationMode(.tail)
+                    }
                 }
                 .width(min: 80, ideal: column.width)
             }

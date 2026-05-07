@@ -36,7 +36,7 @@ final class HashValueViewModel {
         self.page.showTotal = true
         self.table = TableViewModel<RedisHashEntryModel>(
             columns: [
-                .init(title: "Field", width: 100) { $0.field },
+                .init(title: "Field", width: 120) { $0.field },
                 .init(title: "Value") { $0.value }
             ],
             datasource: [],
