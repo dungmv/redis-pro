@@ -50,8 +50,8 @@ struct PageBar: View {
                 }
             }
         }
-        .padding(.horizontal, 10)
-        .padding(.vertical, 6)
-        .glassCard(cornerRadius: LiquidGlass.radiusLG)
+        .padding(.horizontal, 6)
+        .padding(.vertical, 2)
+        .glassCard(cornerRadius: LiquidGlass.radiusSM)
     }
 }

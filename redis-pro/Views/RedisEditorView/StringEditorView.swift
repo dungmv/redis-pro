@@ -31,6 +31,8 @@ struct StringEditorView: View {
                     MTextEditor(text: Binding(get: { vm.text }, set: { vm.text = $0 }))
                 }
             }
+            .padding(.horizontal, 10)
+            .padding(.top, 6)
             .background(Color(NSColor.textBackgroundColor))
 
             // footer
@@ -79,8 +81,10 @@ struct StringEditorView: View {
                 .help("Toggle JSON syntax highlighting preview")
                 IconButton(icon: "arrow.clockwise", name: "Refresh", action: { vm.refresh() })
                 IconButton(icon: "checkmark", name: "Submit", disabled: !vm.isIntactString, action: { vm.submit() })
+                    .padding(.trailing, 8)
             }
-            .padding(EdgeInsets(top: 6, leading: 0, bottom: 0, trailing: 0))
+            .frame(height: 30)
+            .glassFooter()
         }
         .onAppear {
             logger.info("redis string value editor view appear ...")

@@ -85,6 +85,7 @@ struct RedisKeysListView: View {
             }
             .menuStyle(.borderlessButton)
             .frame(width: 24)
+            .padding(.leading, 10)
 
             MIcon(icon: "arrow.clockwise", fontSize: 12) { viewModel.refresh() }
                 .help("Refresh keys")
@@ -97,10 +98,10 @@ struct RedisKeysListView: View {
                 .lineLimit(1)
 
             PageBar(viewModel: viewModel.page)
+                .padding(.trailing, 8)
         }
-        .padding(.horizontal, 8)
-        .padding(.vertical, 6)
-        .glassToolbar()
+        .frame(height: 30)
+        .glassFooter()
     }
 
     // MARK: - Content
@@ -115,8 +116,7 @@ struct RedisKeysListView: View {
             case .NONE:
                 EmptyView()
             }
-            Spacer()
         }
-        .padding(LiquidGlass.spacing8)
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
     }
 }

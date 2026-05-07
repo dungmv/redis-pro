@@ -37,7 +37,7 @@ struct RedisValueHeaderView: View {
             // TTL field
             ttlView
         }
-        .padding(.horizontal, 12)
+        .padding(.horizontal, 10)
         .padding(.vertical, 8)
         .glassToolbar()
     }

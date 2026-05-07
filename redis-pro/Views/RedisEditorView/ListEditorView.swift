@@ -24,17 +24,20 @@ struct ListEditorView: View {
                 Spacer()
                 PageBar(viewModel: vm.page)
             }
-            .padding(EdgeInsets(top: 6, leading: 0, bottom: 6, trailing: 0))
+            .padding(.horizontal, 10)
+            .padding(.vertical, 6)
 
             NTableView(viewModel: vm.table)
 
             // footer
-            HStack(alignment: .center, spacing: 6) {
+            HStack(alignment: .center, spacing: 0) {
                 KeyObjectBar(viewModel: viewModel.keyObject)
                 Spacer()
                 IconButton(icon: "arrow.clockwise", name: "Refresh", action: { vm.refresh() })
+                    .padding(.trailing, 8)
             }
-            .padding(EdgeInsets(top: 6, leading: 0, bottom: 0, trailing: 0))
+            .frame(height: 30)
+            .glassFooter()
         }
         .sheet(isPresented: Binding(get: { vm.editModalVisible }, set: { vm.editModalVisible = $0 })) {
             ModalView("Edit list item", action: { vm.submit() }) {

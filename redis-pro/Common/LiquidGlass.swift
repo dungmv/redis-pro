@@ -158,6 +158,19 @@ struct GlassToolbar: ViewModifier {
     }
 }
 
+/// Floating footer background (thin material + top separator).
+struct GlassFooter: ViewModifier {
+    func body(content: Content) -> some View {
+        content
+            .background(.thinMaterial)
+            .overlay(alignment: .top) {
+                Rectangle()
+                    .fill(LiquidGlass.glassBorder)
+                    .frame(height: 0.5)
+            }
+    }
+}
+
 struct GlassWindowSurface: ViewModifier {
     func body(content: Content) -> some View {
         content
@@ -189,6 +202,10 @@ extension View {
 
     func glassToolbar() -> some View {
         modifier(GlassToolbar())
+    }
+
+    func glassFooter() -> some View {
+        modifier(GlassFooter())
     }
 
     func glassWindowSurface() -> some View {
