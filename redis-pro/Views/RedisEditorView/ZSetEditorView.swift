@@ -23,7 +23,7 @@ struct ZSetEditorView: View {
                 SearchBar(placeholder: "Search element...", onCommit: { vm.search($0) })
                 PageBar(viewModel: vm.page)
             }
-            .padding(EdgeInsets(top: MTheme.V_SPACING, leading: 0, bottom: MTheme.V_SPACING, trailing: 0))
+            .padding(EdgeInsets(top: 6, leading: 0, bottom: 6, trailing: 0))
 
             NTableView(viewModel: vm.table)
 
@@ -33,11 +33,11 @@ struct ZSetEditorView: View {
                 Spacer()
                 IconButton(icon: "arrow.clockwise", name: "Refresh", action: { vm.refresh() })
             }
-            .padding(EdgeInsets(top: MTheme.V_SPACING, leading: 0, bottom: 0, trailing: 0))
+            .padding(EdgeInsets(top: 6, leading: 0, bottom: 0, trailing: 0))
         }
         .sheet(isPresented: Binding(get: { vm.editModalVisible }, set: { vm.editModalVisible = $0 })) {
             ModalView("Edit zset element", action: { vm.submit() }) {
-                VStack(alignment: .leading, spacing: MTheme.H_SPACING) {
+                VStack(alignment: .leading, spacing: 6) {
                     FormItemDouble(
                         label: "Score", placeholder: "score",
                         value: Binding(get: { vm.editScore }, set: { vm.editScore = $0 })

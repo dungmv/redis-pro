@@ -10,11 +10,33 @@ import SwiftUI
 import Logging
 
 struct KeyObjectBar: View {
-    @State var viewModel: KeyObjectViewModel
-    let logger = Logger(label: "key-object-bar")
+    let viewModel: KeyObjectViewModel
 
     var body: some View {
-        FormText(label: "Object Encoding:", value: viewModel.encoding)
-            .padding(EdgeInsets(top: 0, leading: MTheme.H_SPACING, bottom: 0, trailing: MTheme.H_SPACING))
+        HStack(spacing: 2) {
+            HStack(spacing: 4) {
+                Image(systemName: "cpu")
+                    .font(.system(size: 11, weight: .medium))
+                Text("Encoding")
+                    .font(.subheadline.weight(.medium))
+            }
+            .foregroundColor(.secondary)
+            
+            Text(viewModel.encoding.isEmpty ? "–" : viewModel.encoding)
+                .font(.callout.monospaced())
+                .padding(.horizontal, 6)
+                .padding(.vertical, 2)
+                .background(
+                    Capsule()
+                        .fill(Color.primary.opacity(0.06))
+                )
+                .overlay(
+                    Capsule()
+                        .strokeBorder(Color.primary.opacity(0.1), lineWidth: 0.5)
+                )
+                .foregroundColor(.primary)
+                .help("Internal Redis encoding")
+        }
+        .padding(.horizontal, 10)
     }
 }

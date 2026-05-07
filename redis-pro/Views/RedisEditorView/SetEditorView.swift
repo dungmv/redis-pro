@@ -23,21 +23,21 @@ struct SetEditorView: View {
                 SearchBar(placeholder: "Search element...", onCommit: { vm.search($0) })
                 PageBar(viewModel: vm.page)
             }
-            .padding(EdgeInsets(top: MTheme.V_SPACING, leading: 0, bottom: MTheme.V_SPACING, trailing: 0))
+            .padding(EdgeInsets(top: 6, leading: 0, bottom: 6, trailing: 0))
 
             NTableView(viewModel: vm.table)
 
             // footer
-            HStack(alignment: .center, spacing: MTheme.H_SPACING) {
+            HStack(alignment: .center, spacing: 6) {
                 KeyObjectBar(viewModel: viewModel.keyObject)
                 Spacer()
                 IconButton(icon: "arrow.clockwise", name: "Refresh", action: { vm.refresh() })
             }
-            .padding(EdgeInsets(top: MTheme.V_SPACING, leading: 0, bottom: 0, trailing: 0))
+            .padding(EdgeInsets(top: 6, leading: 0, bottom: 0, trailing: 0))
         }
         .sheet(isPresented: Binding(get: { vm.editModalVisible }, set: { vm.editModalVisible = $0 })) {
             ModalView("Edit set element", action: { vm.submit() }) {
-                VStack(alignment: .leading, spacing: MTheme.V_SPACING) {
+                VStack(alignment: .leading, spacing: 6) {
                     FormItemTextArea(placeholder: "value", value: Binding(get: { vm.editValue }, set: { vm.editValue = $0 }))
                 }
             }

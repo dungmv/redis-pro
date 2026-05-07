@@ -16,11 +16,11 @@ struct FormLabel: View {
         HStack(spacing: 2) {
             if required {
                 Text("*")
-                    .font(LiquidGlass.fontLabel)
+                    .font(.subheadline)
                     .foregroundStyle(Color.red)
             }
             Text("\(label):")
-                .font(LiquidGlass.fontLabel)
+                .font(.subheadline.weight(.medium))
                 .foregroundStyle(.secondary)
                 .lineLimit(1)
         }

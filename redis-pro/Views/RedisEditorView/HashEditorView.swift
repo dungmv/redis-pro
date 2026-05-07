@@ -16,14 +16,14 @@ struct HashEditorView: View {
     var body: some View {
         let vm = viewModel.hashValue
         VStack(alignment: .leading, spacing: 0) {
-            HStack(alignment: .center, spacing: MTheme.H_SPACING) {
+            HStack(alignment: .center, spacing: 6) {
                 IconButton(icon: "plus", name: "Add", action: { vm.addNew() })
                 IconButton(icon: "trash", name: "Delete", disabled: vm.table.selectIndex < 0, action: { vm.deleteConfirm(vm.table.selectIndex) })
 
                 SearchBar(placeholder: "Search field...", onCommit: { vm.search($0) })
                 PageBar(viewModel: vm.page)
             }
-            .padding(EdgeInsets(top: MTheme.V_SPACING, leading: 0, bottom: MTheme.V_SPACING, trailing: 0))
+            .padding(EdgeInsets(top: 6, leading: 0, bottom: 6, trailing: 0))
 
             NTableView(viewModel: vm.table)
 
@@ -33,7 +33,7 @@ struct HashEditorView: View {
                 Spacer()
                 IconButton(icon: "arrow.clockwise", name: "Refresh", action: { vm.refresh() })
             }
-            .padding(EdgeInsets(top: MTheme.V_SPACING, leading: 0, bottom: 0, trailing: 0))
+            .padding(EdgeInsets(top: 0, leading: 0, bottom: 0, trailing: 0))
         }
         .onAppear {
             logger.info("redis hash editor view appear ...")

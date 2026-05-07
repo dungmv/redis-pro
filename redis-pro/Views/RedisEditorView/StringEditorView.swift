@@ -17,7 +17,7 @@ struct StringEditorView: View {
     var body: some View {
         let vm = viewModel.stringValue
         VStack(alignment: .leading, spacing: 0) {
-            VStack(alignment: .leading, spacing: MTheme.V_SPACING) {
+            VStack(alignment: .leading, spacing: 6) {
                 if showHighlightedPreview {
                     ScrollView {
                         Text(JSONHighlighter.highlight(vm.text))
@@ -34,11 +34,33 @@ struct StringEditorView: View {
             .background(Color(NSColor.textBackgroundColor))
 
             // footer
-            HStack(alignment: .center, spacing: MTheme.V_SPACING) {
+            HStack(alignment: .center, spacing: 6) {
                 KeyObjectBar(viewModel: viewModel.keyObject)
 
                 if vm.isIntactString {
-                    FormText(label: "Length:", value: "\(vm.length)")
+                    HStack(spacing: 8) {
+                        HStack(spacing: 4) {
+                            Image(systemName: "text.alignleft")
+                                .font(.system(size: 11, weight: .medium))
+                            Text("Length")
+                                .font(.subheadline.weight(.medium))
+                        }
+                        .foregroundColor(.secondary)
+                        
+                        Text("\(vm.length)")
+                            .font(.callout.monospaced())
+                            .padding(.horizontal, 6)
+                            .padding(.vertical, 2)
+                            .background(
+                                Capsule()
+                                    .fill(Color.primary.opacity(0.06))
+                            )
+                            .overlay(
+                                Capsule()
+                                    .strokeBorder(Color.primary.opacity(0.1), lineWidth: 0.5)
+                            )
+                            .foregroundColor(.primary)
+                    }
                 } else {
                     Text("Range: 0~\(vm.stringMaxLength + 1) / \(vm.length)")
                     MButton(text: "Show Intact", action: { vm.getIntactString() })
@@ -58,7 +80,7 @@ struct StringEditorView: View {
                 IconButton(icon: "arrow.clockwise", name: "Refresh", action: { vm.refresh() })
                 IconButton(icon: "checkmark", name: "Submit", disabled: !vm.isIntactString, action: { vm.submit() })
             }
-            .padding(EdgeInsets(top: MTheme.V_SPACING, leading: 0, bottom: 0, trailing: 0))
+            .padding(EdgeInsets(top: 6, leading: 0, bottom: 0, trailing: 0))
         }
         .onAppear {
             logger.info("redis string value editor view appear ...")

@@ -17,11 +17,28 @@ struct MButton: View {
     var keyEquivalent: MKeyEquivalent?
 
     var body: some View {
-        Button(action: { action?() }) {
-            Text(text)
-                .font(.system(size: LiquidGlass.fontSizeMD, weight: .medium))
+        Group {
+            switch style {
+            case .primary:
+                Button(role: style == .destructive ? .destructive : nil, action: { action?() }) {
+                    Text(text)
+                        .font(.callout.weight(.medium))
+                }
+                .buttonStyle(.borderedProminent)
+            case .plain:
+                Button(role: style == .destructive ? .destructive : nil, action: { action?() }) {
+                    Text(text)
+                        .font(.callout.weight(.medium))
+                }
+                .buttonStyle(.plain)
+            default:
+                Button(role: style == .destructive ? .destructive : nil, action: { action?() }) {
+                    Text(text)
+                        .font(.callout.weight(.medium))
+                }
+                .buttonStyle(.bordered)
+            }
         }
-        .buttonStyle(LiquidButtonStyle(variant: style))
         .disabled(disabled)
         .apply {
             if let ke = keyEquivalent {
@@ -42,66 +59,6 @@ enum MButtonVariant {
     case plain
 }
 
-// MARK: - LiquidButtonStyle
-
-struct LiquidButtonStyle: ButtonStyle {
-    let variant: MButtonVariant
-    @Environment(\.isEnabled) private var isEnabled
-
-    func makeBody(configuration: Configuration) -> some View {
-        configuration.label
-            .padding(.horizontal, 12)
-            .padding(.vertical, 5)
-            .background(background(for: configuration))
-            .foregroundStyle(foreground)
-            .clipShape(RoundedRectangle(cornerRadius: LiquidGlass.radiusSM, style: .continuous))
-            .overlay(
-                RoundedRectangle(cornerRadius: LiquidGlass.radiusSM, style: .continuous)
-                    .strokeBorder(borderColor(for: configuration), lineWidth: 0.5)
-            )
-            .scaleEffect(configuration.isPressed ? 0.98 : 1.0)
-            .opacity(isEnabled ? 1.0 : 0.45)
-            .animation(.spring(response: 0.2, dampingFraction: 0.8), value: configuration.isPressed)
-    }
-
-    @ViewBuilder
-    private func background(for configuration: Configuration) -> some View {
-        switch variant {
-        case .primary:
-            RoundedRectangle(cornerRadius: LiquidGlass.radiusSM, style: .continuous)
-                .fill(Color.accentColor.opacity(configuration.isPressed ? 0.82 : 0.95))
-        case .destructive:
-            RoundedRectangle(cornerRadius: LiquidGlass.radiusSM, style: .continuous)
-                .fill(Color.red.opacity(configuration.isPressed ? 0.82 : 0.92))
-        case .plain:
-            RoundedRectangle(cornerRadius: LiquidGlass.radiusSM, style: .continuous)
-                .fill(Color.clear)
-        default:
-            RoundedRectangle(cornerRadius: LiquidGlass.radiusSM, style: .continuous)
-                .fill(configuration.isPressed ? AnyShapeStyle(.regularMaterial) : AnyShapeStyle(.thinMaterial))
-        }
-    }
-
-    private var foreground: AnyShapeStyle {
-        switch variant {
-        case .primary, .destructive:
-            return AnyShapeStyle(.white)
-        default:
-            return AnyShapeStyle(.primary)
-        }
-    }
-
-    private func borderColor(for configuration: Configuration) -> Color {
-        switch variant {
-        case .primary:
-            return Color.accentColor.opacity(configuration.isPressed ? 0.45 : 0.35)
-        case .destructive:
-            return Color.red.opacity(configuration.isPressed ? 0.45 : 0.35)
-        default:
-            return configuration.isPressed ? LiquidGlass.glassStroke : LiquidGlass.glassBorder
-        }
-    }
-}
 
 // MARK: - MKeyEquivalent
 
@@ -152,7 +109,7 @@ struct NButton: View {
                 Text(title ?? "")
             }
         }
-        .buttonStyle(LiquidButtonStyle(variant: .default))
+        .buttonStyle(.bordered)
         .disabled(disabled)
     }
 }
