@@ -20,7 +20,7 @@ struct DataTable<Item: Identifiable & Sendable & Hashable>: View {
                         .lineLimit(1)
                         .truncationMode(.tail)
                 }
-                .width(column.width)
+                .width(min: 80, ideal: column.width)
             }
         }
         .contextMenu(forSelectionType: Item.ID.self) { selectedIDs in
