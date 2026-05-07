@@ -71,8 +71,6 @@
 		43CD28782671FA2A00E11876 /* RedisInfoModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 43CD28772671FA2A00E11876 /* RedisInfoModel.swift */; };
 		43CD287A267209D900E11876 /* RedisInfoView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 43CD2879267209D900E11876 /* RedisInfoView.swift */; };
 		43CD289E26732F4C00E11876 /* Localizable.strings in Resources */ = {isa = PBXBuildFile; fileRef = 43CD28A026732F4C00E11876 /* Localizable.strings */; };
-		43CD28AC267B67C600E11876 /* LogHandlers.swift in Sources */ = {isa = PBXBuildFile; fileRef = 43CD28AB267B67C600E11876 /* LogHandlers.swift */; };
-		43CD28AE267B6E0E00E11876 /* LoggerFactory.swift in Sources */ = {isa = PBXBuildFile; fileRef = 43CD28AD267B6E0E00E11876 /* LoggerFactory.swift */; };
 		43CD28B0267C6A9D00E11876 /* MainViewTypeEnum.swift in Sources */ = {isa = PBXBuildFile; fileRef = 43CD28AF267C6A9D00E11876 /* MainViewTypeEnum.swift */; };
 		43CD28B2267C6D0800E11876 /* ClientsListView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 43CD28B1267C6D0800E11876 /* ClientsListView.swift */; };
 		43CD28B4267C6F1100E11876 /* ClientModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 43CD28B3267C6F1100E11876 /* ClientModel.swift */; };
@@ -280,8 +278,6 @@
 		43CD2879267209D900E11876 /* RedisInfoView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RedisInfoView.swift; sourceTree = "<group>"; };
 		43CD289F26732F4C00E11876 /* zh-Hans */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = "zh-Hans"; path = "zh-Hans.lproj/Localizable.strings"; sourceTree = "<group>"; };
 		43CD28A126732F5000E11876 /* en */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = en; path = en.lproj/Localizable.strings; sourceTree = "<group>"; };
-		43CD28AB267B67C600E11876 /* LogHandlers.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LogHandlers.swift; sourceTree = "<group>"; };
-		43CD28AD267B6E0E00E11876 /* LoggerFactory.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LoggerFactory.swift; sourceTree = "<group>"; };
 		43CD28AF267C6A9D00E11876 /* MainViewTypeEnum.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MainViewTypeEnum.swift; sourceTree = "<group>"; };
 		43CD28B1267C6D0800E11876 /* ClientsListView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ClientsListView.swift; sourceTree = "<group>"; };
 		43CD28B3267C6F1100E11876 /* ClientModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ClientModel.swift; sourceTree = "<group>"; };
@@ -572,8 +568,6 @@
 				437BC2442645272E00E2C84D /* DoubleFormatter.swift */,
 				437BC24626452AE400E2C84D /* StringFormatter.swift */,
 				43CD286D2670A03800E11876 /* VersionManager.swift */,
-				43CD28AB267B67C600E11876 /* LogHandlers.swift */,
-				43CD28AD267B6E0E00E11876 /* LoggerFactory.swift */,
 				43CD28B5267C7CF400E11876 /* Objects.swift */,
 				4301C82E26B0EEB800C08E19 /* Stopwatch.swift */,
 				6252A4B927F0542E00C9536A /* Assert.swift */,
@@ -941,7 +935,7 @@
 				6237D030275C954A000ACD6A /* XCRemoteSwiftPackageReference "swift-log" */,
 				CEA1EF48277C56B100D300E9 /* XCRemoteSwiftPackageReference "swift-nio-ssh" */,
 				CEA1EF4B277C56DD00D300E9 /* XCRemoteSwiftPackageReference "swift-nio" */,
-				A10000010000000000000001 /* XCRemoteSwiftPackageReference "SwiftTreeSitter" */,
+				A10000010000000000000001 /* XCRemoteSwiftPackageReference "swift-tree-sitter" */,
 				A20000010000000000000001 /* XCRemoteSwiftPackageReference "tree-sitter-json" */,
 				437499562CE875D600869391 /* XCRemoteSwiftPackageReference "swift-syntax" */,
 				5C35809C2FA7D8CF008E23C2 /* XCRemoteSwiftPackageReference "valkey-swift" */,
@@ -1064,7 +1058,6 @@
 				4320AAF425B6740900A8E214 /* redis_proApp.swift in Sources */,
 				43BCCD3726A91E85000BE45F /* FormItemPassword.swift in Sources */,
 				43F22F1926A6690600A00F97 /* MLabel.swift in Sources */,
-				43CD28AE267B6E0E00E11876 /* LoggerFactory.swift in Sources */,
 				62D1BA9A2847990F00F41CAD /* Loadings.swift in Sources */,
 				43CD286E2670A03800E11876 /* VersionManager.swift in Sources */,
 				6252A4B627F0450200C9536A /* NTableColumn.swift in Sources */,
@@ -1074,7 +1067,6 @@
 				437BC24E26461E2100E2C84D /* NumberHelper.swift in Sources */,
 				62E8F9D92765F197006A5326 /* MPasswordField.swift in Sources */,
 				431266F5261D912500FB6B69 /* StringEditorView.swift in Sources */,
-				43CD28AC267B67C600E11876 /* LogHandlers.swift in Sources */,
 				43F22EF5269FCE6000A00F97 /* DateHelper.swift in Sources */,
 				4314A34126243ED500053FEE /* PageBar.swift in Sources */,
 				62CB3D7D2619AF990061E8C3 /* RedisKeyModel.swift in Sources */,
@@ -1489,7 +1481,7 @@
 				minimumVersion = 1.6.3;
 			};
 		};
-		A10000010000000000000001 /* XCRemoteSwiftPackageReference "SwiftTreeSitter" */ = {
+		A10000010000000000000001 /* XCRemoteSwiftPackageReference "swift-tree-sitter" */ = {
 			isa = XCRemoteSwiftPackageReference;
 			repositoryURL = "https://github.com/tree-sitter/swift-tree-sitter";
 			requirement = {
@@ -1536,7 +1528,7 @@
 		};
 		A10000020000000000000002 /* SwiftTreeSitter */ = {
 			isa = XCSwiftPackageProductDependency;
-			package = A10000010000000000000001 /* XCRemoteSwiftPackageReference "SwiftTreeSitter" */;
+			package = A10000010000000000000001 /* XCRemoteSwiftPackageReference "swift-tree-sitter" */;
 			productName = SwiftTreeSitter;
 		};
 		A20000020000000000000002 /* TreeSitterJSON */ = {
