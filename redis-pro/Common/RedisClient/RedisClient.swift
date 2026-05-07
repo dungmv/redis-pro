@@ -36,13 +36,11 @@ class RedisClient: @unchecked Sendable {
     private var networkMonitor = NetworkMonitor()
     
     init(_ redisModel: RedisModel) {
-        self.logger.info("init redis client, param: \(redisModel)")
         self.redisModel = redisModel
        
         // 监听app退出
         observers.append(
             NotificationCenter.default.addObserver(forName: NSApplication.willTerminateNotification, object: nil, queue: .main) { [self] _ in
-                logger.info("redis pro will exit...")
                 shutdown()
             }
         )
@@ -69,7 +67,6 @@ class RedisClient: @unchecked Sendable {
     }
     
     func handleError(_ error: Error) {
-        logger.info("system error \(error)")
         loading(false)
         Task { @MainActor in Messages.show(error) }
     }
@@ -204,7 +201,6 @@ extension RedisClient {
         self.valkeyClient = nil
         self.backgroundTask?.cancel()
         self.backgroundTask = nil
-        self.logger.info("redis client- connection closed")
         self.closeSSH()
     }
 

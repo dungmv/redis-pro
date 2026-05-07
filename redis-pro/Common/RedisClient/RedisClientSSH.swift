@@ -21,7 +21,6 @@ extension RedisClient {
         let localChannel = try await sshTunnel.openSSHTunnel()
         
         let localBindPort: Int = localChannel.localAddress?.port ?? 0
-        self.logger.info("init forwarding server success, local port: \(localBindPort)")
         self.sshLocalChannel = localChannel
         
         let auth = (redisModel.password.isEmpty && redisModel.username.isEmpty) ? nil : ValkeyClientConfiguration.Authentication(username: redisModel.username, password: redisModel.password)
@@ -44,11 +43,7 @@ extension RedisClient {
     
     // Close SSH tunnel
     func closeSSH() {
-        self.sshLocalChannel?.close(mode: .all).whenComplete { _ in
-            self.logger.info("SSH local channel closed")
-        }
-        self.sshChannel?.close(mode: .all).whenComplete { _ in
-            self.logger.info("SSH channel closed")
-        }
+        self.sshLocalChannel?.close(mode: .all)
+        self.sshChannel?.close(mode: .all)
     }
 }

@@ -23,10 +23,9 @@ struct redis_proApp: App {
 
     // 应用启动只初始化一次
     init() {
-        // logger init
-        LoggerFactory().setUp()
         rootViewModel.addWindow(mainWindowId)
     }
+
 
     var body: some Scene {
         WindowGroup {
@@ -94,46 +93,7 @@ struct redis_proApp: App {
 class AppDelegate: NSObject, NSApplicationDelegate {
     let logger = Logger(label: "redis-app")
 
-    func applicationWillFinishLaunching(_: Notification) {
-        logger.info("redis pro before launch ...")
-    }
-
     func applicationDidFinishLaunching(_ notification: Notification) {
         logger.info("redis pro launch complete")
-        logger.info("redis pro launch, scene color scheme ready...")
-    }
-
-    func applicationWillTerminate(_ notification: Notification) {
-        logger.info("redis pro application will terminate...")
-    }
-
-    func didFinishLaunchingWithOptions(_ notification: Notification) {
-        logger.info("redis didFinishLaunchingWithOptions...")
-    }
-
-    func applicationWillUnhide(_: Notification) {
-        logger.info("redis pro applicationWillUnhide...")
-    }
-
-    func applicationDidHide(_ notification: Notification) {
-        logger.info("redis pro applicationDidHide...")
-    }
-
-    func applicationWillBecomeActive(_ notification: Notification) {
-        logger.info("redis applicationWillBecomeActive...")
-    }
-
-    func applicationWillResignActive(_: Notification) {
-        logger.info("redis pro applicationWillResignActive...")
-    }
-
-    func applicationShouldHandleReopen(_: NSApplication, hasVisibleWindows: Bool) -> Bool {
-        logger.info("redis pro applicationShouldHandleReopen, hasVisibleWindows: \(hasVisibleWindows)")
-        return true
-    }
-
-    func applicationShouldOpenUntitledFile(_: NSApplication) -> Bool {
-        logger.info("redis pro applicationShouldOpenUntitledFile...")
-        return true
     }
 }

@@ -40,10 +40,7 @@ class SSHTunnel: @unchecked Sendable {
     
     
     func openSSHTunnel() async throws -> Channel {
-        logger.info("create new ssh connection...")
-        
         return try await withCheckedThrowingContinuation { continuation in
-            self.logger.info("init ssh tunnel start...")
             
             
             let bootstrap = ClientBootstrap(group: self.group)
@@ -54,7 +51,6 @@ class SSHTunnel: @unchecked Sendable {
                 .channelOption(ChannelOptions.socket(SocketOptionLevel(SOL_SOCKET), SO_REUSEADDR), value: 1)
                 .channelOption(ChannelOptions.socket(SocketOptionLevel(IPPROTO_TCP), TCP_NODELAY), value: 1)
             
-            logger.info("connecting to ssh server, host: \(self.sshHost), user: \(self.user)")
             let channelFuture = bootstrap.connect(host: self.sshHost, port: self.sshPort)
             
             channelFuture.whenFailure { error in
@@ -64,7 +60,6 @@ class SSHTunnel: @unchecked Sendable {
             
             
             channelFuture.whenSuccess { channel in
-                self.logger.info("connect ssh server success, host: \(self.sshHost), user: \(self.user)")
                 self.sshChannel = channel
                 let server = PortForwardingServer(group: self.group,
                                                   bindHost: self.bindHost,
@@ -92,7 +87,6 @@ class SSHTunnel: @unchecked Sendable {
                             }
                         }
                         
-                        self.logger.info("init new forwarding channel success...")
                         // We need to erase the channel here: we just want success or failure info.
                         return promise.futureResult.map { _ in }
                     }
@@ -101,7 +95,6 @@ class SSHTunnel: @unchecked Sendable {
                 self.forwardingServer = server
                 
                 // Run the server until complete
-                self.logger.info("forwarding server start...")
                 let f:EventLoopFuture<Channel> = server.run()
                 f.whenFailure { error in
                     self.logger.error("init forwarding channel error: \(error)")
