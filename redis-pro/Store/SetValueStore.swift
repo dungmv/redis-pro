@@ -39,7 +39,7 @@ final class SetValueViewModel {
         self.page.showTotal = true
         self.table = TableViewModel<String>(
             columns: [
-                .init(title: "Value", width: 200) { $0 }
+                .init(title: "Value") { $0 }
             ],
             datasource: [],
             contextMenus: [.COPY, .EDIT, .DELETE]

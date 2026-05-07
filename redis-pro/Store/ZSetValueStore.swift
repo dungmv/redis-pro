@@ -37,7 +37,7 @@ final class ZSetValueViewModel {
         self.table = TableViewModel<RedisZSetItemModel>(
             columns: [
                 .init(title: "Score", width: 80) { $0.score },
-                .init(title: "Value", width: 200) { $0.value }
+                .init(title: "Value") { $0.value }
             ],
             datasource: [],
             contextMenus: [.COPY, .EDIT, .DELETE]

@@ -38,7 +38,7 @@ final class ListValueViewModel {
         self.table = TableViewModel<RedisListItemModel>(
             columns: [
                 .init(title: "Index", width: 100) { "\($0.index)" },
-                .init(title: "Value", width: 200) { $0.value }
+                .init(title: "Value") { $0.value }
             ],
             datasource: [],
             contextMenus: [.COPY, .EDIT, .DELETE]

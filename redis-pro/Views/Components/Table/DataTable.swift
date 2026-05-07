@@ -13,15 +13,14 @@ struct DataTable<Item: Identifiable & Sendable & Hashable>: View {
     @State private var selection: Item.ID?
 
     var body: some View {
-        let datasource = viewModel.datasource
-        Table(datasource, selection: $selection) {
+        Table(viewModel.datasource, selection: $selection) {
             TableColumnForEach(viewModel.columns) { column in
                 TableColumn(column.title) { item in
                     Text(column.content(item))
                         .lineLimit(1)
                         .truncationMode(.tail)
                 }
-                .width(column.width ?? 100)
+                .width(column.width)
             }
         }
         .contextMenu(forSelectionType: Item.ID.self) { selectedIDs in

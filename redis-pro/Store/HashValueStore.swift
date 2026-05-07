@@ -37,7 +37,7 @@ final class HashValueViewModel {
         self.table = TableViewModel<RedisHashEntryModel>(
             columns: [
                 .init(title: "Field", width: 100) { $0.field },
-                .init(title: "Value", width: 200) { $0.value }
+                .init(title: "Value") { $0.value }
             ],
             datasource: [],
             contextMenus: [.EDIT, .DELETE, .COPY, .COPY_FIELD, .COPY_VALUE]
