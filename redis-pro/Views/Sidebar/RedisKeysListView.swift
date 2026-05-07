@@ -51,11 +51,6 @@ struct RedisKeysListView: View {
 
             HStack(spacing: 4) {
                 IconButton(icon: "plus", name: "Add") { viewModel.addNew() }
-                IconButton(
-                    icon: "trash",
-                    name: "Delete",
-                    disabled: !viewModel.table.isSelect
-                ) { viewModel.deleteConfirm(viewModel.table.selectIndexes) }
 
                 Spacer()
                 DatabasePicker(viewModel: viewModel.database_)

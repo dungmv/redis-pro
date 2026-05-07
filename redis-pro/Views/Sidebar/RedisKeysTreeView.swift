@@ -26,7 +26,7 @@ struct RedisKeysTreeView: View {
 
             // Native hierarchical list for virtualization and performance
             List(viewModel.redisKeyNodes, children: \.children, selection: selection) { node in
-                TreeRow(node: node, selectedId: viewModel.selectedKeyId)
+                TreeRow(viewModel: viewModel, node: node, selectedId: viewModel.selectedKeyId)
                     .listRowInsets(EdgeInsets(top: 0, leading: 0, bottom: 0, trailing: 4))
                     .listRowBackground(Color.clear)
                     .listRowSeparator(.hidden)
@@ -60,6 +60,7 @@ struct RedisKeysTreeView: View {
 // MARK: - Optimized Tree Row
 
 struct TreeRow: View {
+    let viewModel: RedisKeysViewModel
     let node: RedisKeyNode
     let selectedId: String?
 
@@ -83,6 +84,12 @@ struct TreeRow: View {
         .contextMenu {
             Button("Copy Full Name") {
                 PasteboardHelper.copy(node.fullName)
+            }
+            Divider()
+            Button(role: .destructive) {
+                viewModel.deleteNodeConfirm(node)
+            } label: {
+                Label("Delete", systemImage: "trash")
             }
         }
     }

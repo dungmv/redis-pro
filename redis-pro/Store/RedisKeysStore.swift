@@ -307,6 +307,25 @@ final class RedisKeysViewModel {
         }
     }
 
+    func deleteNodeConfirm(_ node: RedisKeyNode) {
+        let indexes: [Int]
+        if node.isFolder {
+            let prefix = node.fullName + ":"
+            indexes = table.datasource.enumerated()
+                .filter { $0.element.key == node.fullName || $0.element.key.hasPrefix(prefix) }
+                .map { $0.offset }
+        } else {
+            if let index = table.datasource.firstIndex(where: { $0.key == node.fullName }) {
+                indexes = [index]
+            } else {
+                indexes = []
+            }
+        }
+
+        guard !indexes.isEmpty else { return }
+        deleteConfirm(indexes)
+    }
+
     func deleteKey(_ indexes: [Int]) {
         let redisKeys = indexes.map { table.datasource[$0] }
         logger.info("delete key: \(indexes)")
