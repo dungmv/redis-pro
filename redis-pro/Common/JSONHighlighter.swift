@@ -57,13 +57,11 @@ enum JSONHighlighter {
 
     // MARK: - Public API
 
-    /// Highlights the given JSON string and returns an `AttributedString` with syntax coloring.
-    ///
-    /// If tree-sitter parsing fails or no highlight query is available the plain string is returned.
-    static func highlight(_ jsonString: String) -> AttributedString {
+    /// Highlights the given JSON string and returns an `NSAttributedString` with syntax coloring.
+    static func highlightToNS(_ jsonString: String) -> NSAttributedString {
         guard let mutableTree = parser.parse(jsonString),
               let query = highlightQuery else {
-            return AttributedString(jsonString)
+            return NSAttributedString(string: jsonString)
         }
 
         let cursor = query.execute(in: mutableTree)
@@ -86,7 +84,14 @@ enum JSONHighlighter {
             }
         }
 
-        return AttributedString(nsAttr)
+        return nsAttr
+    }
+
+    /// Highlights the given JSON string and returns an `AttributedString` with syntax coloring.
+    ///
+    /// If tree-sitter parsing fails or no highlight query is available the plain string is returned.
+    static func highlight(_ jsonString: String) -> AttributedString {
+        return AttributedString(highlightToNS(jsonString))
     }
 
     // MARK: - Helpers

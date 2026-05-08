@@ -18,7 +18,6 @@ private let logger = Logger(label: "string-value-store")
 final class StringValueViewModel {
     var redisKeyModel: RedisKeyModel?
     var isIntactString: Bool = true
-    var stringMaxLength: Int = -1
     var length: Int = -1
     var text: String = ""
 
@@ -61,18 +60,11 @@ final class StringValueViewModel {
         }
         let key = redisKeyModel.key
         do {
-            let r = isIntactString
-                ? try await redisInstance.getClient().get(key)
-                : try await redisInstance.getClient().getRange(key, end: stringMaxLength)
+            let r = try await redisInstance.getClient().get(key)
             text = r
         } catch {
             Messages.show(error)
         }
-    }
-
-    func getIntactString() {
-        isIntactString = true
-        Task { await getValue() }
     }
 
     func submit() {
@@ -92,9 +84,7 @@ final class StringValueViewModel {
 
     func updateLength(_ length: Int) async {
         self.length = length
-        let stringMaxLength = RedisDefaults.getStringMaxLength()
-        self.stringMaxLength = stringMaxLength
-        isIntactString = stringMaxLength == -1 || length <= stringMaxLength
+        self.isIntactString = true
         await getValue()
     }
 
