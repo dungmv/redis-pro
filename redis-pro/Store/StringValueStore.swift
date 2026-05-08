@@ -88,34 +88,30 @@ final class StringValueViewModel {
         await getValue()
     }
 
-    func jsonPretty() {
-        if text.count < 2 {
-            Messages.show(BizError("Invalid json format!"))
-            return
+    static func getJsonPretty(_ val: String) -> String {
+        if val.count < 2 {
+            return val
         }
-        guard let data = text.data(using: .utf8),
+        guard let data = val.data(using: .utf8),
               let json = try? JSONSerialization.jsonObject(with: data),
               let prettyData = try? JSONSerialization.data(withJSONObject: json, options: .prettyPrinted),
               let prettyString = String(data: prettyData, encoding: .utf8) else {
-            Messages.show(BizError("Invalid json format!"))
-            return
+            return val
         }
-        text = prettyString
+        return prettyString
     }
 
-    func jsonMinify() {
-        if text.count < 2 {
-            Messages.show(BizError("Invalid json format!"))
-            return
+    static func getJsonMinify(_ val: String) -> String {
+        if val.count < 2 {
+            return val
         }
-        guard let data = text.data(using: .utf8),
+        guard let data = val.data(using: .utf8),
               let json = try? JSONSerialization.jsonObject(with: data),
               let minData = try? JSONSerialization.data(withJSONObject: json, options: []),
               let minString = String(data: minData, encoding: .utf8) else {
-            Messages.show(BizError("Invalid json format!"))
-            return
+            return val
         }
-        text = minString
+        return minString
     }
 
     func refresh() {

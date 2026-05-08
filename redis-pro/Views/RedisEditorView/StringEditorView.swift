@@ -62,10 +62,8 @@ struct StringEditorView: View {
                 }
                 .pickerStyle(.segmented)
                 .frame(width: 150)
-                .onChange(of: viewMode) { _, newValue in
-                    if newValue == .json {
-                        vm.jsonPretty()
-                    }
+                .onChange(of: viewMode) { oldValue, newValue in
+                    // View mode change now handled internally by HighlightTextEditor for display
                 }
 
                 IconButton(icon: "arrow.clockwise", name: "Refresh", action: { vm.refresh() })
@@ -85,6 +83,10 @@ struct HighlightTextEditor: NSViewRepresentable {
     @Binding var text: String
     var isJSON: Bool
     
+    func formatJSON(_ val: String) -> String {
+        StringValueViewModel.getJsonPretty(val)
+    }
+    
     func makeNSView(context: Context) -> NSScrollView {
         let scrollView = NSTextView.scrollableTextView()
         let textView = scrollView.documentView as! NSTextView
@@ -97,6 +99,8 @@ struct HighlightTextEditor: NSViewRepresentable {
         textView.backgroundColor = .clear
         textView.drawsBackground = false
         textView.textColor = .labelColor
+        textView.isEditable = true
+        textView.isSelectable = true
         
         // Setup text container
         textView.textContainerInset = NSSize(width: 0, height: 0)
@@ -106,25 +110,27 @@ struct HighlightTextEditor: NSViewRepresentable {
     
     func updateNSView(_ nsView: NSScrollView, context: Context) {
         let textView = nsView.documentView as! NSTextView
+        let coordinator = context.coordinator
         
-        let modeChanged = context.coordinator.lastIsJSON != isJSON
-        context.coordinator.lastIsJSON = isJSON
+        let modeChanged = coordinator.lastIsJSON != isJSON
+        coordinator.lastIsJSON = isJSON
         
-        if isJSON {
-            if textView.string != text || modeChanged {
-                let highlighted = JSONHighlighter.highlightToNS(text)
-                let selectedRange = textView.selectedRange()
+        let displayString = isJSON ? formatJSON(text) : text
+        
+        // Only update if the string has actually changed or the mode changed
+        if textView.string != displayString || modeChanged {
+            let selectedRange = textView.selectedRange()
+            
+            coordinator.isUpdatingFromParent = true
+            if isJSON {
+                let highlighted = JSONHighlighter.highlightToNS(displayString)
                 textView.textStorage?.setAttributedString(highlighted)
-                textView.setSelectedRange(selectedRange)
-            }
-        } else {
-            if textView.string != text || modeChanged {
-                let selectedRange = textView.selectedRange()
-                textView.string = text
-                textView.setSelectedRange(selectedRange)
+            } else {
+                textView.string = displayString
                 textView.font = .monospacedSystemFont(ofSize: 13, weight: .regular)
                 textView.textColor = .labelColor
             }
+            coordinator.isUpdatingFromParent = false
         }
     }
     
@@ -135,13 +141,16 @@ struct HighlightTextEditor: NSViewRepresentable {
     class Coordinator: NSObject, NSTextViewDelegate {
         var parent: HighlightTextEditor
         var lastIsJSON: Bool?
+        var isUpdatingFromParent = false
         
         init(_ parent: HighlightTextEditor) {
             self.parent = parent
         }
         
         func textDidChange(_ notification: Notification) {
-            guard let textView = notification.object as? NSTextView else { return }
+            guard !isUpdatingFromParent,
+                  let textView = notification.object as? NSTextView else { return }
+            
             if self.parent.text != textView.string {
                 self.parent.text = textView.string
             }
