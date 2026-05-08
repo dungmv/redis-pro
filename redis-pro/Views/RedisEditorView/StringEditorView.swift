@@ -84,7 +84,29 @@ struct HighlightTextEditor: NSViewRepresentable {
     var isJSON: Bool
     
     func formatJSON(_ val: String) -> String {
-        StringValueViewModel.getJsonPretty(val)
+        if val.count < 2 {
+            return val
+        }
+        guard let data = val.data(using: .utf8),
+              let json = try? JSONSerialization.jsonObject(with: data),
+              let prettyData = try? JSONSerialization.data(withJSONObject: json, options: .prettyPrinted),
+              let prettyString = String(data: prettyData, encoding: .utf8) else {
+            return val
+        }
+        return prettyString
+    }
+    
+    func minifyJSON(_ val: String) -> String {
+        if val.count < 2 {
+            return val
+        }
+        guard let data = val.data(using: .utf8),
+              let json = try? JSONSerialization.jsonObject(with: data),
+              let minData = try? JSONSerialization.data(withJSONObject: json, options: []),
+              let minString = String(data: minData, encoding: .utf8) else {
+            return val
+        }
+        return minString
     }
     
     func makeNSView(context: Context) -> NSScrollView {

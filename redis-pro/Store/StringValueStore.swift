@@ -88,31 +88,6 @@ final class StringValueViewModel {
         await getValue()
     }
 
-    static func getJsonPretty(_ val: String) -> String {
-        if val.count < 2 {
-            return val
-        }
-        guard let data = val.data(using: .utf8),
-              let json = try? JSONSerialization.jsonObject(with: data),
-              let prettyData = try? JSONSerialization.data(withJSONObject: json, options: .prettyPrinted),
-              let prettyString = String(data: prettyData, encoding: .utf8) else {
-            return val
-        }
-        return prettyString
-    }
-
-    static func getJsonMinify(_ val: String) -> String {
-        if val.count < 2 {
-            return val
-        }
-        guard let data = val.data(using: .utf8),
-              let json = try? JSONSerialization.jsonObject(with: data),
-              let minData = try? JSONSerialization.data(withJSONObject: json, options: []),
-              let minString = String(data: minData, encoding: .utf8) else {
-            return val
-        }
-        return minString
-    }
 
     func refresh() {
         Task { await getLength() }
