@@ -18,7 +18,6 @@ struct HashEditorView: View {
         VStack(alignment: .leading, spacing: 0) {
             HStack(alignment: .center, spacing: 6) {
                 IconButton(icon: "plus", name: "Add", action: { vm.addNew() })
-                IconButton(icon: "trash", name: "Delete", disabled: vm.table.selectIndex < 0, action: { vm.deleteConfirm(vm.table.selectIndex) })
 
                 SearchBar(placeholder: "Search field...", onCommit: { vm.search($0) })
                 PageBar(viewModel: vm.page)

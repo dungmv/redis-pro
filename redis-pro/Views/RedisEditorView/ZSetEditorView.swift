@@ -18,7 +18,6 @@ struct ZSetEditorView: View {
         VStack(alignment: .leading, spacing: 0) {
             HStack(alignment: .center, spacing: 4) {
                 IconButton(icon: "plus", name: "Add", action: { vm.addNew() })
-                IconButton(icon: "trash", name: "Delete", disabled: vm.table.selectIndex < 0, action: { vm.deleteConfirm(vm.table.selectIndex) })
 
                 SearchBar(placeholder: "Search element...", onCommit: { vm.search($0) })
                 PageBar(viewModel: vm.page)

@@ -19,7 +19,6 @@ struct ListEditorView: View {
             HStack(alignment: .center, spacing: 4) {
                 IconButton(icon: "plus", name: "Add head", action: { vm.addNew(type: -1) })
                 IconButton(icon: "plus", name: "Add tail", action: { vm.addNew(type: -2) })
-                IconButton(icon: "trash", name: "Delete", disabled: vm.table.selectIndex < 0, action: { vm.deleteConfirm(vm.table.selectIndex) })
 
                 Spacer()
                 PageBar(viewModel: vm.page)
