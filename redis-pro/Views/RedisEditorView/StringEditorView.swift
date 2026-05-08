@@ -29,30 +29,6 @@ struct StringEditorView: View {
             HStack(alignment: .center, spacing: 6) {
                 KeyObjectBar(viewModel: viewModel.keyObject)
 
-                HStack(spacing: 8) {
-                    HStack(spacing: 4) {
-                        Image(systemName: "text.alignleft")
-                            .font(.system(size: 11, weight: .medium))
-                        Text("Length")
-                            .font(.subheadline.weight(.medium))
-                    }
-                    .foregroundColor(.secondary)
-                    
-                    Text("\(vm.length)")
-                        .font(.callout.monospaced())
-                        .padding(.horizontal, 6)
-                        .padding(.vertical, 2)
-                        .background(
-                            Capsule()
-                                .fill(Color.primary.opacity(0.06))
-                        )
-                        .overlay(
-                            Capsule()
-                                .strokeBorder(Color.primary.opacity(0.1), lineWidth: 0.5)
-                        )
-                        .foregroundColor(.primary)
-                }
-
                 Spacer()
                 
                 Picker("", selection: $viewMode) {

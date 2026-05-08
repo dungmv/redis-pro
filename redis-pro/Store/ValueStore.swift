@@ -48,6 +48,7 @@ final class ValueViewModel {
         }
         let refreshHandler: () -> Void = { [weak self] in
             self?.key.refresh()
+            self?.keyObject.refresh()
         }
 
         stringValue.onSubmitSuccess = submitHandler
@@ -64,6 +65,7 @@ final class ValueViewModel {
 
     func refresh() {
         key.refresh()
+        keyObject.refresh()
     }
 
     func keyChange(_ redisKeyModel: RedisKeyModel) {

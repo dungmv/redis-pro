@@ -17,6 +17,12 @@ private let logger = Logger(label: "key-object-store")
 final class KeyObjectViewModel {
     var key: String = ""
     var encoding: String = ""
+    var memoryUsage: Int = -1
+    
+    var memorySize: String {
+        if memoryUsage < 0 { return "–" }
+        return ByteCountFormatter.string(fromByteCount: Int64(memoryUsage), countStyle: .binary)
+    }
 
     private let redisInstance: RedisInstanceModel
 
@@ -26,7 +32,10 @@ final class KeyObjectViewModel {
     }
 
     func refresh() {
-        Task { await getEncoding() }
+        Task {
+            await getEncoding()
+            await getMemoryUsage()
+        }
     }
 
     func setKey(_ key: String) {
@@ -40,6 +49,16 @@ final class KeyObjectViewModel {
             encoding = r
         } catch {
             logger.error("getEncoding error: \(error)")
+        }
+    }
+    
+    func getMemoryUsage() async {
+        let key = self.key
+        do {
+            let r = try await redisInstance.getClient().memoryUsage(key)
+            memoryUsage = r
+        } catch {
+            logger.error("getMemoryUsage error: \(error)")
         }
     }
 }

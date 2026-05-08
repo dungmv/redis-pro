@@ -189,4 +189,9 @@ extension RedisClient {
             return ""
         }
     }
+
+    func memoryUsage(_ key: String) async throws -> Int {
+        let r: Int? = try await send("MEMORY", args: ["USAGE", key])
+        return r ?? 0
+    }
 }
