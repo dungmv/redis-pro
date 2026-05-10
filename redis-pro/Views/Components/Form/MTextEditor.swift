@@ -1,37 +1,27 @@
 //
 //  MTextEditor.swift
 //  redis-pro
-//  存在问题，自动转换双引号， 暂时使用 NSTextEditor
-//  Created by chengpanwang on 2021/4/29.
+//
+//  Migrated to LiquidGlass (Swift 6)
 //
 
 import SwiftUI
 
 struct MTextEditor: View {
-    @Binding var text:String
-    @State private var editing:Bool = false
-    @State private var disabled:Bool = false
-    
+    @Binding var text: String
+    @FocusState private var isFocused: Bool
+
     var body: some View {
-        // text editor
         TextEditor(text: $text)
             .font(.body)
             .multilineTextAlignment(.leading)
-            .padding(EdgeInsets(top: 4, leading: 0, bottom: 4, trailing: 0))
             .lineSpacing(1.5)
             .disableAutocorrection(true)
-            .onHover { inside in
-                self.editing = inside
-            }
-            .addBorder(Color.gray.opacity(!disabled && editing ?  0.4 : 0.2), width: 1, cornerRadius: MTheme.CORNER_RADIUS)
-    }
-}
-
-
-struct MTextEditor_Previews: PreviewProvider {
-    @State static var text:String = ""
-    static var previews: some View {
-        MTextEditor(text: $text)
+            .scrollContentBackground(.hidden)
+            .focused($isFocused)
+            .padding(.horizontal, 6)
+            .padding(.vertical, 4)
+            .glassField(cornerRadius: LiquidGlass.radiusXS, isActive: isFocused)
     }
 }
 
