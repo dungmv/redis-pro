@@ -19,12 +19,13 @@ struct ClientsListView: View {
 
             HStack(alignment: .center, spacing: 8) {
                 Spacer()
-                MButton(
-                    text: "Kill Client",
-                    action: { viewModel.killConfirm(viewModel.table.selectIndex) },
-                    disabled: viewModel.table.selectIndex < 0
-                )
-                MButton(text: "Refresh", action: { viewModel.refresh() })
+                Button("Kill Client") {
+                    viewModel.killConfirm(viewModel.table.selectIndex)
+                }
+                .buttonStyle(.bordered)
+                .disabled(viewModel.table.selectIndex < 0)
+                Button("Refresh") { viewModel.refresh() }
+                    .buttonStyle(.bordered)
             }
         }
         .onAppear {

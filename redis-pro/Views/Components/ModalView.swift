@@ -56,9 +56,11 @@ struct ModalView<Content: View>: View {
             // ── Footer ──────────────────────────────────────────────────────
             HStack(spacing: 8) {
                 Spacer()
-                MButton(text: "Cancel", action: cancel, keyEquivalent: .escape)
+                Button("Cancel", action: cancel)
+                    .buttonStyle(.bordered)
                     .keyboardShortcut(.cancelAction)
-                MButton(text: "Submit", action: submit, style: .primary, keyEquivalent: .return)
+                Button("Submit", action: submit)
+                    .buttonStyle(.borderedProminent)
                     .keyboardShortcut(.defaultAction)
             }
             .padding(.horizontal, 16)

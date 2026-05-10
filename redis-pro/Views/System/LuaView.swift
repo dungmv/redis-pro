@@ -20,7 +20,8 @@ struct LuaView: View {
             HStack(alignment: .center, spacing: MTheme.H_SPACING) {
                 Text("Eval Lua Script")
                 Spacer()
-                MButton(text: "Script Flush", action: { viewModel.scriptFlush() })
+                Button("Script Flush") { viewModel.scriptFlush() }
+                    .buttonStyle(.bordered)
             }
 
             VSplitView {
@@ -31,7 +32,9 @@ struct LuaView: View {
                     // btns
                     HStack(alignment: .center, spacing: MTheme.H_SPACING) {
                         Spacer()
-                        MButton(text: "Eval", action: { viewModel.eval() }, keyEquivalent: .return)
+                        Button("Eval") { viewModel.eval() }
+                            .buttonStyle(.bordered)
+                            .keyboardShortcut(.defaultAction)
                     }
                     .padding(EdgeInsets(top: 4, leading: 4, bottom: 4, trailing: 4))
                 }

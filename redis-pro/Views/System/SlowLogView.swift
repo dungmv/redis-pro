@@ -44,7 +44,8 @@ struct SlowLogView: View {
                 .frame(width: 200)
 
                 Spacer()
-                MButton(text: "Reset", action: { viewModel.reset() })
+                Button("Reset") { viewModel.reset() }
+                    .buttonStyle(.bordered)
                     .help("REDIS_SLOW_LOG_RESET")
             }
 

@@ -104,17 +104,23 @@ struct LoginForm: View {
                     .help(viewModel.pingR)
                     .frame(maxWidth: .infinity, alignment: .leading)
 
-                MButton(text: "Connect", action: { viewModel.connect() }, disabled: viewModel.loading, style: .primary, keyEquivalent: .return)
+                Button("Connect") { viewModel.connect() }
+                    .buttonStyle(.borderedProminent)
+                    .disabled(viewModel.loading)
                     .keyboardShortcut(.defaultAction)
             }
 
             // Action row
             HStack(spacing: 8) {
-                MButton(text: "Save as New", action: { viewModel.add() })
+                Button("Save as New") { viewModel.add() }
+                    .buttonStyle(.bordered)
                 Spacer()
-                MButton(text: "Save Changes", action: { viewModel.save() })
+                Button("Save Changes") { viewModel.save() }
+                    .buttonStyle(.bordered)
                 Spacer()
-                MButton(text: "Test Connection", action: { viewModel.testConnect() }, disabled: viewModel.loading)
+                Button("Test Connection") { viewModel.testConnect() }
+                    .buttonStyle(.bordered)
+                    .disabled(viewModel.loading)
             }
         }
     }

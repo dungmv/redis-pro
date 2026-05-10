@@ -30,8 +30,10 @@ struct RedisInfoView: View {
 
             HStack(alignment: .center, spacing: MTheme.H_SPACING) {
                 Spacer()
-                MButton(text: "Reset State", action: { viewModel.resetState() })
-                MButton(text: "Refresh", action: { viewModel.refresh() })
+                Button("Reset State") { viewModel.resetState() }
+                    .buttonStyle(.bordered)
+                Button("Refresh") { viewModel.refresh() }
+                    .buttonStyle(.bordered)
             }
         }
         .onAppear {

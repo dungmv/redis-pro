@@ -19,7 +19,8 @@ struct RedisConfigView: View {
             HStack(alignment: .center, spacing: MTheme.H_SPACING) {
                 SearchBar(placeholder: "Search config...", onCommit: { viewModel.search($0) })
                 Spacer()
-                MButton(text: "Rewrite", action: { viewModel.rewrite() })
+                Button("Rewrite") { viewModel.rewrite() }
+                    .buttonStyle(.bordered)
                     .help("REDIS_CONFIG_REWRITE")
             }.padding(MTheme.HEADER_PADDING)
 
@@ -27,7 +28,8 @@ struct RedisConfigView: View {
 
             HStack(alignment: .center, spacing: MTheme.H_SPACING) {
                 Spacer()
-                MButton(text: "Refresh", action: { viewModel.refresh() })
+                Button("Refresh") { viewModel.refresh() }
+                    .buttonStyle(.bordered)
             }
         }
         .sheet(isPresented: Binding(get: { viewModel.editModalVisible }, set: { viewModel.editModalVisible = $0 })) {
