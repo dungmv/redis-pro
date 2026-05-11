@@ -52,48 +52,71 @@ struct ZSetEditorView: View {
             }
         }
         .sheet(isPresented: Binding(get: { vm.geoModalVisible }, set: { vm.geoModalVisible = $0 })) {
-            ModalView("Geo Position", width: 480, height: 320, action: {  }) {
-                VStack(alignment: .leading, spacing: LiquidGlass.spacing20) {
-                    // Metadata Group
-                    VStack(alignment: .leading, spacing: LiquidGlass.spacing8) {
-                        HStack(spacing: LiquidGlass.spacing8) {
-                            Image(systemName: "key.fill")
-                                .foregroundStyle(.secondary)
-                                .font(.system(size: 10))
-                            Text("Key")
-                                .font(LiquidGlass.fontLabel)
-                                .foregroundStyle(.secondary)
-                            Spacer()
-                            Text(viewModel.keyObject.key)
-                                .font(LiquidGlass.fontMono)
-                                .textSelection(.enabled)
-                        }
-                        
-                        HStack(spacing: LiquidGlass.spacing8) {
-                            Image(systemName: "person.fill")
-                                .foregroundStyle(.secondary)
-                                .font(.system(size: 10))
-                            Text("Member")
-                                .font(LiquidGlass.fontLabel)
-                                .foregroundStyle(.secondary)
-                            Spacer()
-                            Text(vm.geoMember)
-                                .font(LiquidGlass.fontMono)
-                                .textSelection(.enabled)
-                        }
+            VStack(alignment: .leading, spacing: 0) {
+                // Native Header
+                HStack {
+                    Label("Geo Position", systemImage: "mappin.and.ellipse")
+                        .font(.headline)
+                        .foregroundStyle(.primary)
+                    Spacer()
+                    Button("Close") {
+                        vm.geoModalVisible = false
                     }
-                    .padding(LiquidGlass.spacing12)
-                    .background(LiquidGlass.glassSurface, in: RoundedRectangle(cornerRadius: LiquidGlass.radiusMD))
-                    .overlay(RoundedRectangle(cornerRadius: LiquidGlass.radiusMD).strokeBorder(LiquidGlass.glassBorder, lineWidth: 0.5))
-
-                    // Coordinates Group
-                    HStack(spacing: LiquidGlass.spacing12) {
-                        CoordinateBox(label: "LATITUDE", value: vm.geoLat, icon: "scope")
-                        CoordinateBox(label: "LONGITUDE", value: vm.geoLng, icon: "scope")
-                    }
+                    .buttonStyle(.bordered)
+                    .keyboardShortcut(.cancelAction)
                 }
-                .padding(.vertical, LiquidGlass.spacing8)
+                .padding(.horizontal, LiquidGlass.spacing16)
+                .padding(.vertical, LiquidGlass.spacing12)
+                .background(.thinMaterial)
+                
+                Divider()
+                
+                // Content
+                ScrollView {
+                    VStack(alignment: .leading, spacing: LiquidGlass.spacing20) {
+                        // Metadata Group
+                        VStack(alignment: .leading, spacing: LiquidGlass.spacing12) {
+                            HStack(spacing: LiquidGlass.spacing8) {
+                                Image(systemName: "key.fill")
+                                    .foregroundStyle(.secondary)
+                                    .font(.system(size: 10))
+                                Text("Key")
+                                    .font(LiquidGlass.fontLabel)
+                                    .foregroundStyle(.secondary)
+                                Spacer()
+                                Text(viewModel.keyObject.key)
+                                    .font(LiquidGlass.fontMono)
+                                    .textSelection(.enabled)
+                            }
+                            
+                            HStack(spacing: LiquidGlass.spacing8) {
+                                Image(systemName: "person.fill")
+                                    .foregroundStyle(.secondary)
+                                    .font(.system(size: 10))
+                                Text("Member")
+                                    .font(LiquidGlass.fontLabel)
+                                    .foregroundStyle(.secondary)
+                                Spacer()
+                                Text(vm.geoMember)
+                                    .font(LiquidGlass.fontMono)
+                                    .textSelection(.enabled)
+                            }
+                        }
+                        .padding(LiquidGlass.spacing16)
+                        .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: LiquidGlass.radiusMD))
+                        .overlay(RoundedRectangle(cornerRadius: LiquidGlass.radiusMD).strokeBorder(LiquidGlass.glassBorder, lineWidth: 0.5))
+
+                        // Coordinates Group
+                        HStack(spacing: LiquidGlass.spacing12) {
+                            CoordinateBox(label: "LATITUDE", value: vm.geoLat, icon: "scope")
+                            CoordinateBox(label: "LONGITUDE", value: vm.geoLng, icon: "scope")
+                        }
+                    }
+                    .padding(LiquidGlass.spacing16)
+                }
             }
+            .frame(width: 480, height: 340)
+            .background(.regularMaterial)
         }
     }
 }
@@ -117,7 +140,7 @@ private struct CoordinateBox: View {
             }
             
             Text(value)
-                .font(.system(size: 16, weight: .semibold, design: .monospaced))
+                .font(.system(size: 14, weight: .semibold, design: .monospaced))
                 .foregroundStyle(.primary)
                 .lineLimit(1)
                 .minimumScaleFactor(0.8)
@@ -129,6 +152,10 @@ private struct CoordinateBox: View {
                     Text("Copy")
                 }
                 .font(.system(size: 10, weight: .medium))
+                .padding(.horizontal, 6)
+                .padding(.vertical, 2)
+                .background(LiquidGlass.typeColor(for: "ZSET").opacity(0.12))
+                .clipShape(Capsule())
             }
             .buttonStyle(.plain)
             .foregroundStyle(LiquidGlass.typeColor(for: "ZSET"))
