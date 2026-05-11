@@ -22,6 +22,11 @@ final class ZSetValueViewModel {
     var isNew: Bool = false
     var redisKeyModel: RedisKeyModel?
 
+    var geoModalVisible: Bool = false
+    var geoLat: String = ""
+    var geoLng: String = ""
+    var geoMember: String = ""
+
     let page: PageViewModel
     let table: TableViewModel<RedisZSetItemModel>
 
@@ -40,7 +45,7 @@ final class ZSetValueViewModel {
                 .init(title: "Value") { $0.value }
             ],
             datasource: [],
-            contextMenus: [.COPY, .EDIT, .DELETE]
+            contextMenus: [.COPY, .EDIT, .DELETE, .GEOPOS]
         )
         setupTableCallbacks()
         setupPageCallbacks()
@@ -52,6 +57,7 @@ final class ZSetValueViewModel {
             guard let self else { return }
             if title == "Delete" { self.deleteConfirm(index) }
             else if title == "Edit" { self.edit(index) }
+            else if title == TableContextMenu.GEOPOS.rawValue { self.showGeoPos(index) }
         }
         table.onCopy = { [weak self] index in
             guard let self else { return }
@@ -186,6 +192,27 @@ final class ZSetValueViewModel {
                 if r > 0 {
                     self.table.datasource.remove(at: index)
                     self.refresh()
+                }
+            } catch {
+                Messages.show(error)
+            }
+        }
+    }
+
+    func showGeoPos(_ index: Int) {
+        guard let redisKeyModel = redisKeyModel else { return }
+        let item = table.datasource[index]
+        let key = redisKeyModel.key
+        let member = item.value
+        geoMember = member
+        Task {
+            do {
+                if let pos = try await redisInstance.getClient().geopos(key, member: member) {
+                    geoLng = pos[0]
+                    geoLat = pos[1]
+                    geoModalVisible = true
+                } else {
+                    Messages.show("No geo position found for member: \(member)")
                 }
             } catch {
                 Messages.show(error)

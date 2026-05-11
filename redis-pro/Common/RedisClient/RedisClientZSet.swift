@@ -201,4 +201,25 @@ extension RedisClient {
         }
         return result
     }
+    
+    func geopos(_ key: String, member: String) async throws -> [String]? {
+        logger.info("redis geopos, key: \(key), member: \(member)")
+        begin()
+        defer { complete() }
+        
+        let client = try await getClient()
+        // GEOPOS key member
+        let res: RESPToken? = try await client?.execute(AnyCommand(commandName: "GEOPOS", args: [ValkeyKey(key), member]))
+        
+        if let token = res, case .array(let array) = token.value {
+            let arr = Swift.Array(array)
+            if let first = arr.first, case .array(let pos) = first.value {
+                let posArr = Swift.Array(pos)
+                if posArr.count >= 2 {
+                    return [String(fromValkeyValue: posArr[0]), String(fromValkeyValue: posArr[1])]
+                }
+            }
+        }
+        return nil
+    }
 }

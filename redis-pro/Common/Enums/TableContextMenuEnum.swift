@@ -22,6 +22,7 @@ enum TableContextMenu: String{
     case RENAME = "Rename"
     // client list
     case KILL = "Kill"
+    case GEOPOS = "Geo Pos"
     
     var ext: TableContextMenuExt {
         switch self {
@@ -41,6 +42,8 @@ enum TableContextMenu: String{
             return .init(keyEquivalent: "")
         case .KILL:
             return .init(keyEquivalent: "k")
+        case .GEOPOS:
+            return .init(keyEquivalent: "")
         }
     }
 }
