@@ -14,10 +14,10 @@ struct ClientsListView: View {
     @State var viewModel: ClientListViewModel
 
     var body: some View {
-        VStack(alignment: .leading, spacing: MTheme.V_SPACING) {
+        VStack(alignment: .leading, spacing: LiquidGlass.spacing6) {
             NTableView(viewModel: viewModel.table)
 
-            HStack(alignment: .center, spacing: 8) {
+            HStack(alignment: .center, spacing: LiquidGlass.spacing8) {
                 Spacer()
                 Button("Kill Client") {
                     viewModel.killConfirm(viewModel.table.selectIndex)

@@ -13,7 +13,7 @@ struct RedisInfoView: View {
     @State var viewModel: RedisInfoViewModel
 
     var body: some View {
-        VStack(alignment: .leading, spacing: MTheme.V_SPACING) {
+        VStack(alignment: .leading, spacing: LiquidGlass.spacing6) {
             TabView(selection: Binding(
                 get: { viewModel.section },
                 set: { viewModel.setTab($0) }
@@ -28,7 +28,7 @@ struct RedisInfoView: View {
             }
             .frame(minWidth: 500, minHeight: 600)
 
-            HStack(alignment: .center, spacing: MTheme.H_SPACING) {
+            HStack(alignment: .center, spacing: LiquidGlass.spacing8) {
                 Spacer()
                 Button("Reset State") { viewModel.resetState() }
                     .buttonStyle(.bordered)

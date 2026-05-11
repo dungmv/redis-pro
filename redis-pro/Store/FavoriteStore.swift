@@ -26,7 +26,7 @@ final class FavoriteViewModel {
     init(redisInstance: RedisInstanceModel) {
         self.redisInstance = redisInstance
         self.table = TableViewModel<RedisModel>(
-            columns: [.init(title: "FAVORITES", width: 50, icon: .APP) { $0.name }],
+            columns: [.init(title: "FAVORITES", width: 50) { $0.name }],
             datasource: [],
             dragable: true
         )

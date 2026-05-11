@@ -14,9 +14,9 @@ struct SlowLogView: View {
     let logger = Logger(label: "slow-log-view")
 
     var body: some View {
-        VStack(alignment: .leading, spacing: MTheme.V_SPACING) {
+        VStack(alignment: .leading, spacing: LiquidGlass.spacing6) {
             // header
-            HStack(alignment: .center, spacing: MTheme.H_SPACING) {
+            HStack(alignment: .center, spacing: LiquidGlass.spacing8) {
                 FormItemInt(
                     label: "Slower Than(us)", labelWidth: 120,
                     value: Binding(get: { viewModel.slowerThan }, set: { viewModel.slowerThan = $0 }),
@@ -52,13 +52,15 @@ struct SlowLogView: View {
             NTableView(viewModel: viewModel.table)
 
             // footer
-            HStack(alignment: .center, spacing: MTheme.H_SPACING_L) {
+            HStack(alignment: .center, spacing: LiquidGlass.spacing12) {
                 Spacer()
                 Text("Total: \(viewModel.total)")
-                    .font(.system(size: 12))
+                    .font(LiquidGlass.FONT_FOOTER)
+                    .foregroundStyle(.secondary)
                     .help("REDIS_SLOW_LOG_TOTAL")
                 Text("Current: \(viewModel.table.datasource.count)")
-                    .font(.system(size: 12))
+                    .font(LiquidGlass.FONT_FOOTER)
+                    .foregroundStyle(.secondary)
                     .help("REDIS_SLOW_LOG_SIZE")
                 IconButton(icon: "arrow.clockwise", name: "Refresh", action: { viewModel.refresh() })
             }

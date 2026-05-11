@@ -41,7 +41,7 @@ final class RedisKeysViewModel {
         self.redisInstance = redisInstance
         self.table = TableViewModel<RedisKeyModel>(
             columns: [
-                .init(type: .KEY_TYPE, title: "Type", width: 40, color: { Color(nsColor: $0.textColor) }) { $0.type },
+                .init(title: "Type", width: 40) { $0.type },
                 .init(title: "Key", width: 50) { $0.key }
             ],
             datasource: [],

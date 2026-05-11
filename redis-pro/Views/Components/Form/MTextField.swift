@@ -27,22 +27,26 @@ struct MTextField: View {
     var body: some View {
         Group {
             if editable {
-                TextField("", text: trimmedBinding, prompt: Text(placeholder ?? ""))
-                    .textFieldStyle(.roundedBorder)
+                TextField("", text: trimmedBinding, prompt: Text(placeholder ?? "").foregroundColor(.secondary))
+                    .textFieldStyle(.plain)
+                    .font(LiquidGlass.fontBody)
                     .onSubmit { onCommit?() }
                     .focused($isFocused)
+                    .padding(.horizontal, 8)
+                    .padding(.vertical, 5)
+                    .glassField(cornerRadius: LiquidGlass.radiusXS, isActive: isFocused)
             } else {
                 Text(value)
                     .textSelection(.enabled)
-                    .font(.body)
+                    .font(LiquidGlass.fontBody)
                     .frame(maxWidth: .infinity, alignment: .leading)
-                    .padding(.horizontal, 4)
-                    .padding(.vertical, 2)
+                    .padding(.horizontal, 8)
+                    .padding(.vertical, 5)
+                    .opacity(0.8)
             }
         }
         .lineLimit(1)
         .multilineTextAlignment(.leading)
-        .opacity(editable ? 1 : 0.82)
         .animation(.spring(response: 0.2, dampingFraction: 0.8), value: isFocused)
     }
 }

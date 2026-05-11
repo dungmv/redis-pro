@@ -14,10 +14,10 @@ struct LuaView: View {
     let logger = Logger(label: "lua-view")
 
     var body: some View {
-        VStack(alignment: .leading, spacing: MTheme.V_SPACING) {
+        VStack(alignment: .leading, spacing: LiquidGlass.spacing6) {
 
             // header
-            HStack(alignment: .center, spacing: MTheme.H_SPACING) {
+            HStack(alignment: .center, spacing: LiquidGlass.spacing8) {
                 Text("Eval Lua Script")
                 Spacer()
                 Button("Script Flush") { viewModel.scriptFlush() }
@@ -25,12 +25,12 @@ struct LuaView: View {
             }
 
             VSplitView {
-                VStack(alignment: .leading, spacing: MTheme.V_SPACING) {
+                VStack(alignment: .leading, spacing: LiquidGlass.spacing6) {
                     // text editor
                     MTextEditor(text: Binding(get: { viewModel.lua }, set: { viewModel.lua = $0 }))
 
                     // btns
-                    HStack(alignment: .center, spacing: MTheme.H_SPACING) {
+                    HStack(alignment: .center, spacing: LiquidGlass.spacing8) {
                         Spacer()
                         Button("Eval") { viewModel.eval() }
                             .buttonStyle(.bordered)

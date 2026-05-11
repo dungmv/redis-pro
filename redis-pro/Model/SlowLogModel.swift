@@ -16,17 +16,17 @@ struct SlowLogModel: Identifiable, Sendable, Hashable {
     var clientName: String = ""
 
     var timestampFormat: String {
-        timestamp == -1 ? MTheme.NULL_STRING : DateHelper.formatDateTime(timestamp: self.timestamp)
+        timestamp == -1 ? LiquidGlass.NULL_STRING : DateHelper.formatDateTime(timestamp: self.timestamp)
     }
 
     init() {}
 
     init(id: String?, timestamp: Int?, execTime: String?, cmd: String?, client: String?, clientName: String?) {
-        self.id = id ?? MTheme.NULL_STRING
+        self.id = id ?? LiquidGlass.NULL_STRING
         self.timestamp = timestamp ?? -1
-        self.execTime = execTime ?? MTheme.NULL_STRING
-        self.cmd = cmd ?? MTheme.NULL_STRING
-        self.client = client ?? MTheme.NULL_STRING
-        self.clientName = clientName ?? MTheme.NULL_STRING
+        self.execTime = execTime ?? LiquidGlass.NULL_STRING
+        self.cmd = cmd ?? LiquidGlass.NULL_STRING
+        self.client = client ?? LiquidGlass.NULL_STRING
+        self.clientName = clientName ?? LiquidGlass.NULL_STRING
     }
 }
