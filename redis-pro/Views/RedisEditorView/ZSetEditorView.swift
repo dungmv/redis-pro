@@ -25,7 +25,38 @@ struct ZSetEditorView: View {
             .padding(.horizontal, 10)
             .padding(.vertical, 6)
 
-            NTableView(viewModel: vm.table)
+            NTableView(viewModel: vm.table) { index in
+                Button {
+                    vm.edit(index)
+                } label: {
+                    Label("Edit", systemImage: "pencil")
+                }
+                .keyboardShortcut("e")
+
+                Button(role: .destructive) {
+                    vm.deleteConfirm(index)
+                } label: {
+                    Label("Delete", systemImage: "trash")
+                }
+                .keyboardShortcut(.delete)
+
+                Divider()
+
+                Button {
+                    vm.showGeoPos(index)
+                } label: {
+                    Label("Geo Pos", systemImage: "mappin.and.ellipse")
+                }
+
+                Divider()
+
+                Button {
+                    vm.table.copy(index: index)
+                } label: {
+                    Label("Copy", systemImage: "doc.on.doc")
+                }
+                .keyboardShortcut("c")
+            }
 
             // footer
             HStack(alignment: .center, spacing: 0) {

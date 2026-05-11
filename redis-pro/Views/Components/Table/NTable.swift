@@ -25,9 +25,15 @@ struct NTableColumn<Item>: Identifiable {
     }
 }
 
-struct NTableView<Item: Identifiable & Sendable & Hashable>: View {
+struct NTableView<Item: Identifiable & Sendable & Hashable, ContextMenu: View>: View {
     let viewModel: TableViewModel<Item>
+    @ViewBuilder let contextMenu: (Int) -> ContextMenu
     @State private var selection: Item.ID?
+
+    init(viewModel: TableViewModel<Item>, @ViewBuilder contextMenu: @escaping (Int) -> ContextMenu) {
+        self.viewModel = viewModel
+        self.contextMenu = contextMenu
+    }
 
     var body: some View {
         Table(viewModel.datasource, selection: $selection) {
@@ -44,14 +50,7 @@ struct NTableView<Item: Identifiable & Sendable & Hashable>: View {
         .contextMenu(forSelectionType: Item.ID.self) { selectedIDs in
             if let selectedID = selectedIDs.first,
                let index = viewModel.datasource.firstIndex(where: { $0.id == selectedID }) {
-                ForEach(viewModel.contextMenus, id: \.self) { menu in
-                    Button(menu.rawValue) {
-                        viewModel.contextMenu(title: menu.rawValue, index: index)
-                    }
-                    if menu == .COPY {
-                        Divider()
-                    }
-                }
+                contextMenu(index)
             }
         }
         .onChange(of: selection) { oldValue, newValue in
@@ -61,5 +60,12 @@ struct NTableView<Item: Identifiable & Sendable & Hashable>: View {
                 viewModel.selectionChange(index: -1, indexes: [])
             }
         }
+    }
+}
+
+extension NTableView where ContextMenu == EmptyView {
+    init(viewModel: TableViewModel<Item>) {
+        self.viewModel = viewModel
+        self.contextMenu = { _ in EmptyView() }
     }
 }

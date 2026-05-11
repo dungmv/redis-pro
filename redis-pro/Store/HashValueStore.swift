@@ -39,8 +39,7 @@ final class HashValueViewModel {
                 .init(title: "Field", width: 120) { $0.field },
                 .init(title: "Value") { $0.value }
             ],
-            datasource: [],
-            contextMenus: [.EDIT, .DELETE, .COPY, .COPY_FIELD, .COPY_VALUE]
+            datasource: []
         )
         setupTableCallbacks()
         setupPageCallbacks()
@@ -48,18 +47,6 @@ final class HashValueViewModel {
     }
 
     private func setupTableCallbacks() {
-        table.onContextMenu = { [weak self] title, index in
-            guard let self else { return }
-            if title == "Delete" { self.deleteConfirm(index) }
-            else if title == "Edit" { self.edit(index) }
-            else if title == TableContextMenu.COPY_FIELD.rawValue {
-                let item = self.table.datasource[index]
-                PasteboardHelper.copy(item.field)
-            } else if title == TableContextMenu.COPY_VALUE.rawValue {
-                let item = self.table.datasource[index]
-                PasteboardHelper.copy(item.value)
-            }
-        }
         table.onCopy = { [weak self] index in
             guard let self else { return }
             let item = self.table.datasource[index]

@@ -47,18 +47,9 @@ final class ClientListViewModel {
                 .init(title: "redir", width: 60) { $0.redir },
                 .init(title: "user", width: 60) { $0.user },
             ],
-            datasource: [],
-            contextMenus: [.KILL]
+            datasource: []
         )
-        setupTableCallbacks()
         logger.info("ClientListViewModel init ...")
-    }
-
-    private func setupTableCallbacks() {
-        table.onContextMenu = { [weak self] title, index in
-            guard let self else { return }
-            if title == "Kill" { self.killConfirm(index) }
-        }
     }
 
     func initial() {

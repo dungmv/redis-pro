@@ -32,19 +32,9 @@ final class RedisConfigViewModel {
                 .init(title: "Key", width: 200) { $0.key },
                 .init(title: "Value", width: 800) { $0.value }
             ],
-            datasource: [],
-            contextMenus: [.EDIT]
+            datasource: []
         )
-        setupTableCallbacks()
         logger.info("RedisConfigViewModel init ...")
-    }
-
-    private func setupTableCallbacks() {
-        table.onContextMenu = { [weak self] title, index in
-            guard let self else { return }
-            if title == "Edit" { self.edit(index) }
-        }
-        table.onDouble = { [weak self] index in self?.edit(index) }
     }
 
     func initial() {

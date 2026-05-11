@@ -18,7 +18,6 @@ private let logger = Logger(label: "table-store")
 final class TableViewModel<Item: Identifiable & Sendable> {
     var columns: [NTableColumn<Item>]
     var datasource: [Item]
-    var contextMenus: [TableContextMenu]
     var selectIndex: Int
     var selectIndexes: [Int]
     var defaultSelectIndex: Int
@@ -32,13 +31,11 @@ final class TableViewModel<Item: Identifiable & Sendable> {
     var onDouble: ((Int) -> Void)?
     var onDelete: ((Int) -> Void)?
     var onCopy: ((Int) -> Void)?
-    var onContextMenu: ((String, Int) -> Void)?
     var onDragComplete: ((Int, Int) -> Void)?
 
     init(
         columns: [NTableColumn<Item>] = [],
         datasource: [Item] = [],
-        contextMenus: [TableContextMenu] = [],
         selectIndex: Int = -1,
         defaultSelectIndex: Int = -1,
         dragable: Bool = false,
@@ -46,7 +43,6 @@ final class TableViewModel<Item: Identifiable & Sendable> {
     ) {
         self.columns = columns
         self.datasource = datasource
-        self.contextMenus = contextMenus
         self.selectIndex = selectIndex
         self.selectIndexes = []
         self.defaultSelectIndex = defaultSelectIndex
@@ -90,11 +86,6 @@ final class TableViewModel<Item: Identifiable & Sendable> {
     func copy(index: Int) {
         logger.info("table copy, index: \(index)")
         onCopy?(index)
-    }
-
-    func contextMenu(title: String, index: Int) {
-        logger.info("table context menu, title: \(title), index: \(index)")
-        onContextMenu?(title, index)
     }
 
     func dragComplete(from: Int, to: Int) {

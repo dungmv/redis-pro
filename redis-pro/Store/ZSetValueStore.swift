@@ -44,8 +44,7 @@ final class ZSetValueViewModel {
                 .init(title: "Score", width: 120) { $0.score },
                 .init(title: "Value") { $0.value }
             ],
-            datasource: [],
-            contextMenus: [.COPY, .EDIT, .DELETE, .GEOPOS]
+            datasource: []
         )
         setupTableCallbacks()
         setupPageCallbacks()
@@ -53,12 +52,6 @@ final class ZSetValueViewModel {
     }
 
     private func setupTableCallbacks() {
-        table.onContextMenu = { [weak self] title, index in
-            guard let self else { return }
-            if title == "Delete" { self.deleteConfirm(index) }
-            else if title == "Edit" { self.edit(index) }
-            else if title == TableContextMenu.GEOPOS.rawValue { self.showGeoPos(index) }
-        }
         table.onCopy = { [weak self] index in
             guard let self else { return }
             let item = self.table.datasource[index]

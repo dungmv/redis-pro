@@ -41,8 +41,7 @@ final class SetValueViewModel {
             columns: [
                 .init(title: "Value") { $0 }
             ],
-            datasource: [],
-            contextMenus: [.COPY, .EDIT, .DELETE]
+            datasource: []
         )
         setupTableCallbacks()
         setupPageCallbacks()
@@ -50,11 +49,6 @@ final class SetValueViewModel {
     }
 
     private func setupTableCallbacks() {
-        table.onContextMenu = { [weak self] title, index in
-            guard let self else { return }
-            if title == "Delete" { self.deleteConfirm(index) }
-            else if title == "Edit" { self.edit(index) }
-        }
         table.onCopy = { [weak self] index in
             guard let self else { return }
             PasteboardHelper.copy(self.table.datasource[index])

@@ -25,7 +25,46 @@ struct HashEditorView: View {
             .padding(.horizontal, 10)
             .padding(.vertical, 6)
 
-            NTableView(viewModel: vm.table)
+            NTableView(viewModel: vm.table) { index in
+                Button {
+                    vm.edit(index)
+                } label: {
+                    Label("Edit", systemImage: "pencil")
+                }
+                .keyboardShortcut("e")
+
+                Button(role: .destructive) {
+                    vm.deleteConfirm(index)
+                } label: {
+                    Label("Delete", systemImage: "trash")
+                }
+                .keyboardShortcut(.delete)
+
+                Divider()
+
+                Button {
+                    let item = vm.table.datasource[index]
+                    PasteboardHelper.copy(item.field)
+                } label: {
+                    Label("Copy Field", systemImage: "doc.on.doc")
+                }
+
+                Button {
+                    let item = vm.table.datasource[index]
+                    PasteboardHelper.copy(item.value)
+                } label: {
+                    Label("Copy Value", systemImage: "doc.on.doc")
+                }
+
+                Divider()
+
+                Button {
+                    vm.table.copy(index: index)
+                } label: {
+                    Label("Copy", systemImage: "doc.on.doc")
+                }
+                .keyboardShortcut("c")
+            }
 
             // footer
             HStack(alignment: .center, spacing: 0) {

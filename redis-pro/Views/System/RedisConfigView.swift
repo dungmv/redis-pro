@@ -24,7 +24,14 @@ struct RedisConfigView: View {
                     .help("REDIS_CONFIG_REWRITE")
             }.padding(LiquidGlass.HEADER_PADDING)
 
-            NTableView(viewModel: viewModel.table)
+            NTableView(viewModel: viewModel.table) { index in
+                Button {
+                    viewModel.edit(index)
+                } label: {
+                    Label("Edit", systemImage: "pencil")
+                }
+                .keyboardShortcut("e")
+            }
 
             HStack(alignment: .center, spacing: LiquidGlass.H_SPACING) {
                 Spacer()

@@ -40,8 +40,7 @@ final class ListValueViewModel {
                 .init(title: "Index", width: 120) { "\($0.index)" },
                 .init(title: "Value") { $0.value }
             ],
-            datasource: [],
-            contextMenus: [.COPY, .EDIT, .DELETE]
+            datasource: []
         )
         setupTableCallbacks()
         setupPageCallbacks()
@@ -49,11 +48,6 @@ final class ListValueViewModel {
     }
 
     private func setupTableCallbacks() {
-        table.onContextMenu = { [weak self] title, index in
-            guard let self else { return }
-            if title == "Delete" { self.deleteConfirm(index) }
-            else if title == "Edit" { self.edit(index) }
-        }
         table.onCopy = { [weak self] index in
             guard let self else { return }
             let item = self.table.datasource[index]

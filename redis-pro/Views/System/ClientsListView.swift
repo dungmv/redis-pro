@@ -15,7 +15,14 @@ struct ClientsListView: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: LiquidGlass.spacing6) {
-            NTableView(viewModel: viewModel.table)
+            NTableView(viewModel: viewModel.table) { index in
+                Button {
+                    viewModel.killConfirm(index)
+                } label: {
+                    Label("Kill", systemImage: "xmark.circle")
+                }
+                .keyboardShortcut("k")
+            }
 
             HStack(alignment: .center, spacing: LiquidGlass.spacing8) {
                 Spacer()

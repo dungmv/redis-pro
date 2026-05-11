@@ -152,7 +152,6 @@
 		62D741C1288415180049AB3C /* LuaStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 62D741C0288415180049AB3C /* LuaStore.swift */; };
 		62D741C3288416470049AB3C /* RedisClientLua.swift in Sources */ = {isa = PBXBuildFile; fileRef = 62D741C2288416470049AB3C /* RedisClientLua.swift */; };
 		62E3DCAF28B0C60B00FF865A /* PasteboardHelper.swift in Sources */ = {isa = PBXBuildFile; fileRef = 62E3DCAE28B0C60B00FF865A /* PasteboardHelper.swift */; };
-		62E3DCB228B0C93A00FF865A /* TableContextMenuEnum.swift in Sources */ = {isa = PBXBuildFile; fileRef = 62E3DCB128B0C93A00FF865A /* TableContextMenuEnum.swift */; };
 		62E8F9D22765019D006A5326 /* MIntField.swift in Sources */ = {isa = PBXBuildFile; fileRef = 62E8F9D12765019D006A5326 /* MIntField.swift */; };
 		62E8F9D92765F197006A5326 /* MPasswordField.swift in Sources */ = {isa = PBXBuildFile; fileRef = 62E8F9D82765F197006A5326 /* MPasswordField.swift */; };
 		A10000030000000000000003 /* SwiftTreeSitter in Frameworks */ = {isa = PBXBuildFile; productRef = A10000020000000000000002 /* SwiftTreeSitter */; };
@@ -332,7 +331,6 @@
 		62D741C0288415180049AB3C /* LuaStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LuaStore.swift; sourceTree = "<group>"; };
 		62D741C2288416470049AB3C /* RedisClientLua.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RedisClientLua.swift; sourceTree = "<group>"; };
 		62E3DCAE28B0C60B00FF865A /* PasteboardHelper.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PasteboardHelper.swift; sourceTree = "<group>"; };
-		62E3DCB128B0C93A00FF865A /* TableContextMenuEnum.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TableContextMenuEnum.swift; sourceTree = "<group>"; };
 		62E8F9D12765019D006A5326 /* MIntField.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MIntField.swift; sourceTree = "<group>"; };
 		62E8F9D82765F197006A5326 /* MPasswordField.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MPasswordField.swift; sourceTree = "<group>"; };
 		A30000010000000000000001 /* JSONHighlighter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = JSONHighlighter.swift; sourceTree = "<group>"; };
@@ -746,7 +744,6 @@
 				431FD83E26BD160800151934 /* RedisConnectionTypeEnum.swift */,
 				431266D4261C5C9000FB6B69 /* ButtonTypeEnum.swift */,
 				43CD28AF267C6A9D00E11876 /* MainViewTypeEnum.swift */,
-				62E3DCB128B0C93A00FF865A /* TableContextMenuEnum.swift */,
 			);
 			path = Enums;
 			sourceTree = "<group>";
@@ -958,7 +955,6 @@
 				62C262E22839DD0B0036A282 /* RedisListItemModel.swift in Sources */,
 				62D1BA9828437F5900F41CAD /* Messages.swift in Sources */,
 				626E10ED27B794E7007ED968 /* AboutView.swift in Sources */,
-				62E3DCB228B0C93A00FF865A /* TableContextMenuEnum.swift in Sources */,
 				43CD28742670E8BE00E11876 /* SettingsView.swift in Sources */,
 				620AF6BC27D488B1002D6895 /* RedisClientList.swift in Sources */,
 				62D741B7284B69040049AB3C /* RedisSystemView.swift in Sources */,

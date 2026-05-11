@@ -45,7 +45,6 @@ final class RedisKeysViewModel {
                 .init(title: "Key", width: 50) { $0.key }
             ],
             datasource: [],
-            contextMenus: [.COPY, .RENAME, .DELETE],
             multiSelect: true
         )
         self.redisSystem = RedisSystemViewModel(redisInstance: redisInstance)
@@ -68,17 +67,6 @@ final class RedisKeysViewModel {
             guard let self else { return }
             let item = self.table.datasource[index]
             PasteboardHelper.copy(item.key)
-        }
-        table.onContextMenu = { [weak self] title, index in
-            guard let self else { return }
-            if title == "Delete" { self.deleteConfirm([index]) }
-            else if title == "Rename" {
-                let redisKeyModel = self.table.datasource[self.table.selectIndex]
-                self.rename.key = redisKeyModel.key
-                self.rename.newKey = redisKeyModel.key
-                self.rename.index = self.table.selectIndex
-                self.rename.visible = true
-            }
         }
         table.onDouble = { [weak self] _ in
             guard let self else { return }
