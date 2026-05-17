@@ -1,47 +1,48 @@
 # Redis Pro
 
-
-![Swift6.0+](https://img.shields.io/badge/Swift-6.0%2B-orange.svg?style=flat)
+![Swift 6.0+](https://img.shields.io/badge/Swift-6.0%2B-orange.svg?style=flat)
 [![release](https://img.shields.io/github/v/release/cmushroom/redis-pro?include_prereleases)](https://github.com/cmushroom/redis-pro/releases)
-![platforms](https://img.shields.io/badge/Platforms-macOS%20-orange.svg?style=flat)
+![platforms](https://img.shields.io/badge/Platforms-macOS-orange.svg?style=flat)
 
 ## Intro
-* **Redis Pro** is a modern, lightweight, and high-performance Redis/Valkey management tool for macOS.
-* Built with **SwiftUI** and a premium **Liquid Glass** aesthetic (glassmorphism), it provides a native and fluid user experience.
-* Supports **Valkey** and **Redis** (3.x to 7.x) with high-performance NIO-based architecture.
+* **Redis Pro** is a modern, lightweight, and blazing-fast Redis & Valkey management client designed natively for macOS.
+* Crafted with a premium **Liquid Glass** aesthetic (glassmorphism), the user interface provides a visually stunning, responsive, and tactile experience.
+* Built on a high-performance **Swift 6 / NIO-based architecture**, it delivers unmatched fluid navigation even when handling massive datasets.
 
 ## Features
-- [x] **Liquid Glass UI**: Modern glassmorphism design with optimized dark mode support.
-- [x] **Hierarchical Key Navigation**: Native tree view with virtualization for lightning-fast browsing of large datasets.
-- [x] **SSH Tunneling**: Secure connection support via built-in SSH tunneling.
-- [x] **Valkey & Redis Support**: Fully compatible with Valkey and Redis 3.x-7.x.
-- [x] **Client Management**: List and terminate client connections.
-- [x] **Real-time Monitoring**: Slow log and server info visualization.
-- [x] **Batch Operations**: Efficiently delete keys in bulk.
-- [x] **Native MVVM**: Robust and high-performance state management using Swift 6 `@Observable` and SwiftUI native bindings, with zero third-party UI dependencies.
+- [x] **Liquid Glass UI**: Stunning glassmorphism design optimized for macOS, supporting dynamic light and dark modes with a curated, premium color palette.
+- [x] **Hierarchical Key Navigation**: Native virtualized tree view for lightning-fast key scanning, filtering, and navigation.
+- [x] **Geospatial (GEOPOS) Mapping**: Dedicated CoordinateBox components and visual modal for viewing latitude/longitude coordinates of Sorted Set (ZSet) members, complete with one-click copying.
+- [x] **Lua Script Evaluation**: Execute Lua scripts directly inside the application, inspect results, and manage script cache (Flush, Eval).
+- [x] **Secure SSH Tunneling**: Full support for secure remote database connections via built-in high-performance SSH tunnels.
+- [x] **Valkey & Redis Support**: Fully compatible with Valkey and Redis 3.x to 7.x.
+- [x] **Real-time Diagnostics**: Slow log analysis, system config editor, and live server info metric visualization.
+- [x] **Client Management**: Real-time listing, monitoring, and dynamic termination of active client connections.
+- [x] **Batch Operations**: Perform high-speed bulk deletions of keys matching specific patterns.
+- [x] **Native MVVM & Zero-Bloat**: Fully built on Swift 6 `@Observable` and native SwiftUI, completely free of bulky third-party UI framework dependencies.
 
 ## Installation
-* **Direct Download**: Download the latest DMG from the [releases page](https://github.com/cmushroom/redis-pro/releases).
+* **Direct Download**: Download the latest DMG release from the [releases page](https://github.com/cmushroom/redis-pro/releases).
 * **Homebrew**:
     ```bash
     brew install redis-pro
     ```
 
 ## Platform
-* Supports macOS 11.0+ (Intel and Apple Silicon).
+* Supports macOS 15.0+ (Universal binary for Intel and Apple Silicon).
 
 ## Roadmap
-- [ ] Terminal / CLI integration
-- [ ] SSH key-based authentication
-- [ ] iPadOS support
+- [ ] Native Terminal / CLI integration
+- [ ] SSH key-based (private key) authentication
+- [ ] Cluster & Sentinel support
 
 ## Dependencies
-* [ValkeySwift](https://github.com/valkey-io/valkey-swift): High-performance NIO-based Redis/Valkey client.
-* [swift-log](https://github.com/apple/swift-log): Standard logging for Swift.
-* [Puppy](https://github.com/sushichop/Puppy): Flexible logging backend.
-* [SwiftJSONFormatter](https://github.com/luin/SwiftJSONFormatter): JSON formatting.
-
-* [swift-nio-ssh](https://github.com/apple/swift-nio-ssh): Native SSH support.
+* [ValkeySwift](https://github.com/valkey-io/valkey-swift): High-performance, NIO-based Redis & Valkey client for Swift.
+* [swift-nio](https://github.com/apple/swift-nio): Event-driven asynchronous network application framework.
+* [swift-nio-ssh](https://github.com/apple/swift-nio-ssh): Native, performant Swift SSH implementation.
+* [swift-log](https://github.com/apple/swift-log): Swift standard logging API.
+* [swift-tree-sitter](https://github.com/tree-sitter/swift-tree-sitter): Swift bindings for the Tree-sitter parsing library.
+* [tree-sitter-json](https://github.com/tree-sitter/tree-sitter-json): JSON grammar for Tree-sitter enabling high-performance syntax highlighting.
 
 ## Snapshot
 login
