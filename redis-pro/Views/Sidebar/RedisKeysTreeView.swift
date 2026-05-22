@@ -142,19 +142,17 @@ struct TreeRow: View {
         HStack(spacing: 5) {
             Image(systemName: "folder.fill")
                 .font(.system(.body))
-                .foregroundStyle(isSelected ? Color.primary : Color.secondary.opacity(0.8))
+                .foregroundStyle(isSelected ? Color.primary : Color.secondary)
                 .symbolRenderingMode(.hierarchical)
 
             Text(node.name)
                 .font(.system(.body))
-                .foregroundStyle(isSelected ? Color.primary : Color.primary.opacity(0.9))
                 .lineLimit(1)
 
             Spacer(minLength: 4)
 
             Text("\(node.keyCount)")
                 .font(.system(.caption))
-                .foregroundStyle(.secondary.opacity(0.8))
                 .padding(.horizontal, 4)
                 .background(.quaternary.opacity(0.3), in: RoundedRectangle(cornerRadius: 3))
         }
@@ -170,7 +168,6 @@ struct TreeRow: View {
             Text(node.name)
                 .font(.system(.body))
                 .lineLimit(1)
-                .foregroundStyle(isSelected ? Color.primary : Color.primary.opacity(0.9))
 
             Spacer(minLength: 0)
         }
