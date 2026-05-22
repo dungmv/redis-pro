@@ -72,18 +72,22 @@ private struct LoadMoreRow: View {
     var body: some View {
         HStack {
             Spacer(minLength: 0)
-            MLoading(
-                text: "Load more",
-                loadingText: "Loading more keys...",
-                loading: viewModel.isLoadingMore
-            )
-            .foregroundStyle(.secondary)
+            Button {
+                viewModel.loadMoreKeysIfNeeded()
+            } label: {
+                MLoading(
+                    text: "Load more",
+                    loadingText: "Loading more keys...",
+                    loading: viewModel.isLoadingMore
+                )
+                .foregroundStyle(.secondary)
+                .frame(maxWidth: .infinity)
+            }
+            .buttonStyle(.plain)
+            .disabled(viewModel.isLoadingMore)
             Spacer(minLength: 0)
         }
         .contentShape(Rectangle())
-        .onAppear {
-            viewModel.loadMoreKeysIfNeeded()
-        }
     }
 }
 
