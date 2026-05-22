@@ -139,7 +139,7 @@ struct TreeRow: View {
     // MARK: Folder Content
 
     private var folderContent: some View {
-        HStack(spacing: 5) {
+        HStack {
             Image(systemName: "folder.fill")
                 .font(.system(.body))
                 .foregroundStyle(isSelected ? Color.primary : Color.secondary)
@@ -156,13 +156,12 @@ struct TreeRow: View {
                 .padding(.horizontal, 4)
                 .background(.quaternary.opacity(0.3), in: RoundedRectangle(cornerRadius: 3))
         }
-        .frame(height: 20)
     }
 
     // MARK: Key Content
 
     private var keyContent: some View {
-        HStack(spacing: 6) {
+        HStack {
             TypeBadge(type: node.type?.uppercased() ?? "")
 
             Text(node.name)
@@ -171,9 +170,6 @@ struct TreeRow: View {
 
             Spacer(minLength: 0)
         }
-        .frame(height: 22)
-        .padding(.leading, -2)
-        .padding(.trailing, 2)
     }
 }
 
