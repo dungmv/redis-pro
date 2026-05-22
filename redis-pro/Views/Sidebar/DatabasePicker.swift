@@ -15,15 +15,13 @@ struct DatabasePicker: View {
     var body: some View {
         Menu(content: {
             ForEach(0 ..< viewModel.databases, id: \.self) { item in
-                Button("DB\(item)", action: { viewModel.selectDB(item) })
-                    .font(.system(size: 10.0))
+                Button("DB \(item)", action: { viewModel.selectDB(item) })
+                    .font(.system(.body))
                     .foregroundColor(.primary)
             }
         }, label: {
-            MLabel(name: "DB\(viewModel.database)", icon: "cylinder.split.1x2").font(.system(size: 8))
+            Text("DB \(viewModel.database)").font(.system(.body))
         })
-        .scaleEffect(0.9)
-        .frame(width: 56)
         .menuStyle(BorderlessButtonMenuStyle())
         .onAppear {
             viewModel.initial()

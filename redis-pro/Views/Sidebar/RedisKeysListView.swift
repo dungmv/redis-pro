@@ -42,20 +42,11 @@ struct RedisKeysListView: View {
     }
 
     private var sidebarHeader: some View {
-        VStack(alignment: .leading, spacing: 6) {
-            SearchBar(
-                placeholder: "Search keys...",
-                onCommit: { viewModel.search($0) },
-                onChange: { viewModel.searchChange($0) }
-            )
-
-            HStack(spacing: 4) {
-                IconButton(icon: "plus", name: "Add") { viewModel.addNew() }
-
-                Spacer()
-                DatabasePicker(viewModel: viewModel.database_)
-            }
-        }
+        SearchBar(
+            placeholder: "Search keys...",
+            onCommit: { viewModel.search($0) },
+            onChange: { viewModel.searchChange($0) }
+        )
         .padding(.horizontal, 8)
         .padding(.top, 8)
         .padding(.bottom, 6)
@@ -85,12 +76,11 @@ struct RedisKeysListView: View {
             MIcon(icon: "arrow.clockwise", fontSize: 12) { viewModel.refresh() }
                 .help("Refresh keys")
 
+            MIcon(icon: "plus") { viewModel.addNew() }
+
             Spacer(minLength: 0)
 
-            Text("db: \(viewModel.dbsize)")
-                .font(LiquidGlass.FONT_FOOTER)
-                .foregroundStyle(.secondary)
-                .lineLimit(1)
+            DatabasePicker(viewModel: viewModel.database_)
         }
         .frame(height: 30)
         .glassFooter()

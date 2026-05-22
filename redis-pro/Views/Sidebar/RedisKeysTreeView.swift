@@ -50,7 +50,7 @@ struct RedisKeysTreeView: View {
     private var headerView: some View {
         HStack {
             Text("KEYS")
-                .font(.system(size: 10, weight: .bold))
+                .font(.system(.caption))
                 .foregroundStyle(.secondary)
                 .kerning(0.8)
             Spacer()
