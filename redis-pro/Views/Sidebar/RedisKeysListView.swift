@@ -91,9 +91,6 @@ struct RedisKeysListView: View {
                 .font(LiquidGlass.FONT_FOOTER)
                 .foregroundStyle(.secondary)
                 .lineLimit(1)
-
-            PageBar(viewModel: viewModel.page)
-                .padding(.trailing, 8)
         }
         .frame(height: 30)
         .glassFooter()

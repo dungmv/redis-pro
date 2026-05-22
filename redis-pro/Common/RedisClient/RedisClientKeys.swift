@@ -76,7 +76,37 @@ extension RedisClient {
         end = min(end, keys.count)
         return Array(keys[start..<end])
     }
-    
+
+    func loadKeys(cursor: Int, keywords: String, count: Int) async throws -> (cursor: Int, keys: [RedisKeyModel]) {
+        begin()
+
+        let stopwatch = Stopwatch.createStarted()
+        logger.info("redis keys load more, cursor: \(cursor), count: \(count), keywords: \(keywords)")
+
+        defer {
+            self.logger.info("keys load more complete, spend: \(stopwatch.elapsedMillis()) ms")
+            complete()
+        }
+
+        if isScan(keywords) {
+            let match = keywords.isEmpty ? nil : keywords
+            let result = try await keyScan(cursor: cursor, keywords: match, count: count)
+            let models = try await self.toRedisKeyModels(result.keys)
+            return (result.cursor, models)
+        }
+
+        guard cursor == 0 else {
+            return (0, [])
+        }
+
+        let exist = try await self.exist(keywords)
+        guard exist else {
+            return (0, [])
+        }
+
+        return (0, try await self.toRedisKeyModels([keywords]))
+    }
+
     func pageKeys(_ page: Page) async throws -> [RedisKeyModel] {
         begin()
         

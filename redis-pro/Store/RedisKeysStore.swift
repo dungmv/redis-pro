@@ -21,6 +21,8 @@ final class RedisKeysViewModel {
     var mainViewType: MainViewTypeEnum = .EDITOR
     var redisKeyNodes: [RedisKeyNode] = []
     var selectedKeyId: String? = nil
+    var isLoadingMore: Bool = false
+    var hasMoreKeys: Bool = true
 
     let table: TableViewModel<RedisKeyModel>
     let redisSystem: RedisSystemViewModel
@@ -34,8 +36,7 @@ final class RedisKeysViewModel {
     // Debounce/cancel support
     private var searchTask: Task<Void, Never>?
     private var getKeysTask: Task<Void, Never>?
-    private var countKeysTask: Task<Void, Never>?
-    private var countLockId: Int = 0
+    private var scanCursor: Int = 0
 
     init(redisInstance: RedisInstanceModel) {
         self.redisInstance = redisInstance
@@ -85,20 +86,20 @@ final class RedisKeysViewModel {
             self.table.selectIndex = -1
             self.table.selectIndexes = []
             self.table.datasource = []
+            self.redisKeyNodes = []
+            self.selectedKeyId = nil
             self.value.key.redisKeyModel = RedisKeyModel()
             self.mainViewType = .EDITOR
             self.page.total = 0
             self.page.current = 1
+            self.scanCursor = 0
+            self.hasMoreKeys = true
+            self.isLoadingMore = false
         }
         database_.onSelectDBSuccess = { [weak self] db in
             logger.info("database switch success, reload keys for database \(db)")
             self?.initial()
         }
-
-        // Page callbacks
-        page.onNextPage = { [weak self] in self?.getKeys() }
-        page.onPrevPage = { [weak self] in self?.getKeys() }
-        page.onUpdateSize = { [weak self] in self?.getKeys() }
 
         // Rename callback
         rename.onSetKey = { [weak self] index, newKey in
@@ -165,14 +166,18 @@ final class RedisKeysViewModel {
         page.total = 0
         page.keywords = keywords
         table.datasource = []
+        redisKeyNodes = []
         table.selectIndex = -1
+        table.selectIndexes = []
+        selectedKeyId = nil
+        scanCursor = 0
+        hasMoreKeys = true
+        isLoadingMore = false
 
         // Cancel running tasks
         getKeysTask?.cancel()
-        countKeysTask?.cancel()
 
         getKeys()
-        getCount()
     }
 
     func searchChange(_ keywords: String) {
@@ -185,62 +190,39 @@ final class RedisKeysViewModel {
     }
 
     func getKeys() {
-        let current = self.page.current
         let size = self.page.size
         let keywords = self.page.keywords
+        let cursor = self.scanCursor
+        let shouldAppend = !self.table.datasource.isEmpty
+        isLoadingMore = shouldAppend
         getKeysTask?.cancel()
         getKeysTask = Task {
             do {
-                var page = Page()
-                page.current = current
-                page.size = size
-                page.keywords = keywords
-                let keysPage = try await redisInstance.getClient().pageKeys(page)
+                let result = try await redisInstance.getClient().loadKeys(
+                    cursor: cursor,
+                    keywords: keywords,
+                    count: size
+                )
                 guard !Task.isCancelled else { return }
-                let nodes = RedisKeyNode.buildTree(from: keysPage)
-                self.redisKeyNodes = nodes
-                self.table.datasource = keysPage
+                let datasource = shouldAppend
+                    ? mergeKeys(existing: self.table.datasource, incoming: result.keys)
+                    : result.keys
+                self.scanCursor = result.cursor
+                self.table.datasource = datasource
+                self.redisKeyNodes = RedisKeyNode.buildTree(from: datasource)
+                self.hasMoreKeys = result.cursor != 0
+                self.isLoadingMore = false
             } catch {
                 guard !Task.isCancelled else { return }
+                self.isLoadingMore = false
                 Messages.show(error)
             }
         }
     }
 
-    func getCount() {
-        countLockId += 1
-        let lockId = countLockId
-        countKeysTask?.cancel()
-        countKeysTask = Task {
-            await countKeys(cursor: 0, lockId: lockId)
-        }
-    }
-
-    private func countKeys(cursor: Int, lockId: Int) async {
-        guard lockId >= countLockId else {
-            logger.info("New search started — aborting stale count task")
-            return
-        }
-        guard !Task.isCancelled else { return }
-        let current = self.page.current
-        let size = self.page.size
-        let keywords = self.page.keywords
-        
-        do {
-            var page = Page()
-            page.current = current
-            page.size = size
-            page.keywords = keywords
-            let r = try await redisInstance.getClient().countKey(page, cursor: cursor)
-            guard !Task.isCancelled, lockId >= countLockId else { return }
-            self.page.total = self.page.total + r.1
-            if r.0 != 0 {
-                await countKeys(cursor: r.0, lockId: lockId)
-            }
-        } catch {
-            guard !Task.isCancelled else { return }
-            Messages.show(error)
-        }
+    func loadMoreKeysIfNeeded() {
+        guard hasMoreKeys, !isLoadingMore else { return }
+        getKeys()
     }
 
     func setMainViewType(_ type: MainViewTypeEnum) {
@@ -374,5 +356,17 @@ final class RedisKeysViewModel {
                 Messages.show(error)
             }
         }
+    }
+
+    private func mergeKeys(existing: [RedisKeyModel], incoming: [RedisKeyModel]) -> [RedisKeyModel] {
+        guard !existing.isEmpty else { return incoming }
+        guard !incoming.isEmpty else { return existing }
+
+        var merged = existing
+        var existingKeys = Set(existing.map(\.key))
+        for item in incoming where existingKeys.insert(item.key).inserted {
+            merged.append(item)
+        }
+        return merged
     }
 }

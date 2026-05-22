@@ -25,12 +25,21 @@ struct RedisKeysTreeView: View {
             headerView
 
             // Native hierarchical list for virtualization and performance
-            List(viewModel.redisKeyNodes, children: \.children, selection: selection) { node in
-                TreeRow(viewModel: viewModel, node: node, selectedId: viewModel.selectedKeyId)
-                    .listRowInsets(EdgeInsets(top: 0, leading: 0, bottom: 0, trailing: 4))
-                    .listRowBackground(Color.clear)
-                    .listRowSeparator(.hidden)
-                    .tag(node.id as String?)
+            List(selection: selection) {
+                OutlineGroup(viewModel.redisKeyNodes, children: \.children) { node in
+                    TreeRow(viewModel: viewModel, node: node, selectedId: viewModel.selectedKeyId)
+                        .listRowInsets(EdgeInsets(top: 0, leading: 0, bottom: 0, trailing: 4))
+                        .listRowBackground(Color.clear)
+                        .listRowSeparator(.hidden)
+                        .tag(node.id as String?)
+                }
+
+                if !viewModel.table.datasource.isEmpty && (viewModel.hasMoreKeys || viewModel.isLoadingMore) {
+                    LoadMoreRow(viewModel: viewModel)
+                        .listRowInsets(EdgeInsets(top: 6, leading: 12, bottom: 8, trailing: 12))
+                        .listRowBackground(Color.clear)
+                        .listRowSeparator(.hidden)
+                }
             }
             .listStyle(.plain)
             .scrollContentBackground(.hidden)
@@ -54,6 +63,27 @@ struct RedisKeysTreeView: View {
         }
         .padding(.horizontal, 12)
         .padding(.vertical, 6)
+    }
+}
+
+private struct LoadMoreRow: View {
+    let viewModel: RedisKeysViewModel
+
+    var body: some View {
+        HStack {
+            Spacer(minLength: 0)
+            MLoading(
+                text: "Load more",
+                loadingText: "Loading more keys...",
+                loading: viewModel.isLoadingMore
+            )
+            .foregroundStyle(.secondary)
+            Spacer(minLength: 0)
+        }
+        .contentShape(Rectangle())
+        .onAppear {
+            viewModel.loadMoreKeysIfNeeded()
+        }
     }
 }
 
