@@ -119,11 +119,13 @@ struct RedisListView: View {
 
     private var actionButtons: some View {
         VStack(spacing: 8) {
-            SidebarActionButton(title: "New Server…") {
+            Button("New Server…") {
                 // Blank model in form; save after user fills details
                 viewModel.login.redisModel = RedisModel()
                 showEditSheet = true
             }
+            .buttonStyle(.bordered)
+            .controlSize(.large)
         }
         .padding(.horizontal, 14)
     }
@@ -341,34 +343,4 @@ private struct ConnectionRow: View {
     }
 }
 
-// MARK: - Sidebar Action Button
 
-private struct SidebarActionButton: View {
-    let title: String
-    let action: () -> Void
-
-    @State private var isHovered = false
-
-    var body: some View {
-        Button(action: action) {
-            Text(title)
-                .font(.system(size: 12, weight: .medium))
-                .frame(maxWidth: .infinity)
-                .padding(.vertical, 7)
-                .background(
-                    RoundedRectangle(cornerRadius: 7, style: .continuous)
-                        .fill(isHovered
-                              ? Color.primary.opacity(0.10)
-                              : Color.primary.opacity(0.06))
-                )
-                .overlay(
-                    RoundedRectangle(cornerRadius: 7, style: .continuous)
-                        .strokeBorder(LiquidGlass.glassBorder, lineWidth: 0.5)
-                )
-                .foregroundStyle(.primary)
-                .animation(.easeOut(duration: 0.12), value: isHovered)
-        }
-        .buttonStyle(.plain)
-        .onHover { isHovered = $0 }
-    }
-}
