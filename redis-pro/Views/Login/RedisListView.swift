@@ -2,7 +2,8 @@
 //  RedisListView.swift
 //  redis-pro
 //
-//  Sidebar connection list + login form split view.
+//  Medis-inspired home screen: slim branding sidebar + connection list.
+//  Form opens as a sheet modal; no embedded form panel.
 //  Migrated to MVVM (Swift 6)
 //
 
@@ -14,98 +15,320 @@ struct RedisListView: View {
     private static let logger = Logger(label: "redis-list-view")
 
     @State var viewModel: FavoriteViewModel
+    @State private var showEditSheet = false
 
-    private var selection: Binding<Int?> {
-        Binding<Int?>(
-            get: {
-                let idx = viewModel.table.selectIndex
-                return idx >= 0 ? idx : nil
-            },
-            set: { newValue in
-                if let index = newValue {
-                    viewModel.table.selectionChange(index: index, indexes: [index])
-                }
-            }
-        )
-    }
+    // MARK: - Body
 
     var body: some View {
         HSplitView {
-            // ── Connection list (left sidebar) ────────────────────────
-            VStack(alignment: .leading, spacing: 0) {
-                // Sidebar header
-                HStack {
-                    Text("CONNECTIONS")
-                        .font(.system(size: 10, weight: .bold))
-                        .foregroundStyle(.secondary)
-                        .kerning(0.8)
-                    Spacer()
-                }
-                .padding(.horizontal, 12)
-                .padding(.vertical, 10)
-                .glassToolbar()
-
-                Divider()
-
-                // Connections list (single column, no table header)
-                List(selection: selection) {
-                    ForEach(Array(viewModel.table.datasource.enumerated()), id: \.offset) { index, model in
-                        Text(model.name.isEmpty ? "New Connection" : model.name)
-                            .tag(index)
-                            .onTapGesture(count: 2) {
-                                viewModel.connect(index)
-                            }
-                    }
-                }
-                .listStyle(.sidebar)
-                .frame(maxWidth: .infinity, maxHeight: .infinity)
-                .onDeleteCommand {
-                    if let idx = selection.wrappedValue {
-                        viewModel.deleteConfirm(idx)
-                    }
-                }
-
-                Divider()
-
-                // Footer controls
-                HStack(alignment: .center, spacing: 2) {
-                    MIcon(icon: "plus", fontSize: 13) { viewModel.addNew() }
-                        .help("Add new connection")
-                    MIcon(
-                        icon: "minus",
-                        fontSize: 13,
-                        disabled: viewModel.table.selectIndex < 0
-                    ) {
-                        viewModel.deleteConfirm(viewModel.table.selectIndex)
-                    }
-                    .help("Remove connection")
-                    Spacer()
-                }
-                .padding(.horizontal, 10)
-                .padding(.vertical, 6)
-                .glassToolbar()
-            }
-            .background(.thinMaterial)
-            .frame(minWidth: 200, idealWidth: 240, maxWidth: 320)
-            .layoutPriority(0)
-            .onAppear { onLoad() }
-
-            // ── Login form (right panel) ───────────────────────────────
-            LoginForm(viewModel: viewModel.login)
-                .background(.regularMaterial)
-                .layoutPriority(1)
-                .frame(minWidth: 400, idealWidth: 500, maxWidth: .infinity, minHeight: 520, maxHeight: .infinity)
+            sidebarPanel
+            connectionListPanel
         }
         .glassWindowSurface()
+        .sheet(isPresented: $showEditSheet) {
+            editSheet
+        }
+    }
+
+    // MARK: - Edit Sheet
+
+    private var editSheet: some View {
+        ZStack(alignment: .topTrailing) {
+            LoginForm(viewModel: viewModel.login)
+
+            Button {
+                showEditSheet = false
+            } label: {
+                Image(systemName: "xmark.circle.fill")
+                    .font(.system(size: 18))
+                    .symbolRenderingMode(.hierarchical)
+                    .foregroundStyle(.secondary)
+            }
+            .buttonStyle(.plain)
+            .padding(14)
+            .help("Close")
+        }
+    }
+
+    // MARK: - Left Sidebar
+
+    private var sidebarPanel: some View {
+        VStack(spacing: 0) {
+            Spacer()
+
+            brandingSection
+
+            Spacer()
+
+            actionButtons
+                .padding(.bottom, 20)
+        }
+        .frame(minWidth: 170, idealWidth: 180, maxWidth: 200)
+        .background(.thinMaterial)
+        .layoutPriority(0)
+        .onAppear { onLoad() }
+    }
+
+    // MARK: - Branding
+
+    private var brandingSection: some View {
+        VStack(spacing: 10) {
+            // App icon
+            ZStack {
+                RoundedRectangle(cornerRadius: 20, style: .continuous)
+                    .fill(
+                        LinearGradient(
+                            colors: [
+                                Color(red: 0.96, green: 0.30, blue: 0.22),
+                                Color(red: 0.78, green: 0.13, blue: 0.10)
+                            ],
+                            startPoint: .topLeading,
+                            endPoint: .bottomTrailing
+                        )
+                    )
+                    .frame(width: 72, height: 72)
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 20, style: .continuous)
+                            .strokeBorder(Color.white.opacity(0.18), lineWidth: 0.8)
+                    )
+                    .shadow(
+                        color: Color(red: 0.96, green: 0.30, blue: 0.22).opacity(0.40),
+                        radius: 14, x: 0, y: 6
+                    )
+
+                Image(systemName: "server.rack")
+                    .font(.system(size: 30, weight: .semibold))
+                    .foregroundStyle(.white)
+                    .symbolRenderingMode(.hierarchical)
+            }
+
+            VStack(spacing: 4) {
+                Text("Redis Pro")
+                    .font(.system(size: 15, weight: .bold))
+                    .foregroundStyle(.primary)
+
+                Text("Version \(appVersion)")
+                    .font(.system(size: 11))
+                    .foregroundStyle(.secondary)
+            }
+        }
+        .frame(maxWidth: .infinity)
+    }
+
+    // MARK: - Action Buttons
+
+    private var actionButtons: some View {
+        VStack(spacing: 8) {
+            SidebarActionButton(title: "New Server…") {
+                // Blank model in form; save after user fills details
+                viewModel.login.redisModel = RedisModel()
+                showEditSheet = true
+            }
+        }
+        .padding(.horizontal, 14)
+    }
+
+    // MARK: - Connection List Panel
+
+    private var connectionListPanel: some View {
+        Group {
+            if viewModel.table.datasource.isEmpty {
+                emptyState
+            } else {
+                ScrollView {
+                    LazyVStack(spacing: 0) {
+                        ForEach(
+                            Array(viewModel.table.datasource.enumerated()),
+                            id: \.offset
+                        ) { index, model in
+                            ConnectionRow(
+                                model: model,
+                                isSelected: viewModel.table.selectIndex == index,
+                                onEdit: {
+                                    viewModel.table.selectionChange(index: index, indexes: [index])
+                                    showEditSheet = true
+                                },
+                                onConnect: {
+                                    viewModel.connect(index)
+                                }
+                            )
+
+                            if index < viewModel.table.datasource.count - 1 {
+                                Divider()
+                                    .padding(.leading, 60)
+                            }
+                        }
+                    }
+                    .padding(.vertical, 6)
+                }
+            }
+        }
+        .frame(minWidth: 380, maxWidth: .infinity, maxHeight: .infinity)
+        .background(.regularMaterial)
+        .layoutPriority(1)
+    }
+
+    // MARK: - Empty State
+
+    private var emptyState: some View {
+        VStack(spacing: 14) {
+            Image(systemName: "server.rack")
+                .font(.system(size: 40))
+                .foregroundStyle(.tertiary)
+
+            VStack(spacing: 6) {
+                Text("No connections")
+                    .font(.system(size: 14, weight: .semibold))
+                    .foregroundStyle(.secondary)
+
+                Text("Click \"New Server\" in the sidebar to add your first Redis connection.")
+                    .font(.system(size: 12))
+                    .foregroundStyle(.tertiary)
+                    .multilineTextAlignment(.center)
+                    .frame(maxWidth: 260)
+            }
+        }
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+    }
+
+    // MARK: - Helpers
+
+    private var appVersion: String {
+        Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "1.0"
     }
 
     private func onLoad() {
         viewModel.getAll()
         viewModel.initDefaultSelection()
-        // Apply default selection now that datasource is loaded
         let idx = viewModel.table.defaultSelectIndex
         if idx >= 0, idx < viewModel.table.datasource.count {
             viewModel.table.selectionChange(index: idx, indexes: [idx])
         }
+    }
+}
+
+// MARK: - Connection Row
+
+private struct ConnectionRow: View {
+    let model: RedisModel
+    let isSelected: Bool
+    let onEdit: () -> Void
+    let onConnect: () -> Void
+
+    @State private var isHovered = false
+
+    var body: some View {
+        HStack(spacing: 12) {
+            // Type icon
+            typeIcon
+
+            // Labels
+            VStack(alignment: .leading, spacing: 3) {
+                Text(model.name.isEmpty ? "New Connection" : model.name)
+                    .font(.system(size: 13, weight: .medium))
+                    .foregroundStyle(.primary)
+                    .lineLimit(1)
+
+                Text("\(model.host):\(model.port)")
+                    .font(.system(size: 11, design: .monospaced))
+                    .foregroundStyle(.secondary)
+                    .lineLimit(1)
+            }
+
+            Spacer(minLength: 8)
+
+            // Action buttons (visible on hover or when selected)
+            if isHovered || isSelected {
+                HStack(spacing: 6) {
+                    Button("Edit") { onEdit() }
+                        .buttonStyle(.bordered)
+                        .controlSize(.small)
+
+                    Button("Connect") { onConnect() }
+                        .buttonStyle(.borderedProminent)
+                        .controlSize(.small)
+                }
+                .transition(.opacity.combined(with: .scale(scale: 0.95)))
+            }
+        }
+        .padding(.horizontal, 16)
+        .padding(.vertical, 10)
+        .background(rowBackground)
+        .contentShape(Rectangle())
+        .onHover { inside in
+            withAnimation(.easeOut(duration: 0.12)) {
+                isHovered = inside
+            }
+        }
+        .onTapGesture(count: 2) { onConnect() }
+        .onTapGesture(count: 1) { onEdit() }
+    }
+
+    @ViewBuilder
+    private var typeIcon: some View {
+        ZStack {
+            Circle()
+                .fill(typeColor.opacity(0.14))
+                .frame(width: 36, height: 36)
+
+            Image(systemName: typeIconName)
+                .font(.system(size: 14, weight: .medium))
+                .foregroundStyle(typeColor)
+        }
+    }
+
+    @ViewBuilder
+    private var rowBackground: some View {
+        if isSelected {
+            Color.accentColor.opacity(0.08)
+        } else if isHovered {
+            Color.primary.opacity(0.04)
+        } else {
+            Color.clear
+        }
+    }
+
+    private var typeIconName: String {
+        model.connectionType == RedisConnectionTypeEnum.SSH.rawValue
+            ? "bolt.horizontal"
+            : "network"
+    }
+
+    private var typeColor: Color {
+        model.connectionType == RedisConnectionTypeEnum.SSH.rawValue
+            ? Color(red: 0.98, green: 0.62, blue: 0.22)
+            : Color(red: 0.20, green: 0.74, blue: 0.40)
+    }
+}
+
+// MARK: - Sidebar Action Button
+
+private struct SidebarActionButton: View {
+    let title: String
+    let action: () -> Void
+
+    @State private var isHovered = false
+
+    var body: some View {
+        Button(action: action) {
+            Text(title)
+                .font(.system(size: 12, weight: .medium))
+                .frame(maxWidth: .infinity)
+                .padding(.vertical, 7)
+                .background(
+                    RoundedRectangle(cornerRadius: 7, style: .continuous)
+                        .fill(isHovered
+                              ? Color.primary.opacity(0.10)
+                              : Color.primary.opacity(0.06))
+                )
+                .overlay(
+                    RoundedRectangle(cornerRadius: 7, style: .continuous)
+                        .strokeBorder(LiquidGlass.glassBorder, lineWidth: 0.5)
+                )
+                .foregroundStyle(.primary)
+                .animation(.easeOut(duration: 0.12), value: isHovered)
+        }
+        .buttonStyle(.plain)
+        .onHover { isHovered = $0 }
     }
 }
