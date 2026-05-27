@@ -27,11 +27,8 @@ struct MIntField: View {
             .multilineTextAlignment(.leading)
             .font(.body)
             .disableAutocorrection(true)
-            .textFieldStyle(.plain)
+            .textFieldStyle(.roundedBorder)
             .focused($isFocused)
-            .padding(.horizontal, 8)
-            .padding(.vertical, 5)
-            .glassField(cornerRadius: LiquidGlass.radiusXS, isActive: isFocused)
     }
 
     func doCommit() {

@@ -59,7 +59,12 @@ struct ListEditorView: View {
                     .padding(.trailing, 8)
             }
             .frame(height: 30)
-            .glassFooter()
+            .background(.thinMaterial)
+            .overlay(alignment: .top) {
+                Rectangle()
+                    .fill(Color(NSColor.separatorColor))
+                    .frame(height: 0.5)
+            }
         }
         .sheet(isPresented: Binding(get: { vm.editModalVisible }, set: { vm.editModalVisible = $0 })) {
             ModalView("Edit list item", action: { vm.submit() }) {

@@ -41,7 +41,7 @@ struct MPasswordField: View {
 
             Button(action: { visible.toggle() }) {
                 Image(systemName: visible ? "eye" : "eye.slash")
-                    .font(.system(size: LiquidGlass.fontSizeSM))
+                    .font(.system(size: 11))
                     .foregroundStyle(.secondary)
             }
             .buttonStyle(.plain)
@@ -52,6 +52,13 @@ struct MPasswordField: View {
         }
         .padding(.horizontal, 8)
         .padding(.vertical, 5)
-        .glassField(cornerRadius: LiquidGlass.radiusXS, isActive: isFocused)
+        .background(
+            RoundedRectangle(cornerRadius: 4)
+                .fill(Color(NSColor.controlBackgroundColor))
+        )
+        .overlay(
+            RoundedRectangle(cornerRadius: 4)
+                .stroke(isFocused ? Color.accentColor : Color(NSColor.separatorColor), lineWidth: isFocused ? 1.5 : 0.5)
+        )
     }
 }

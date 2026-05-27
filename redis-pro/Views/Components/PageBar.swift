@@ -15,7 +15,7 @@ struct PageBar: View {
         HStack(alignment: .center, spacing: 4) {
             if viewModel.showTotal {
                 Text("Total: \(viewModel.total)")
-                    .font(LiquidGlass.FONT_FOOTER)
+                    .font(.system(size: 10, weight: .regular))
                     .foregroundStyle(.secondary)
                     .lineLimit(1)
             }
@@ -39,7 +39,7 @@ struct PageBar: View {
                 }
 
                 Text("\(viewModel.current)/\(viewModel.totalPageText)")
-                    .font(LiquidGlass.FONT_FOOTER)
+                    .font(.system(size: 10, weight: .regular))
                     .foregroundStyle(.secondary)
                     .frame(minWidth: 36)
                     .multilineTextAlignment(.center)
@@ -52,6 +52,10 @@ struct PageBar: View {
         }
         .padding(.horizontal, 6)
         .padding(.vertical, 2)
-        .glassCard(cornerRadius: LiquidGlass.radiusSM)
+        .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 6, style: .continuous))
+        .overlay(
+            RoundedRectangle(cornerRadius: 6)
+                .strokeBorder(Color(NSColor.separatorColor), lineWidth: 0.5)
+        )
     }
 }

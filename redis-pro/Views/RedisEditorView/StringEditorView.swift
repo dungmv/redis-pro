@@ -47,7 +47,12 @@ struct StringEditorView: View {
                     .padding(.trailing, 8)
             }
             .frame(height: 30)
-            .glassFooter()
+            .background(.thinMaterial)
+            .overlay(alignment: .top) {
+                Rectangle()
+                    .fill(Color(NSColor.separatorColor))
+                    .frame(height: 0.5)
+            }
         }
         .onAppear {
             logger.info("redis string value editor view appear ...")

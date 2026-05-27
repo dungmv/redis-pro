@@ -14,7 +14,7 @@ struct ClientsListView: View {
     @State var viewModel: ClientListViewModel
 
     var body: some View {
-        VStack(alignment: .leading, spacing: LiquidGlass.spacing6) {
+        VStack(alignment: .leading, spacing: 6) {
             NTableView(viewModel: viewModel.table) { index in
                 Button {
                     viewModel.killConfirm(index)
@@ -24,7 +24,7 @@ struct ClientsListView: View {
                 .keyboardShortcut("k")
             }
 
-            HStack(alignment: .center, spacing: LiquidGlass.spacing8) {
+            HStack(alignment: .center, spacing: 8) {
                 Spacer()
                 Button("Kill Client") {
                     viewModel.killConfirm(viewModel.table.selectIndex)

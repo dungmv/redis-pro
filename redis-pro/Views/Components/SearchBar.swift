@@ -30,7 +30,7 @@ struct SearchBar: View {
 
                 TextField("", text: $keywords, prompt: Text(placeholder).foregroundColor(.secondary))
                     .textFieldStyle(.plain)
-                    .font(LiquidGlass.fontBody)
+                    .font(.body)
                     .focused($isFocused)
                     .onSubmit { commit() }
                     .onChange(of: keywords) { _, newValue in
@@ -60,7 +60,14 @@ struct SearchBar: View {
             }
             .padding(.horizontal, 8)
             .padding(.vertical, 6)
-            .glassField(cornerRadius: LiquidGlass.radiusSM, isActive: isFocused)
+            .background(
+                RoundedRectangle(cornerRadius: 6)
+                    .fill(Color(NSColor.controlBackgroundColor))
+            )
+            .overlay(
+                RoundedRectangle(cornerRadius: 6)
+                    .stroke(isFocused ? Color.accentColor : Color(NSColor.separatorColor), lineWidth: isFocused ? 1.5 : 0.5)
+            )
             .animation(.spring(response: 0.2, dampingFraction: 0.8), value: isFocused)
         }
         .zIndex(10)
@@ -83,7 +90,7 @@ struct SearchBar: View {
                                 .font(.system(size: 11))
                                 .foregroundStyle(.secondary)
                             Text(item)
-                                .font(LiquidGlass.fontBody)
+                                .font(.body)
                                 .lineLimit(1)
                             Spacer()
                         }
@@ -101,7 +108,11 @@ struct SearchBar: View {
                         Divider().padding(.horizontal, 8)
                     }
                 }
-                .glassCard(cornerRadius: LiquidGlass.radiusSM)
+                .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 6, style: .continuous))
+                .overlay(
+                    RoundedRectangle(cornerRadius: 6)
+                        .strokeBorder(Color(NSColor.separatorColor), lineWidth: 0.5)
+                )
                 .zIndex(100)
                 .transition(.asymmetric(
                     insertion: .opacity.combined(with: .move(edge: .top)),

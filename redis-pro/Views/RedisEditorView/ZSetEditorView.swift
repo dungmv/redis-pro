@@ -66,7 +66,12 @@ struct ZSetEditorView: View {
                     .padding(.trailing, 8)
             }
             .frame(height: 30)
-            .glassFooter()
+            .background(.thinMaterial)
+            .overlay(alignment: .top) {
+                Rectangle()
+                    .fill(Color(NSColor.separatorColor))
+                    .frame(height: 0.5)
+            }
         }
         .sheet(isPresented: Binding(get: { vm.editModalVisible }, set: { vm.editModalVisible = $0 })) {
             ModalView("Edit zset element", action: { vm.submit() }) {
@@ -96,54 +101,54 @@ struct ZSetEditorView: View {
                     .buttonStyle(.bordered)
                     .keyboardShortcut(.cancelAction)
                 }
-                .padding(.horizontal, LiquidGlass.spacing16)
-                .padding(.vertical, LiquidGlass.spacing12)
+                .padding(.horizontal, 16)
+                .padding(.vertical, 12)
                 .background(.thinMaterial)
                 
                 Divider()
                 
                 // Content
                 ScrollView {
-                    VStack(alignment: .leading, spacing: LiquidGlass.spacing20) {
+                    VStack(alignment: .leading, spacing: 20) {
                         // Metadata Group
-                        VStack(alignment: .leading, spacing: LiquidGlass.spacing12) {
-                            HStack(spacing: LiquidGlass.spacing8) {
+                        VStack(alignment: .leading, spacing: 12) {
+                            HStack(spacing: 8) {
                                 Image(systemName: "key.fill")
                                     .foregroundStyle(.secondary)
                                     .font(.system(size: 10))
                                 Text("Key")
-                                    .font(LiquidGlass.fontLabel)
+                                    .font(.system(size: 11, weight: .medium))
                                     .foregroundStyle(.secondary)
                                 Spacer()
                                 Text(viewModel.keyObject.key)
-                                    .font(LiquidGlass.fontMono)
+                                    .font(.system(.body, design: .monospaced))
                                     .textSelection(.enabled)
                             }
                             
-                            HStack(spacing: LiquidGlass.spacing8) {
+                            HStack(spacing: 8) {
                                 Image(systemName: "person.fill")
                                     .foregroundStyle(.secondary)
                                     .font(.system(size: 10))
                                 Text("Member")
-                                    .font(LiquidGlass.fontLabel)
+                                    .font(.system(size: 11, weight: .medium))
                                     .foregroundStyle(.secondary)
                                 Spacer()
                                 Text(vm.geoMember)
-                                    .font(LiquidGlass.fontMono)
+                                    .font(.system(.body, design: .monospaced))
                                     .textSelection(.enabled)
                             }
                         }
-                        .padding(LiquidGlass.spacing16)
-                        .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: LiquidGlass.radiusMD))
-                        .overlay(RoundedRectangle(cornerRadius: LiquidGlass.radiusMD).strokeBorder(LiquidGlass.glassBorder, lineWidth: 0.5))
-
+                        .padding(16)
+                        .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 8))
+                        .overlay(RoundedRectangle(cornerRadius: 8).strokeBorder(Color(NSColor.separatorColor).opacity(0.45), lineWidth: 0.5))
+ 
                         // Coordinates Group
-                        HStack(spacing: LiquidGlass.spacing12) {
+                        HStack(spacing: 12) {
                             CoordinateBox(label: "LATITUDE", value: vm.geoLat, icon: "scope")
                             CoordinateBox(label: "LONGITUDE", value: vm.geoLng, icon: "scope")
                         }
                     }
-                    .padding(LiquidGlass.spacing16)
+                    .padding(16)
                 }
             }
             .frame(width: 480, height: 340)
@@ -158,7 +163,7 @@ private struct CoordinateBox: View {
     let icon: String
     
     var body: some View {
-        VStack(alignment: .leading, spacing: LiquidGlass.spacing6) {
+        VStack(alignment: .leading, spacing: 6) {
             HStack {
                 Text(label)
                     .font(.system(size: 9, weight: .bold))
@@ -167,7 +172,7 @@ private struct CoordinateBox: View {
                 Spacer()
                 Image(systemName: icon)
                     .font(.system(size: 10))
-                    .foregroundStyle(LiquidGlass.typeColor(for: "ZSET"))
+                    .foregroundStyle(Color.redisTypeColor(for: "ZSET"))
             }
             
             Text(value)
@@ -185,22 +190,21 @@ private struct CoordinateBox: View {
                 .font(.system(size: 10, weight: .medium))
                 .padding(.horizontal, 6)
                 .padding(.vertical, 2)
-                .background(LiquidGlass.typeColor(for: "ZSET").opacity(0.12))
+                .background(Color.redisTypeColor(for: "ZSET").opacity(0.12))
                 .clipShape(Capsule())
             }
             .buttonStyle(.plain)
-            .foregroundStyle(LiquidGlass.typeColor(for: "ZSET"))
-            .hoverEffect()
+            .foregroundStyle(Color.redisTypeColor(for: "ZSET"))
         }
-        .padding(LiquidGlass.spacing12)
+        .padding(12)
         .frame(maxWidth: .infinity, alignment: .leading)
         .background {
-            RoundedRectangle(cornerRadius: LiquidGlass.radiusLG)
-                .fill(LiquidGlass.typeColor(for: "ZSET").opacity(0.08))
+            RoundedRectangle(cornerRadius: 12)
+                .fill(Color.redisTypeColor(for: "ZSET").opacity(0.08))
         }
         .overlay {
-            RoundedRectangle(cornerRadius: LiquidGlass.radiusLG)
-                .strokeBorder(LiquidGlass.typeColor(for: "ZSET").opacity(0.15), lineWidth: 1)
+            RoundedRectangle(cornerRadius: 12)
+                .strokeBorder(Color.redisTypeColor(for: "ZSET").opacity(0.15), lineWidth: 1)
         }
     }
 }

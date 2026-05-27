@@ -13,8 +13,8 @@ struct ModalView<Content: View>: View {
     var title: String
     var action: () throws -> Void
     var content: Content
-    var width: CGFloat = LiquidGlass.DIALOG_W
-    var height: CGFloat = LiquidGlass.DIALOG_H
+    var width: CGFloat = 640
+    var height: CGFloat = 400
 
     init(_ title: String, action: @escaping () throws -> Void, @ViewBuilder content: () -> Content) {
         self.title = title

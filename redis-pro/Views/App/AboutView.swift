@@ -25,7 +25,7 @@ struct AboutView: View {
                 .ignoresSafeArea()
 
             VStack(spacing: 0) {
-                VStack(spacing: LiquidGlass.spacing20) {
+                VStack(spacing: 20) {
                     ZStack {
                         RoundedRectangle(cornerRadius: 22, style: .continuous)
                             .fill(
@@ -37,9 +37,9 @@ struct AboutView: View {
                             .frame(width: 80, height: 80)
                             .overlay(
                                 RoundedRectangle(cornerRadius: 22, style: .continuous)
-                                    .strokeBorder(LiquidGlass.glassHighlight, lineWidth: 0.5)
+                                    .strokeBorder(Color.white.opacity(0.16), lineWidth: 0.5)
                             )
-                            .shadow(color: LiquidGlass.glassShadow, radius: 12, x: 0, y: 6)
+                            .shadow(color: Color.black.opacity(0.1), radius: 12, x: 0, y: 6)
 
                         Image(systemName: "server.rack")
                             .font(.system(size: 36, weight: .medium))
@@ -47,7 +47,7 @@ struct AboutView: View {
                             .symbolRenderingMode(.hierarchical)
                     }
 
-                    VStack(spacing: LiquidGlass.spacing4) {
+                    VStack(spacing: 4) {
                         Text("Redis Pro")
                             .font(.system(size: 24, weight: .bold))
                             .foregroundStyle(.primary)
@@ -66,7 +66,11 @@ struct AboutView: View {
                 .padding(.horizontal, 24)
                 .padding(.top, 28)
                 .padding(.bottom, 24)
-                .glassCard(cornerRadius: LiquidGlass.radiusLG)
+                .background(.thinMaterial, in: RoundedRectangle(cornerRadius: 12, style: .continuous))
+                .overlay(
+                    RoundedRectangle(cornerRadius: 12, style: .continuous)
+                        .strokeBorder(Color(NSColor.separatorColor), lineWidth: 0.5)
+                )
 
                 VStack(alignment: .leading, spacing: 0) {
                     Text("Open Source Libraries")
@@ -102,7 +106,11 @@ struct AboutView: View {
                             }
                         }
                     }
-                    .glassCard(cornerRadius: LiquidGlass.radiusMD)
+                    .background(.thinMaterial, in: RoundedRectangle(cornerRadius: 8, style: .continuous))
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 8, style: .continuous)
+                            .strokeBorder(Color(NSColor.separatorColor), lineWidth: 0.5)
+                    )
                 }
                 .padding(.top, 16)
 
@@ -115,7 +123,7 @@ struct AboutView: View {
             }
             .padding(16)
         }
-        .glassWindowSurface()
+        .background(.regularMaterial)
         .frame(minWidth: 400, maxWidth: 480, minHeight: 420, maxHeight: 520)
     }
 }

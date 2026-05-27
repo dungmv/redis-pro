@@ -185,8 +185,8 @@ private struct TypeBadge: View {
             .frame(width: 14, height: 14)
             .background(
                 RoundedRectangle(cornerRadius: 3)
-                    .fill(LiquidGlass.typeColor(for: type))
+                    .fill(Color.redisTypeColor(for: type))
             )
-            .shadow(color: LiquidGlass.typeColor(for: type).opacity(0.25), radius: 1, x: 0, y: 0.5)
+            .shadow(color: Color.redisTypeColor(for: type).opacity(0.25), radius: 1, x: 0, y: 0.5)
     }
 }

@@ -15,14 +15,14 @@ struct RedisConfigView: View {
     let logger = Logger(label: "redis-config-view")
 
     var body: some View {
-        VStack(alignment: .leading, spacing: LiquidGlass.V_SPACING) {
-            HStack(alignment: .center, spacing: LiquidGlass.H_SPACING) {
+        VStack(alignment: .leading, spacing: 6) {
+            HStack(alignment: .center, spacing: 6) {
                 SearchBar(placeholder: "Search config...", onCommit: { viewModel.search($0) })
                 Spacer()
                 Button("Rewrite") { viewModel.rewrite() }
                     .buttonStyle(.bordered)
                     .help("REDIS_CONFIG_REWRITE")
-            }.padding(LiquidGlass.HEADER_PADDING)
+            }.padding(EdgeInsets(top: 4, leading: 0, bottom: 4, trailing: 0))
 
             NTableView(viewModel: viewModel.table) { index in
                 Button {
@@ -33,7 +33,7 @@ struct RedisConfigView: View {
                 .keyboardShortcut("e")
             }
 
-            HStack(alignment: .center, spacing: LiquidGlass.H_SPACING) {
+            HStack(alignment: .center, spacing: 6) {
                 Spacer()
                 Button("Refresh") { viewModel.refresh() }
                     .buttonStyle(.bordered)

@@ -21,7 +21,7 @@ struct MLoading: View {
                     .transition(.opacity.combined(with: .scale(scale: 0.7)))
             }
             Text(loading ? loadingText : text)
-                .font(LiquidGlass.fontBody)
+                .font(.body)
                 .foregroundStyle(loading ? Color.accentColor : Color.primary)
                 .lineLimit(1)
                 .contentTransition(.numericText())

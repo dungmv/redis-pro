@@ -9,7 +9,7 @@ import SwiftUI
 
 struct MIcon: View {
     var icon: String
-    var fontSize: CGFloat = LiquidGlass.fontSizeSM
+    var fontSize: CGFloat = 11
     var disabled: Bool = false
     var action: () -> Void = {}
 
@@ -34,7 +34,7 @@ struct MIcon: View {
                         .strokeBorder(
                             disabled
                             ? Color.clear
-                            : (isHovered ? LiquidGlass.glassStroke : LiquidGlass.glassBorder),
+                            : (isHovered ? Color.primary.opacity(0.18) : Color(NSColor.separatorColor).opacity(0.45)),
                             lineWidth: 0.5
                         )
                 )

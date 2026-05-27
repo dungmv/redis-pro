@@ -25,7 +25,7 @@ struct RedisValueHeaderView: View {
                 value: Binding(get: { viewModel.key }, set: { viewModel.key = $0 })
             )
             .frame(maxWidth: .infinity)
-            .font(LiquidGlass.fontMono)
+            .font(.system(.body, design: .monospaced))
 
             // Type picker
             RedisKeyTypePicker(
@@ -39,7 +39,12 @@ struct RedisValueHeaderView: View {
         }
         .padding(.horizontal, 10)
         .padding(.vertical, 8)
-        .glassToolbar()
+        .background(.thinMaterial)
+        .overlay(alignment: .bottom) {
+            Rectangle()
+                .fill(Color(NSColor.separatorColor))
+                .frame(height: 0.5)
+        }
     }
 
     private var ttlView: some View {

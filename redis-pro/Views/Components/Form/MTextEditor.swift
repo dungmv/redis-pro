@@ -21,7 +21,14 @@ struct MTextEditor: View {
             .focused($isFocused)
             .padding(.horizontal, 6)
             .padding(.vertical, 4)
-            .glassField(cornerRadius: LiquidGlass.radiusXS, isActive: isFocused)
+            .background(
+                RoundedRectangle(cornerRadius: 4)
+                    .fill(Color(NSColor.controlBackgroundColor))
+            )
+            .overlay(
+                RoundedRectangle(cornerRadius: 4)
+                    .stroke(isFocused ? Color.accentColor : Color(NSColor.separatorColor), lineWidth: isFocused ? 1.5 : 0.5)
+            )
     }
 }
 

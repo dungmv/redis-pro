@@ -28,17 +28,13 @@ struct MTextField: View {
         Group {
             if editable {
                 TextField("", text: trimmedBinding, prompt: Text(placeholder ?? "").foregroundColor(.secondary))
-                    .textFieldStyle(.plain)
-                    .font(LiquidGlass.fontBody)
+                    .textFieldStyle(.roundedBorder)
                     .onSubmit { onCommit?() }
                     .focused($isFocused)
-                    .padding(.horizontal, 8)
-                    .padding(.vertical, 5)
-                    .glassField(cornerRadius: LiquidGlass.radiusXS, isActive: isFocused)
             } else {
                 Text(value)
                     .textSelection(.enabled)
-                    .font(LiquidGlass.fontBody)
+                    .font(.body)
                     .frame(maxWidth: .infinity, alignment: .leading)
                     .padding(.horizontal, 8)
                     .padding(.vertical, 5)

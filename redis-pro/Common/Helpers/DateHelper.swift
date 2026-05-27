@@ -30,3 +30,8 @@ final class DateHelper: @unchecked Sendable {
         return dateTimeFormatter.string(from: date)
     }
 }
+
+extension Date {
+    var timestamp: Int { Int(timeIntervalSince1970) }
+    var millis: Int64 { Int64((timeIntervalSince1970 * 1000).rounded()) }
+}

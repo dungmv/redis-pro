@@ -24,7 +24,7 @@ struct RedisListView: View {
             sidebarPanel
             connectionListPanel
         }
-        .glassWindowSurface()
+
         .sheet(isPresented: $showEditSheet) {
             editSheet
         }

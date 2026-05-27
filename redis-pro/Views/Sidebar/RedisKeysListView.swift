@@ -50,7 +50,12 @@ struct RedisKeysListView: View {
         .padding(.horizontal, 8)
         .padding(.top, 8)
         .padding(.bottom, 6)
-        .glassToolbar()
+        .background(.thinMaterial)
+        .overlay(alignment: .bottom) {
+            Rectangle()
+                .fill(Color(NSColor.separatorColor))
+                .frame(height: 0.5)
+        }
     }
 
     private var sidebarFooter: some View {
@@ -83,7 +88,12 @@ struct RedisKeysListView: View {
             DatabasePicker(viewModel: viewModel.database_)
         }
         .frame(height: 30)
-        .glassFooter()
+        .background(.thinMaterial)
+        .overlay(alignment: .top) {
+            Rectangle()
+                .fill(Color(NSColor.separatorColor))
+                .frame(height: 0.5)
+        }
     }
 
     // MARK: - Content
