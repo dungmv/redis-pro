@@ -144,12 +144,21 @@ struct RedisListView: View {
                             ConnectionRow(
                                 model: model,
                                 isSelected: viewModel.table.selectIndex == index,
+                                onConnect: {
+                                    viewModel.connect(index)
+                                },
                                 onEdit: {
                                     viewModel.table.selectionChange(index: index, indexes: [index])
                                     showEditSheet = true
                                 },
-                                onConnect: {
-                                    viewModel.connect(index)
+                                onDuplicate: {
+                                    var copy = model
+                                    copy.id = UUID().uuidString
+                                    copy.name = (model.name.isEmpty ? "New Connection" : model.name) + " Copy"
+                                    viewModel.save(copy)
+                                },
+                                onDelete: {
+                                    viewModel.deleteConfirm(index)
                                 }
                             )
 
@@ -212,8 +221,10 @@ struct RedisListView: View {
 private struct ConnectionRow: View {
     let model: RedisModel
     let isSelected: Bool
-    let onEdit: () -> Void
     let onConnect: () -> Void
+    let onEdit: () -> Void
+    let onDuplicate: () -> Void
+    let onDelete: () -> Void
 
     @State private var isHovered = false
 
@@ -262,6 +273,35 @@ private struct ConnectionRow: View {
         }
         .onTapGesture(count: 2) { onConnect() }
         .onTapGesture(count: 1) { onEdit() }
+        .contextMenu {
+            Button {
+                onConnect()
+            } label: {
+                Label("Connect", systemImage: "bolt.fill")
+            }
+
+            Button {
+                onEdit()
+            } label: {
+                Label("Edit", systemImage: "pencil")
+            }
+
+            Divider()
+
+            Button {
+                onDuplicate()
+            } label: {
+                Label("Duplicate", systemImage: "doc.on.doc")
+            }
+
+            Divider()
+
+            Button(role: .destructive) {
+                onDelete()
+            } label: {
+                Label("Delete", systemImage: "trash")
+            }
+        }
     }
 
     @ViewBuilder

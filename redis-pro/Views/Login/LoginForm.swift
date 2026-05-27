@@ -83,53 +83,34 @@ struct LoginForm: View {
 
     private var footer: some View {
         HStack(spacing: 10) {
-            // Help
-            if !viewModel.loading {
-                Button {
-                    guard let url = URL(string: Const.REPO_URL) else { return }
-                    openURL(url)
-                } label: {
-                    Image(systemName: "questionmark.circle")
+            // Status / loading (left side — always present via Spacer)
+            if viewModel.loading {
+                HStack(spacing: 6) {
+                    ProgressView()
+                        .scaleEffect(0.75)
+                        .frame(width: 14, height: 14)
+                    Text("Connecting…")
+                        .font(.system(size: 12))
                         .foregroundStyle(.secondary)
                 }
-                .buttonStyle(.plain)
-                .help("Open documentation")
+            } else if !viewModel.pingR.isEmpty {
+                Text(viewModel.pingR)
+                    .font(.system(size: 12))
+                    .foregroundStyle(
+                        viewModel.pingR.lowercased().contains("success")
+                        ? AnyShapeStyle(Color.green)
+                        : AnyShapeStyle(Color.secondary)
+                    )
             }
 
-            // Status / loading
-            Group {
-                if viewModel.loading {
-                    HStack(spacing: 6) {
-                        ProgressView()
-                            .scaleEffect(0.75)
-                            .frame(width: 14, height: 14)
-                        Text("Connecting…")
-                            .font(.system(size: 12))
-                            .foregroundStyle(.secondary)
-                    }
-                } else if !viewModel.pingR.isEmpty {
-                    Text(viewModel.pingR)
-                        .font(.system(size: 12))
-                        .foregroundStyle(
-                            viewModel.pingR.lowercased().contains("success")
-                            ? AnyShapeStyle(Color.green)
-                            : AnyShapeStyle(Color.secondary)
-                        )
-                }
-            }
-            .frame(maxWidth: .infinity, alignment: .leading)
+            Spacer() // always pushes buttons to the right
 
-            // Actions
+            // Actions — always pinned right
             Button("Test") { viewModel.testConnect() }
                 .disabled(viewModel.loading)
 
-            Button("Save as New") { viewModel.add() }
-
             Button("Save") { viewModel.save() }
-
-            Button("Connect") { viewModel.connect() }
                 .buttonStyle(.borderedProminent)
-                .disabled(viewModel.loading)
                 .keyboardShortcut(.defaultAction)
         }
         .padding(.horizontal, 16)
