@@ -17,7 +17,6 @@
 		430A09E225C1559400B60DFC /* FormLabel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 430A09E125C1559400B60DFC /* FormLabel.swift */; };
 		430A09E625C155F800B60DFC /* FormItemText.swift in Sources */ = {isa = PBXBuildFile; fileRef = 430A09E525C155F800B60DFC /* FormItemText.swift */; };
 		431266D5261C5C9000FB6B69 /* ButtonTypeEnum.swift in Sources */ = {isa = PBXBuildFile; fileRef = 431266D4261C5C9000FB6B69 /* ButtonTypeEnum.swift */; };
-		431266D8261C66E100FB6B69 /* LiquidGlass.swift in Sources */ = {isa = PBXBuildFile; fileRef = 431266D7261C66E100FB6B69 /* LiquidGlass.swift */; };
 		431266DE261D45C500FB6B69 /* MIcon.swift in Sources */ = {isa = PBXBuildFile; fileRef = 431266DD261D45C500FB6B69 /* MIcon.swift */; };
 		431266E5261D4E2700FB6B69 /* RedisValueView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 431266E4261D4E2700FB6B69 /* RedisValueView.swift */; };
 		431266E8261D4E4100FB6B69 /* RedisValueHeaderView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 431266E7261D4E4100FB6B69 /* RedisValueHeaderView.swift */; };
@@ -190,7 +189,6 @@
 		430A09E125C1559400B60DFC /* FormLabel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FormLabel.swift; sourceTree = "<group>"; };
 		430A09E525C155F800B60DFC /* FormItemText.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FormItemText.swift; sourceTree = "<group>"; };
 		431266D4261C5C9000FB6B69 /* ButtonTypeEnum.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ButtonTypeEnum.swift; sourceTree = "<group>"; };
-		431266D7261C66E100FB6B69 /* LiquidGlass.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LiquidGlass.swift; sourceTree = "<group>"; };
 		431266DD261D45C500FB6B69 /* MIcon.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MIcon.swift; sourceTree = "<group>"; };
 		431266E4261D4E2700FB6B69 /* RedisValueView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RedisValueView.swift; sourceTree = "<group>"; };
 		431266E7261D4E4100FB6B69 /* RedisValueHeaderView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RedisValueHeaderView.swift; sourceTree = "<group>"; };
@@ -498,7 +496,6 @@
 				4301C84326BBE66F00C08E19 /* SSH */,
 				43CD286F2670C3BC00E11876 /* Settings */,
 				62D1BA9428435C0C00F41CAD /* Helpers */,
-				431266D7261C66E100FB6B69 /* LiquidGlass.swift */,
 				A30000010000000000000001 /* JSONHighlighter.swift */,
 				4373C50025C2E75B002B700E /* BizError.swift */,
 				4397288B2643E43800803BE9 /* Const.swift */,
@@ -921,7 +918,6 @@
 				62D741B5284B67B00049AB3C /* RedisSystemStore.swift in Sources */,
 				43CD28B6267C7CF400E11876 /* Objects.swift in Sources */,
 				4314A34C26258A4300053FEE /* Page.swift in Sources */,
-				431266D8261C66E100FB6B69 /* LiquidGlass.swift in Sources */,
 				A30000020000000000000002 /* JSONHighlighter.swift in Sources */,
 				62283B282B5283C100782720 /* ReadTimeoutHandler.swift in Sources */,
 				CE3A187D282525AB00988515 /* KeyStore.swift in Sources */,
