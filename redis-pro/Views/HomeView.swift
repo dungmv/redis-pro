@@ -12,6 +12,8 @@ import Logging
 struct HomeView: View {
     private static let logger = Logger(label: "home-view")
     @State var viewModel: AppViewModel
+    @Environment(\.openWindow) private var openWindow
+    @Environment(\.dismiss) private var dismiss
 
     var body: some View {
         RedisKeysListView(viewModel: viewModel.redisKeys)
@@ -22,6 +24,13 @@ struct HomeView: View {
             .onDisappear {
                 Self.logger.info("redis pro home view destroy...")
                 viewModel.onClose()
+            }
+            .onChange(of: viewModel.isConnect) { oldValue, newValue in
+                if !newValue {
+                    // Disconnected: Open Login window and close this Workspace window
+                    openWindow(id: "login-window")
+                    dismiss()
+                }
             }
             // 设置window标题
             .navigationTitle(viewModel.title)

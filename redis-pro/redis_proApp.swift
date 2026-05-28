@@ -28,12 +28,21 @@ struct redis_proApp: App {
 
 
     var body: some Scene {
-        WindowGroup {
-            if let appVM = rootViewModel.window(id: mainWindowId) {
+        Window("Login", id: "login-window") {
+            if let appVM = rootViewModel.windows.first {
                 IndexView(viewModel: appVM)
                     .preferredColorScheme(preferredColorScheme)
             }
         }
+        .defaultSize(width: 600, height: 420)
+
+        WindowGroup("Workspace", id: "workspace-window", for: String.self) { $windowId in
+            if let id = windowId, let appVM = rootViewModel.window(id: id) {
+                HomeView(viewModel: appVM)
+                    .preferredColorScheme(preferredColorScheme)
+            }
+        }
+        .defaultSize(width: 1000, height: 650)
         .commands {
             CommandGroup(replacing: CommandGroupPlacement.toolbar) {
                 Button(action: openNewWindow) {

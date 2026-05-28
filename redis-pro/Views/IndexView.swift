@@ -13,12 +13,17 @@ struct IndexView: View {
     private static let logger = Logger(label: "index-view")
 
     @State var viewModel: AppViewModel
+    @Environment(\.openWindow) private var openWindow
+    @Environment(\.dismiss) private var dismiss
 
     var body: some View {
-        if viewModel.isConnect {
-            HomeView(viewModel: viewModel)
-        } else {
-            LoginView(viewModel: viewModel)
-        }
+        LoginView(viewModel: viewModel)
+            .onChange(of: viewModel.isConnect) { oldValue, newValue in
+                if newValue {
+                    // Connected: Open Workspace window and close this Login window
+                    openWindow(id: "workspace-window", value: viewModel.id)
+                    dismiss()
+                }
+            }
     }
 }
