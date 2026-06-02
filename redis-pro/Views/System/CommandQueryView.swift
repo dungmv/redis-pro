@@ -86,101 +86,134 @@ struct CommandQueryView: View {
     @State var viewModel: CommandQueryViewModel
     
     var body: some View {
-        VSplitView {
-            VStack(alignment: .leading, spacing: 0) {
-                CommandQueryTextEditor(text: $viewModel.queryText, selectedCommand: $viewModel.selectedCommand) { cmd in
-                    viewModel.executeCommand(cmd)
-                }
-                .background(Color(NSColor.textBackgroundColor))
-            }
-            .frame(minHeight: 120, maxHeight: .infinity)
-            
-            VStack(alignment: .leading, spacing: 0) {
-                // Divider / status bar
-                HStack(spacing: 8) {
-                    Image(systemName: "terminal")
-                        .font(.system(size: 12, weight: .medium))
-                        .foregroundStyle(.secondary)
-                    
-                    Text(viewModel.selectedCommand.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ? "0 commands selected" : "1 command selected")
-                        .font(.system(.subheadline))
-                        .foregroundStyle(.secondary)
-                    
-                    Spacer()
-                    
-                    Button(action: {
-                        viewModel.executeCommand(viewModel.selectedCommand)
-                    }) {
-                        HStack(spacing: 4) {
-                            Image(systemName: "play.fill")
-                                .font(.system(size: 10))
-                            Text("Execute Selected")
-                            Text("⌘↩")
-                                .font(.system(.caption, design: .monospaced))
-                                .opacity(0.8)
-                        }
+        HSplitView {
+            // ── Left: Editor + Console ──────────────────────────────────
+            VSplitView {
+                VStack(alignment: .leading, spacing: 0) {
+                    CommandQueryTextEditor(text: $viewModel.queryText, selectedCommand: $viewModel.selectedCommand) { cmd in
+                        viewModel.executeCommand(cmd)
                     }
-                    .keyboardShortcut(.return, modifiers: .command)
-                    .disabled(viewModel.selectedCommand.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty || viewModel.isExecuting)
+                    .background(Color(NSColor.textBackgroundColor))
                 }
-                .padding(.horizontal, 12)
-                .padding(.vertical, 6)
-                .background(.thinMaterial)
-                .overlay(alignment: .bottom) {
-                    Rectangle()
-                        .fill(Color(NSColor.separatorColor))
-                        .frame(height: 0.5)
-                }
+                .frame(minHeight: 120, maxHeight: .infinity)
                 
-                // Console Output
-                ScrollView {
-                    ScrollViewReader { proxy in
-                        VStack(alignment: .leading, spacing: 4) {
-                            Text(viewModel.outputText.isEmpty ? "Console ready. Type a command and press Cmd+Enter to execute." : viewModel.outputText)
-                                .font(.system(.body, design: .monospaced))
-                                .foregroundStyle(viewModel.outputText.isEmpty ? .secondary : .primary)
-                                .textSelection(.enabled)
-                                .frame(maxWidth: .infinity, alignment: .leading)
-                                .padding(10)
-                                .id("output-bottom")
+                VStack(alignment: .leading, spacing: 0) {
+                    // Status bar
+                    HStack(spacing: 8) {
+                        Image(systemName: "terminal")
+                            .font(.system(size: 12, weight: .medium))
+                            .foregroundStyle(.secondary)
+                        
+                        Text(viewModel.selectedCommand.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ? "0 commands selected" : "1 command selected")
+                            .font(.system(.subheadline))
+                            .foregroundStyle(.secondary)
+                        
+                        Spacer()
+                        
+                        Button(action: {
+                            viewModel.executeCommand(viewModel.selectedCommand)
+                        }) {
+                            HStack(spacing: 4) {
+                                Image(systemName: "play.fill")
+                                    .font(.system(size: 10))
+                                Text("Execute Selected")
+                                Text("⌘↩")
+                                    .font(.system(.caption, design: .monospaced))
+                                    .opacity(0.8)
+                            }
                         }
-                        .onChange(of: viewModel.outputText) { _, _ in
-                            withAnimation {
-                                proxy.scrollTo("output-bottom", anchor: .bottom)
+                        .keyboardShortcut(.return, modifiers: .command)
+                        .disabled(viewModel.selectedCommand.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty || viewModel.isExecuting)
+                        
+                        Divider().frame(height: 16)
+                        
+                        // Toggle docs sidebar button
+                        Button(action: {
+                            withAnimation(.easeInOut(duration: 0.2)) {
+                                viewModel.showDocsSidebar.toggle()
+                            }
+                        }) {
+                            Image(systemName: "sidebar.right")
+                                .font(.system(size: 13))
+                                .foregroundStyle(viewModel.showDocsSidebar ? Color.accentColor : Color.secondary)
+                        }
+                        .buttonStyle(.plain)
+                        .help(viewModel.showDocsSidebar ? "Hide Command Docs" : "Show Command Docs")
+                    }
+                    .padding(.horizontal, 12)
+                    .padding(.vertical, 6)
+                    .background(.thinMaterial)
+                    .overlay(alignment: .bottom) {
+                        Rectangle()
+                            .fill(Color(NSColor.separatorColor))
+                            .frame(height: 0.5)
+                    }
+                    
+                    // Console Output
+                    ScrollView {
+                        ScrollViewReader { proxy in
+                            VStack(alignment: .leading, spacing: 4) {
+                                Text(viewModel.outputText.isEmpty ? "Console ready. Type a command and press Cmd+Enter to execute." : viewModel.outputText)
+                                    .font(.system(.body, design: .monospaced))
+                                    .foregroundStyle(viewModel.outputText.isEmpty ? .secondary : .primary)
+                                    .textSelection(.enabled)
+                                    .frame(maxWidth: .infinity, alignment: .leading)
+                                    .padding(10)
+                                    .id("output-bottom")
+                            }
+                            .onChange(of: viewModel.outputText) { _, _ in
+                                withAnimation {
+                                    proxy.scrollTo("output-bottom", anchor: .bottom)
+                                }
                             }
                         }
                     }
-                }
-                .background(Color(NSColor.textBackgroundColor))
-                
-                // Bottom actions
-                Divider()
-                HStack {
-                    Button(action: {
-                        viewModel.clearOutput()
-                    }) {
-                        Label("Clear Console", systemImage: "trash")
-                            .font(.system(.subheadline))
-                    }
-                    .buttonStyle(.plain)
-                    .help("Clear Console Output")
+                    .background(Color(NSColor.textBackgroundColor))
                     
-                    Spacer()
-                    
-                    Button(action: {
-                        exportConsole()
-                    }) {
-                        Label("Export...", systemImage: "square.and.arrow.up")
-                            .font(.system(.subheadline))
+                    // Bottom actions
+                    Divider()
+                    HStack {
+                        Button(action: {
+                            viewModel.clearOutput()
+                        }) {
+                            Label("Clear Console", systemImage: "trash")
+                                .font(.system(.subheadline))
+                        }
+                        .buttonStyle(.plain)
+                        .help("Clear Console Output")
+                        
+                        Spacer()
+                        
+                        Button(action: {
+                            exportConsole()
+                        }) {
+                            Label("Export...", systemImage: "square.and.arrow.up")
+                                .font(.system(.subheadline))
+                        }
+                        .buttonStyle(.plain)
+                        .disabled(viewModel.outputText.isEmpty)
                     }
-                    .buttonStyle(.plain)
-                    .disabled(viewModel.outputText.isEmpty)
+                    .padding(.horizontal, 12)
+                    .padding(.vertical, 8)
+                    .background(.thinMaterial)
                 }
-                .padding(.horizontal, 12)
-                .padding(.vertical, 8)
-                .background(.thinMaterial)
+                .frame(minHeight: 180, maxHeight: .infinity)
             }
-            .frame(minHeight: 180, maxHeight: .infinity)
+            .frame(minWidth: 340)
+            
+            // ── Right: Command Docs Sidebar ─────────────────────────────
+            if viewModel.showDocsSidebar {
+                CommandDocSidebarView(viewModel: viewModel)
+                    .frame(minWidth: 300, idealWidth: 380)
+            }
+        }
+        .onChange(of: viewModel.currentDocCommand) { _, newCmd in
+            viewModel.fetchCommandDocs(newCmd)
+        }
+        .onAppear {
+            if !viewModel.currentDocCommand.isEmpty {
+                viewModel.fetchCommandDocs(viewModel.currentDocCommand)
+            }
         }
     }
     
@@ -199,6 +232,250 @@ struct CommandQueryView: View {
                 }
             }
         }
+    }
+}
+
+// MARK: - Command Docs Sidebar
+struct CommandDocSidebarView: View {
+    let viewModel: CommandQueryViewModel
+    
+    private var docsPageURL: URL? {
+        let base = "https://redis.io/docs/latest/commands/"
+        let cmd = viewModel.currentDocCommand
+        return URL(string: cmd.isEmpty ? base : base + cmd)
+    }
+    
+    var body: some View {
+        VStack(spacing: 0) {
+            // Header
+            HStack(spacing: 6) {
+                Image(systemName: "book.closed")
+                    .font(.system(size: 11, weight: .medium))
+                    .foregroundStyle(.secondary)
+                Text(viewModel.currentDocCommand.isEmpty
+                     ? "Command Docs"
+                     : viewModel.currentDocCommand.uppercased())
+                    .font(.system(.subheadline, weight: .semibold))
+                    .foregroundStyle(viewModel.currentDocCommand.isEmpty ? .secondary : .primary)
+                Spacer()
+                if let url = docsPageURL {
+                    Link(destination: url) {
+                        Image(systemName: "arrow.up.right.square")
+                            .font(.system(size: 11))
+                            .foregroundStyle(.secondary)
+                    }
+                    .help("Open docs in browser")
+                }
+            }
+            .padding(.horizontal, 10)
+            .padding(.vertical, 7)
+            .background(.thinMaterial)
+            .overlay(alignment: .bottom) {
+                Rectangle()
+                    .fill(Color(NSColor.separatorColor))
+                    .frame(height: 0.5)
+            }
+            
+            // Content
+            Group {
+                if viewModel.isLoadingDoc {
+                    VStack(spacing: 8) {
+                        ProgressView()
+                            .progressViewStyle(.circular)
+                            .controlSize(.small)
+                        Text("Loading docs...")
+                            .font(.system(.caption))
+                            .foregroundStyle(.secondary)
+                    }
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+                } else if let doc = viewModel.commandDoc {
+                    CommandDocContentView(doc: doc)
+                } else if let err = viewModel.docError {
+                    VStack(spacing: 8) {
+                        Image(systemName: "exclamationmark.circle")
+                            .font(.system(size: 26))
+                            .foregroundStyle(.secondary)
+                        Text(err)
+                            .font(.system(.callout))
+                            .foregroundStyle(.secondary)
+                            .multilineTextAlignment(.center)
+                    }
+                    .padding()
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+                } else {
+                    VStack(spacing: 8) {
+                        Image(systemName: "text.cursor")
+                            .font(.system(size: 30))
+                            .foregroundStyle(.secondary.opacity(0.4))
+                        Text("Place cursor on a command\nto view its documentation")
+                            .font(.system(.callout))
+                            .foregroundStyle(.secondary)
+                            .multilineTextAlignment(.center)
+                    }
+                    .padding()
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+                }
+            }
+        }
+        .background(Color(NSColor.windowBackgroundColor))
+    }
+}
+
+// MARK: - Native doc content
+struct CommandDocContentView: View {
+    let doc: CommandDoc
+    
+    var body: some View {
+        ScrollView {
+            VStack(alignment: .leading, spacing: 16) {
+                
+                // Command name
+                Text(doc.name.uppercased())
+                    .font(.system(.title2, design: .monospaced, weight: .bold))
+                
+                // Deprecated badge
+                if doc.docFlags.contains("deprecated") {
+                    Label("Deprecated", systemImage: "exclamationmark.triangle.fill")
+                        .font(.system(.caption, weight: .medium))
+                        .foregroundStyle(.orange)
+                        .padding(.horizontal, 8).padding(.vertical, 4)
+                        .background(Color.orange.opacity(0.12))
+                        .clipShape(RoundedRectangle(cornerRadius: 5))
+                }
+                
+                // Summary
+                if !doc.summary.isEmpty {
+                    Text(doc.summary)
+                        .font(.system(.body))
+                        .foregroundStyle(.secondary)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+                
+                // Group + Since badges
+                HStack(spacing: 6) {
+                    if !doc.group.isEmpty {
+                        Text(doc.group.replacingOccurrences(of: "_", with: " ").capitalized)
+                            .font(.system(.caption2, weight: .semibold))
+                            .foregroundStyle(Color.accentColor)
+                            .padding(.horizontal, 6).padding(.vertical, 3)
+                            .background(Color.accentColor.opacity(0.12))
+                            .clipShape(RoundedRectangle(cornerRadius: 4))
+                    }
+                    if !doc.since.isEmpty {
+                        Text("Since v\(doc.since)")
+                            .font(.system(.caption2, weight: .medium))
+                            .foregroundStyle(.secondary)
+                            .padding(.horizontal, 6).padding(.vertical, 3)
+                            .background(Color(NSColor.controlBackgroundColor))
+                            .clipShape(RoundedRectangle(cornerRadius: 4))
+                    }
+                }
+                
+                // Complexity
+                if !doc.complexity.isEmpty {
+                    VStack(alignment: .leading, spacing: 5) {
+                        Label("Complexity", systemImage: "clock")
+                            .font(.system(.caption, weight: .semibold))
+                            .foregroundStyle(.secondary)
+                        Text(doc.complexity)
+                            .font(.system(.caption, design: .monospaced))
+                            .fixedSize(horizontal: false, vertical: true)
+                    }
+                    .padding(10)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .background(Color(NSColor.controlBackgroundColor))
+                    .clipShape(RoundedRectangle(cornerRadius: 7))
+                }
+                
+                // Arguments
+                if !doc.arguments.isEmpty {
+                    VStack(alignment: .leading, spacing: 6) {
+                        Text("ARGUMENTS")
+                            .font(.system(.caption2, weight: .bold))
+                            .foregroundStyle(.secondary)
+                            .kerning(1)
+                        ForEach(doc.arguments) { arg in
+                            CommandArgRow(arg: arg, indent: 0)
+                        }
+                    }
+                }
+            }
+            .padding(14)
+            .frame(maxWidth: .infinity, alignment: .leading)
+        }
+    }
+}
+
+// MARK: - Argument row
+struct CommandArgRow: View {
+    let arg: CommandArgDoc
+    let indent: Int
+    
+    private var typeColor: Color {
+        switch arg.type {
+        case "key":        return .green
+        case "integer", "double": return .orange
+        case "pure-token": return Color.accentColor
+        case "oneof":      return .purple
+        case "block":      return .indigo
+        default:           return .secondary
+        }
+    }
+    
+    var body: some View {
+        VStack(alignment: .leading, spacing: 4) {
+            HStack(spacing: 6) {
+                if let tok = arg.token {
+                    Text(tok)
+                        .font(.system(.caption, design: .monospaced, weight: .bold))
+                        .foregroundStyle(Color.accentColor)
+                }
+                Text(arg.displayText.isEmpty ? arg.name : arg.displayText)
+                    .font(.system(.caption, design: .monospaced))
+                Spacer()
+                Text(arg.type)
+                    .font(.system(.caption2))
+                    .foregroundStyle(typeColor)
+                    .padding(.horizontal, 5).padding(.vertical, 2)
+                    .background(typeColor.opacity(0.1))
+                    .clipShape(RoundedRectangle(cornerRadius: 3))
+            }
+            
+            if !arg.flags.isEmpty {
+                HStack(spacing: 4) {
+                    ForEach(arg.flags, id: \.self) { flag in
+                        Text(flag)
+                            .font(.system(.caption2))
+                            .foregroundStyle(.secondary)
+                            .padding(.horizontal, 4).padding(.vertical, 1)
+                            .overlay {
+                                RoundedRectangle(cornerRadius: 3)
+                                    .stroke(Color.secondary.opacity(0.35), lineWidth: 0.8)
+                            }
+                    }
+                }
+            }
+            
+            // Nested args (oneof / block)
+            if !arg.arguments.isEmpty {
+                VStack(alignment: .leading, spacing: 2) {
+                    ForEach(arg.arguments) { nested in
+                        HStack(alignment: .top, spacing: 5) {
+                            Rectangle()
+                                .fill(Color.secondary.opacity(0.25))
+                                .frame(width: 1.5)
+                                .padding(.leading, 4)
+                            CommandArgRow(arg: nested, indent: indent + 1)
+                        }
+                    }
+                }
+                .padding(.leading, 4)
+            }
+        }
+        .padding(.horizontal, 10).padding(.vertical, 7)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(Color(NSColor.controlBackgroundColor).opacity(indent == 0 ? 0.6 : 0.35))
+        .clipShape(RoundedRectangle(cornerRadius: 6))
     }
 }
 

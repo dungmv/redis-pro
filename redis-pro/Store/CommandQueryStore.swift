@@ -19,6 +19,19 @@ final class CommandQueryViewModel {
     var selectedCommand: String = ""
     var outputText: String = ""
     var isExecuting: Bool = false
+    var showDocsSidebar: Bool = true
+    var commandDoc: CommandDoc? = nil
+    var isLoadingDoc: Bool = false
+    var docError: String? = nil
+    private var lastFetchedDocCommand: String = ""
+    
+    /// The Redis command name currently under cursor/selection, used to load docs.
+    var currentDocCommand: String {
+        let trimmed = selectedCommand.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmed.isEmpty else { return "" }
+        // Take the first token (the command name)
+        return trimmed.components(separatedBy: .whitespaces).first?.lowercased() ?? ""
+    }
     
     private let redisInstance: RedisInstanceModel
     
@@ -107,6 +120,116 @@ final class CommandQueryViewModel {
             return "\(token)"
         }
     }
+    
+    // MARK: - Command Docs
+    func fetchCommandDocs(_ command: String) {
+        let cmd = command.lowercased().trimmingCharacters(in: .whitespaces)
+        guard !cmd.isEmpty else {
+            commandDoc = nil
+            docError = nil
+            lastFetchedDocCommand = ""
+            return
+        }
+        guard cmd != lastFetchedDocCommand else { return }
+        lastFetchedDocCommand = cmd
+        isLoadingDoc = true
+        docError = nil
+        commandDoc = nil
+        
+        Task {
+            do {
+                let client = try await redisInstance.getClient()
+                let response: RESPToken? = try await client.send("COMMAND", args: ["DOCS", cmd])
+                if let response, let doc = parseCommandDoc(cmd, from: response) {
+                    self.commandDoc = doc
+                } else {
+                    self.docError = "No documentation found for \"\(cmd.uppercased())\""
+                }
+            } catch {
+                self.docError = "Failed to load docs: \(error.localizedDescription)"
+            }
+            self.isLoadingDoc = false
+        }
+    }
+    
+    private func respTokenToString(_ token: RESPToken) -> String {
+        switch token.value {
+        case .simpleString(let buf), .bulkString(let buf): return String(buffer: buf)
+        case .number(let i):  return String(i)
+        case .double(let d):  return String(d)
+        case .boolean(let b): return b ? "true" : "false"
+        case .null:           return ""
+        default:              return ""
+        }
+    }
+    
+    private func respTokenToMap(_ token: RESPToken) -> [String: RESPToken] {
+        var result: [String: RESPToken] = [:]
+        if let map = try? token.decode(as: RESPToken.Map.self) {
+            for entry in map {
+                result[respTokenToString(entry.key)] = entry.value
+            }
+        } else if let arr = try? token.decode(as: RESPToken.Array.self) {
+            var items = Array(arr)
+            while items.count >= 2 {
+                result[respTokenToString(items[0])] = items[1]
+                items.removeFirst(2)
+            }
+        }
+        return result
+    }
+    
+    private func parseCommandDoc(_ cmd: String, from token: RESPToken) -> CommandDoc? {
+        let outer = respTokenToMap(token)
+        guard let docToken = outer[cmd] else { return nil }
+        let docMap = respTokenToMap(docToken)
+        guard !docMap.isEmpty else { return nil }
+        
+        let summary    = docMap["summary"].map    { respTokenToString($0) } ?? ""
+        let since      = docMap["since"].map      { respTokenToString($0) } ?? ""
+        let group      = docMap["group"].map      { respTokenToString($0) } ?? ""
+        let complexity = docMap["complexity"].map { respTokenToString($0) } ?? ""
+        
+        var arguments: [CommandArgDoc] = []
+        if let argsToken = docMap["arguments"],
+           let argsArr = try? argsToken.decode(as: RESPToken.Array.self) {
+            arguments = Array(argsArr).compactMap { parseArgDoc($0) }
+        }
+        
+        var docFlags: [String] = []
+        if let flagsToken = docMap["doc_flags"],
+           let flagsArr = try? flagsToken.decode(as: RESPToken.Array.self) {
+            docFlags = Array(flagsArr).map { respTokenToString($0) }
+        }
+        
+        return CommandDoc(name: cmd, summary: summary, since: since,
+                         group: group, complexity: complexity,
+                         arguments: arguments, docFlags: docFlags)
+    }
+    
+    private func parseArgDoc(_ token: RESPToken) -> CommandArgDoc? {
+        let map = respTokenToMap(token)
+        let name        = map["name"].map        { respTokenToString($0) } ?? ""
+        guard !name.isEmpty else { return nil }
+        let displayText = map["display_text"].map { respTokenToString($0) } ?? name
+        let type        = map["type"].map        { respTokenToString($0) } ?? ""
+        let argToken    = map["token"].map       { respTokenToString($0) }
+        
+        var flags: [String] = []
+        if let flagsToken = map["flags"],
+           let flagsArr = try? flagsToken.decode(as: RESPToken.Array.self) {
+            flags = Array(flagsArr).map { respTokenToString($0) }
+        }
+        
+        var nestedArgs: [CommandArgDoc] = []
+        if let nestedToken = map["arguments"],
+           let nestedArr = try? nestedToken.decode(as: RESPToken.Array.self) {
+            nestedArgs = Array(nestedArr).compactMap { parseArgDoc($0) }
+        }
+        
+        return CommandArgDoc(name: name, displayText: displayText, type: type,
+                            flags: flags, token: argToken, arguments: nestedArgs)
+    }
 }
 
 struct RedisCommandParser {
@@ -160,4 +283,26 @@ struct RedisCommandParser {
         let cmd = args.removeFirst()
         return (cmd, args)
     }
+}
+
+// MARK: - Command Doc Models
+
+struct CommandDoc {
+    let name: String
+    let summary: String
+    let since: String
+    let group: String
+    let complexity: String
+    let arguments: [CommandArgDoc]
+    let docFlags: [String]
+}
+
+struct CommandArgDoc: Identifiable {
+    let id = UUID()
+    let name: String
+    let displayText: String
+    let type: String
+    let flags: [String]
+    let token: String?
+    let arguments: [CommandArgDoc]
 }
