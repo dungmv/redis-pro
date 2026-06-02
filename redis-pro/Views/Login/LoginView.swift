@@ -141,36 +141,34 @@ struct LoginView: View {
             if favoriteViewModel.table.datasource.isEmpty {
                 emptyState
             } else {
-                ScrollView {
-                    LazyVStack(spacing: 0) {
-                        ForEach(
-                            Array(favoriteViewModel.table.datasource.enumerated()),
-                            id: \.offset
-                        ) { index, model in
-                            ConnectionRow(
-                                model: model,
-                                isSelected: favoriteViewModel.table.selectIndex == index,
-                                onConnect: {
-                                    favoriteViewModel.connect(index)
-                                },
-                                onEdit: {
-                                    favoriteViewModel.table.selectionChange(index: index, indexes: [index])
-                                    showEditSheet = true
-                                },
-                                onDuplicate: {
-                                    var copy = model
-                                    copy.id = UUID().uuidString
-                                    copy.name = (model.name.isEmpty ? "New Connection" : model.name) + " Copy"
-                                    favoriteViewModel.save(copy)
-                                },
-                                onDelete: {
-                                    favoriteViewModel.deleteConfirm(index)
-                                }
-                            )
-                        }
+                let selection = Binding<Int>(
+                    get: { favoriteViewModel.table.selectIndex },
+                    set: { index in
+                        favoriteViewModel.table.selectionChange(index: index, indexes: index >= 0 ? [index] : [])
                     }
-                    .padding(.vertical, 6)
-                }
+                )
+
+                ConnectionTableView(
+                    datasource: favoriteViewModel.table.datasource,
+                    selectIndex: selection,
+                    onConnect: { index in
+                        favoriteViewModel.connect(index)
+                    },
+                    onEdit: { index in
+                        favoriteViewModel.table.selectionChange(index: index, indexes: [index])
+                        showEditSheet = true
+                    },
+                    onDuplicate: { index in
+                        let model = favoriteViewModel.table.datasource[index]
+                        var copy = model
+                        copy.id = UUID().uuidString
+                        copy.name = (model.name.isEmpty ? "New Connection" : model.name) + " Copy"
+                        favoriteViewModel.save(copy)
+                    },
+                    onDelete: { index in
+                        favoriteViewModel.deleteConfirm(index)
+                    }
+                )
             }
         }
         .frame(minWidth: 380, maxWidth: .infinity, maxHeight: .infinity)
@@ -220,13 +218,6 @@ struct LoginView: View {
 
 private struct ConnectionRow: View {
     let model: RedisModel
-    let isSelected: Bool
-    let onConnect: () -> Void
-    let onEdit: () -> Void
-    let onDuplicate: () -> Void
-    let onDelete: () -> Void
-
-    @State private var isHovered = false
 
     var body: some View {
         HStack(spacing: 12) {
@@ -237,7 +228,6 @@ private struct ConnectionRow: View {
             VStack(alignment: .leading, spacing: 3) {
                 Text(model.name.isEmpty ? "New Connection" : model.name)
                     .font(.system(size: 13, weight: .medium))
-                    .foregroundStyle(.primary)
                     .lineLimit(1)
 
                 Text("\(model.host):\(model.port)")
@@ -247,61 +237,9 @@ private struct ConnectionRow: View {
             }
 
             Spacer(minLength: 8)
-
-            // Action buttons (visible on hover or when selected)
-            if isHovered || isSelected {
-                HStack(spacing: 6) {
-                    Button("Edit") { onEdit() }
-                        .buttonStyle(.bordered)
-                        .controlSize(.small)
-
-                    Button("Connect") { onConnect() }
-                        .buttonStyle(.borderedProminent)
-                        .controlSize(.small)
-                }
-                .transition(.opacity.combined(with: .scale(scale: 0.95)))
-            }
         }
-        .padding(.horizontal, 16)
-        .padding(.vertical, 10)
-        .background(rowBackground)
-        .contentShape(Rectangle())
-        .onHover { inside in
-            withAnimation(.easeOut(duration: 0.12)) {
-                isHovered = inside
-            }
-        }
-        .onTapGesture(count: 2) { onConnect() }
-        .onTapGesture(count: 1) { onEdit() }
-        .contextMenu {
-            Button {
-                onConnect()
-            } label: {
-                Label("Connect", systemImage: "bolt.fill")
-            }
-
-            Button {
-                onEdit()
-            } label: {
-                Label("Edit", systemImage: "pencil")
-            }
-
-            Divider()
-
-            Button {
-                onDuplicate()
-            } label: {
-                Label("Duplicate", systemImage: "doc.on.doc")
-            }
-
-            Divider()
-
-            Button(role: .destructive) {
-                onDelete()
-            } label: {
-                Label("Delete", systemImage: "trash")
-            }
-        }
+        .padding(.horizontal, 8)
+        .padding(.vertical, 6)
     }
 
     @ViewBuilder
@@ -317,17 +255,6 @@ private struct ConnectionRow: View {
         }
     }
 
-    @ViewBuilder
-    private var rowBackground: some View {
-        if isSelected {
-            Color.accentColor.opacity(0.08)
-        } else if isHovered {
-            Color.primary.opacity(0.04)
-        } else {
-            Color.clear
-        }
-    }
-
     private var typeIconName: String {
         model.connectionType == RedisConnectionTypeEnum.SSH.rawValue
             ? "bolt.horizontal"
@@ -338,5 +265,170 @@ private struct ConnectionRow: View {
         model.connectionType == RedisConnectionTypeEnum.SSH.rawValue
             ? Color(red: 0.98, green: 0.62, blue: 0.22)
             : Color(red: 0.20, green: 0.74, blue: 0.40)
+    }
+}
+
+// MARK: - Connection Table View (NSTableView wrapper)
+
+private struct ConnectionTableView: NSViewRepresentable {
+    let datasource: [RedisModel]
+    @Binding var selectIndex: Int
+    let onConnect: (Int) -> Void
+    let onEdit: (Int) -> Void
+    let onDuplicate: (Int) -> Void
+    let onDelete: (Int) -> Void
+
+    func makeNSView(context: Context) -> NSScrollView {
+        let scrollView = NSScrollView()
+        scrollView.hasVerticalScroller = true
+        scrollView.autohidesScrollers = true
+        scrollView.drawsBackground = false
+        scrollView.backgroundColor = .clear
+
+        let tableView = NSTableView()
+        tableView.headerView = nil
+        tableView.backgroundColor = .clear
+        tableView.style = .plain
+        tableView.usesAlternatingRowBackgroundColors = false
+        tableView.columnAutoresizingStyle = .firstColumnOnlyAutoresizingStyle
+        
+        let column = NSTableColumn(identifier: NSUserInterfaceItemIdentifier("ConnectionColumn"))
+        column.resizingMask = .autoresizingMask
+        tableView.addTableColumn(column)
+
+        tableView.delegate = context.coordinator
+        tableView.dataSource = context.coordinator
+        tableView.doubleAction = #selector(Coordinator.doubleClickRow(_:))
+        tableView.target = context.coordinator
+
+        // Context Menu
+        let menu = NSMenu()
+        
+        let connectItem = NSMenuItem(title: "Connect", action: #selector(Coordinator.connectMenuAction(_:)), keyEquivalent: "")
+        connectItem.target = context.coordinator
+        menu.addItem(connectItem)
+        
+        let editItem = NSMenuItem(title: "Edit", action: #selector(Coordinator.editMenuAction(_:)), keyEquivalent: "")
+        editItem.target = context.coordinator
+        menu.addItem(editItem)
+        
+        menu.addItem(NSMenuItem.separator())
+        
+        let duplicateItem = NSMenuItem(title: "Duplicate", action: #selector(Coordinator.duplicateMenuAction(_:)), keyEquivalent: "")
+        duplicateItem.target = context.coordinator
+        menu.addItem(duplicateItem)
+        
+        menu.addItem(NSMenuItem.separator())
+        
+        let deleteItem = NSMenuItem(title: "Delete", action: #selector(Coordinator.deleteMenuAction(_:)), keyEquivalent: "")
+        deleteItem.target = context.coordinator
+        menu.addItem(deleteItem)
+        
+        tableView.menu = menu
+
+        scrollView.documentView = tableView
+        return scrollView
+    }
+
+    func updateNSView(_ nsView: NSScrollView, context: Context) {
+        guard let tableView = nsView.documentView as? NSTableView else { return }
+        
+        context.coordinator.parent = self
+        context.coordinator.datasource = datasource
+        
+        tableView.reloadData()
+
+        if selectIndex >= 0 && selectIndex < datasource.count {
+            if tableView.selectedRow != selectIndex {
+                tableView.selectRowIndexes(IndexSet(integer: selectIndex), byExtendingSelection: false)
+            }
+        } else {
+            tableView.deselectAll(nil)
+        }
+    }
+
+    func makeCoordinator() -> Coordinator {
+        Coordinator(self)
+    }
+
+    class Coordinator: NSObject, NSTableViewDelegate, NSTableViewDataSource, NSMenuItemValidation {
+        var parent: ConnectionTableView
+        var datasource: [RedisModel]
+        weak var tableView: NSTableView?
+
+        init(_ parent: ConnectionTableView) {
+            self.parent = parent
+            self.datasource = parent.datasource
+        }
+
+        func numberOfRows(in tableView: NSTableView) -> Int {
+            datasource.count
+        }
+
+        func tableView(_ tableView: NSTableView, viewFor tableColumn: NSTableColumn?, row: Int) -> NSView? {
+            self.tableView = tableView
+            guard row >= 0 && row < datasource.count else { return nil }
+            let model = datasource[row]
+            
+            let identifier = NSUserInterfaceItemIdentifier("ConnectionCell")
+            var hostingView = tableView.makeView(withIdentifier: identifier, owner: self) as? NSHostingView<ConnectionRow>
+
+            let cellView = ConnectionRow(model: model)
+
+            if let hostingView = hostingView {
+                hostingView.rootView = cellView
+                return hostingView
+            } else {
+                let newHostingView = NSHostingView(rootView: cellView)
+                newHostingView.identifier = identifier
+                return newHostingView
+            }
+        }
+
+        func tableView(_ tableView: NSTableView, heightOfRow row: Int) -> CGFloat {
+            return 50
+        }
+
+        func tableViewSelectionDidChange(_ notification: Notification) {
+            guard let tableView = notification.object as? NSTableView else { return }
+            let selectedRow = tableView.selectedRow
+            DispatchQueue.main.async {
+                if self.parent.selectIndex != selectedRow {
+                    self.parent.selectIndex = selectedRow
+                }
+            }
+        }
+
+        @objc func doubleClickRow(_ sender: AnyObject) {
+            guard let tableView = sender as? NSTableView else { return }
+            let clickedRow = tableView.clickedRow
+            guard clickedRow >= 0 && clickedRow < datasource.count else { return }
+            parent.onConnect(clickedRow)
+        }
+
+        @objc func connectMenuAction(_ sender: AnyObject) {
+            guard let clickedRow = tableView?.clickedRow, clickedRow >= 0 && clickedRow < datasource.count else { return }
+            parent.onConnect(clickedRow)
+        }
+
+        @objc func editMenuAction(_ sender: AnyObject) {
+            guard let clickedRow = tableView?.clickedRow, clickedRow >= 0 && clickedRow < datasource.count else { return }
+            parent.onEdit(clickedRow)
+        }
+
+        @objc func duplicateMenuAction(_ sender: AnyObject) {
+            guard let clickedRow = tableView?.clickedRow, clickedRow >= 0 && clickedRow < datasource.count else { return }
+            parent.onDuplicate(clickedRow)
+        }
+
+        @objc func deleteMenuAction(_ sender: AnyObject) {
+            guard let clickedRow = tableView?.clickedRow, clickedRow >= 0 && clickedRow < datasource.count else { return }
+            parent.onDelete(clickedRow)
+        }
+
+        func validateMenuItem(_ menuItem: NSMenuItem) -> Bool {
+            guard let tableView = tableView else { return false }
+            return tableView.clickedRow >= 0 && tableView.clickedRow < datasource.count
+        }
     }
 }
