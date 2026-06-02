@@ -12,7 +12,6 @@
 		4301C86426BBF62600C08E19 /* SSHRedisClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4301C86326BBF62600C08E19 /* SSHRedisClient.swift */; };
 		4301C86626BBF86E00C08E19 /* SSHForward.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4301C86526BBF86E00C08E19 /* SSHForward.swift */; };
 		430A09D325BEA91700B60DFC /* LoginView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 430A09D225BEA91700B60DFC /* LoginView.swift */; };
-		430A09D625BEA98300B60DFC /* RedisListView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 430A09D525BEA98300B60DFC /* RedisListView.swift */; };
 		430A09DC25BEAD2700B60DFC /* RedisInstanceModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 430A09DB25BEAD2700B60DFC /* RedisInstanceModel.swift */; };
 		430A09E225C1559400B60DFC /* FormLabel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 430A09E125C1559400B60DFC /* FormLabel.swift */; };
 		430A09E625C155F800B60DFC /* FormItemText.swift in Sources */ = {isa = PBXBuildFile; fileRef = 430A09E525C155F800B60DFC /* FormItemText.swift */; };
@@ -184,7 +183,6 @@
 		4301C86326BBF62600C08E19 /* SSHRedisClient.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SSHRedisClient.swift; sourceTree = "<group>"; };
 		4301C86526BBF86E00C08E19 /* SSHForward.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SSHForward.swift; sourceTree = "<group>"; };
 		430A09D225BEA91700B60DFC /* LoginView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LoginView.swift; sourceTree = "<group>"; };
-		430A09D525BEA98300B60DFC /* RedisListView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RedisListView.swift; sourceTree = "<group>"; };
 		430A09DB25BEAD2700B60DFC /* RedisInstanceModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RedisInstanceModel.swift; sourceTree = "<group>"; };
 		430A09E125C1559400B60DFC /* FormLabel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FormLabel.swift; sourceTree = "<group>"; };
 		430A09E525C155F800B60DFC /* FormItemText.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FormItemText.swift; sourceTree = "<group>"; };
@@ -717,7 +715,6 @@
 			isa = PBXGroup;
 			children = (
 				430A09D225BEA91700B60DFC /* LoginView.swift */,
-				430A09D525BEA98300B60DFC /* RedisListView.swift */,
 				4373C50B25C3FC81002B700E /* LoginForm.swift */,
 			);
 			path = Login;
@@ -976,7 +973,6 @@
 				4301C86626BBF86E00C08E19 /* SSHForward.swift in Sources */,
 				4314A34F2625B46E00053FEE /* RedisClient.swift in Sources */,
 				4373C50C25C3FC81002B700E /* LoginForm.swift in Sources */,
-				430A09D625BEA98300B60DFC /* RedisListView.swift in Sources */,
 				431266E5261D4E2700FB6B69 /* RedisValueView.swift in Sources */,
 				4301C82F26B0EEB800C08E19 /* Stopwatch.swift in Sources */,
 				62CB3D752619AEC20061E8C3 /* RedisKeysListView.swift in Sources */,
