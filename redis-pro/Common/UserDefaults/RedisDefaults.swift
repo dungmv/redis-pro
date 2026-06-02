@@ -140,4 +140,12 @@ class RedisDefaults {
         userDefaults.set(history, forKey: UserDefaultsKeysEnum.UserSearchHistory.rawValue)
         logger.info("save user search history to user defaults complete, \(history)")
     }
+    
+    public static func getCommandQueryText() -> String {
+        return userDefaults.string(forKey: UserDefaultsKeysEnum.CommandQueryText.rawValue) ?? ""
+    }
+    
+    public static func saveCommandQueryText(_ text: String) {
+        userDefaults.set(text, forKey: UserDefaultsKeysEnum.CommandQueryText.rawValue)
+    }
 }

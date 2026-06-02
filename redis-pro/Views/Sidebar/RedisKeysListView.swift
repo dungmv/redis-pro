@@ -34,11 +34,37 @@ struct RedisKeysListView: View {
     private var sidebarPanel: some View {
         VStack(alignment: .leading, spacing: 0) {
             sidebarHeader
+            commandQueryButton
             Divider()
             RedisKeysTreeView(viewModel: viewModel)
             Divider()
             sidebarFooter
         }
+    }
+
+    private var commandQueryButton: some View {
+        Button(action: {
+            viewModel.selectCommandQuery()
+        }) {
+            HStack(spacing: 8) {
+                Image(systemName: "terminal.fill")
+                    .font(.system(size: 13, weight: .medium))
+                Text("Command Query")
+                    .font(.system(.body, weight: .medium))
+                Spacer()
+            }
+            .padding(.horizontal, 10)
+            .padding(.vertical, 8)
+            .contentShape(Rectangle())
+            .background(
+                RoundedRectangle(cornerRadius: 6)
+                    .fill(viewModel.mainViewType == .QUERY ? Color.accentColor : Color.clear)
+            )
+            .foregroundStyle(viewModel.mainViewType == .QUERY ? .white : .primary)
+        }
+        .buttonStyle(.plain)
+        .padding(.horizontal, 8)
+        .padding(.vertical, 6)
     }
 
     private var sidebarHeader: some View {
@@ -105,6 +131,8 @@ struct RedisKeysListView: View {
                 RedisValueView(viewModel: viewModel.value)
             case .SYSTEM:
                 RedisSystemView(viewModel: viewModel.redisSystem)
+            case .QUERY:
+                CommandQueryView(viewModel: viewModel.commandQuery)
             case .NONE:
                 EmptyView()
             }

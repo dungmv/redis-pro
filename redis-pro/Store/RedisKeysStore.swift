@@ -30,6 +30,7 @@ final class RedisKeysViewModel {
     let database_: DatabaseViewModel
     let page: PageViewModel
     let rename: RenameViewModel
+    let commandQuery: CommandQueryViewModel
 
     private let redisInstance: RedisInstanceModel
 
@@ -53,6 +54,7 @@ final class RedisKeysViewModel {
         self.database_ = DatabaseViewModel(redisInstance: redisInstance)
         self.page = PageViewModel()
         self.rename = RenameViewModel(redisInstance: redisInstance)
+        self.commandQuery = CommandQueryViewModel(redisInstance: redisInstance)
 
         setupCallbacks()
         logger.info("RedisKeysViewModel init ...")
@@ -229,6 +231,11 @@ final class RedisKeysViewModel {
         mainViewType = type
     }
 
+    func selectCommandQuery() {
+        selectedKeyId = nil
+        mainViewType = .QUERY
+    }
+
     func addNew() {
         var newKey = RedisKeyModel()
         newKey.initNew()
@@ -243,6 +250,7 @@ final class RedisKeysViewModel {
             table.selectIndexes = [index]
             let redisKeyModel = table.datasource[index]
             value.keyChange(redisKeyModel)
+            mainViewType = .EDITOR
         } else {
             table.selectIndex = -1
             table.selectIndexes = []

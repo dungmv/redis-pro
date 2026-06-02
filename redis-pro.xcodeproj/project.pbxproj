@@ -7,6 +7,8 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		5CA3EBAB0000000000000002 /* CommandQueryStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5CA3EBAB0000000000000001 /* CommandQueryStore.swift */; };
+		5CA3EBAB0000000000000004 /* CommandQueryView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5CA3EBAB0000000000000003 /* CommandQueryView.swift */; };
 		4301C82F26B0EEB800C08E19 /* Stopwatch.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4301C82E26B0EEB800C08E19 /* Stopwatch.swift */; };
 		4301C84526BBE68400C08E19 /* SSHAuthentication.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4301C84426BBE68400C08E19 /* SSHAuthentication.swift */; };
 		4301C86426BBF62600C08E19 /* SSHRedisClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4301C86326BBF62600C08E19 /* SSHRedisClient.swift */; };
@@ -178,6 +180,8 @@
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXFileReference section */
+		5CA3EBAB0000000000000001 /* CommandQueryStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CommandQueryStore.swift; sourceTree = "<group>"; };
+		5CA3EBAB0000000000000003 /* CommandQueryView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CommandQueryView.swift; sourceTree = "<group>"; };
 		4301C82E26B0EEB800C08E19 /* Stopwatch.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Stopwatch.swift; sourceTree = "<group>"; };
 		4301C84426BBE68400C08E19 /* SSHAuthentication.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SSHAuthentication.swift; sourceTree = "<group>"; };
 		4301C86326BBF62600C08E19 /* SSHRedisClient.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SSHRedisClient.swift; sourceTree = "<group>"; };
@@ -560,6 +564,7 @@
 		43CD28A22673368E00E11876 /* System */ = {
 			isa = PBXGroup;
 			children = (
+				5CA3EBAB0000000000000003 /* CommandQueryView.swift */,
 				62D741B6284B69040049AB3C /* RedisSystemView.swift */,
 				43CD2879267209D900E11876 /* RedisInfoView.swift */,
 				432A6ADE26A7C3D200F6DB64 /* RedisConfigView.swift */,
@@ -633,6 +638,7 @@
 		626C4C0E281D32E200B7A542 /* Store */ = {
 			isa = PBXGroup;
 			children = (
+				5CA3EBAB0000000000000001 /* CommandQueryStore.swift */,
 				626C4C13281D485A00B7A542 /* AppStore.swift */,
 				626C4C0F281D331D00B7A542 /* FavoriteStore.swift */,
 				62D1BA9B2848F1F800F41CAD /* AppContextStore.swift */,
@@ -888,6 +894,8 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				5CA3EBAB0000000000000002 /* CommandQueryStore.swift in Sources */,
+				5CA3EBAB0000000000000004 /* CommandQueryView.swift in Sources */,
 				43F22EEF269EDF7B00A00F97 /* SlowLogModel.swift in Sources */,
 				43EADB052620043F003B8310 /* HashEditorView.swift in Sources */,
 				621EFD8C276CB7510079D1E3 /* NTable.swift in Sources */,
