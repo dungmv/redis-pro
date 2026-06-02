@@ -24,6 +24,10 @@ final class CommandQueryViewModel {
     var isLoadingDoc: Bool = false
     var docError: String? = nil
     private var lastFetchedDocCommand: String = ""
+    /// Command names fetched from COMMAND LIST — drives autocomplete + highlighting.
+    var commandNames: [String] = []
+    private var commandDocsCache: [String: CommandDoc] = [:]
+    private var isCommandListLoaded: Bool = false
     
     /// The Redis command name currently under cursor/selection, used to load docs.
     var currentDocCommand: String {
@@ -122,6 +126,30 @@ final class CommandQueryViewModel {
     }
     
     // MARK: - Command Docs
+    
+    /// Fetch all command names from COMMAND LIST (once per session) for autocomplete.
+    func fetchCommandList() {
+        guard !isCommandListLoaded else { return }
+        isCommandListLoaded = true
+        Task {
+            do {
+                let client = try await redisInstance.getClient()
+                let response: RESPToken? = try await client.send("COMMAND", args: ["LIST"])
+                if let response, let arr = try? response.decode(as: RESPToken.Array.self) {
+                    let names = Array(arr)
+                        .map { respTokenToString($0) }
+                        .filter { !$0.isEmpty }
+                        .sorted()
+                    self.commandNames = names
+                    logger.info("COMMAND LIST loaded \(names.count) commands")
+                }
+            } catch {
+                logger.warning("COMMAND LIST failed: \(error) — falling back to built-in list")
+                // commandNames stays empty; highlighter/autocomplete use static fallback
+            }
+        }
+    }
+    
     func fetchCommandDocs(_ command: String) {
         let cmd = command.lowercased().trimmingCharacters(in: .whitespaces)
         guard !cmd.isEmpty else {
@@ -132,6 +160,14 @@ final class CommandQueryViewModel {
         }
         guard cmd != lastFetchedDocCommand else { return }
         lastFetchedDocCommand = cmd
+        
+        // Return cached doc immediately (no network hit)
+        if let cached = commandDocsCache[cmd] {
+            self.commandDoc = cached
+            self.isLoadingDoc = false
+            self.docError = nil
+            return
+        }
         isLoadingDoc = true
         docError = nil
         commandDoc = nil
@@ -141,6 +177,7 @@ final class CommandQueryViewModel {
                 let client = try await redisInstance.getClient()
                 let response: RESPToken? = try await client.send("COMMAND", args: ["DOCS", cmd])
                 if let response, let doc = parseCommandDoc(cmd, from: response) {
+                    self.commandDocsCache[cmd] = doc   // cache for the session
                     self.commandDoc = doc
                 } else {
                     self.docError = "No documentation found for \"\(cmd.uppercased())\""

@@ -26,7 +26,7 @@ enum RedisHighlighter {
         "script", "flushdb", "flushall", "dbsize", "select", "auth", "quit"
     ]
     
-    static func highlight(_ text: String) -> NSAttributedString {
+    static func highlight(_ text: String, commands: Set<String>? = nil) -> NSAttributedString {
         let nsAttr = NSMutableAttributedString(string: text)
         let fullRange = NSRange(location: 0, length: text.utf16.count)
         
@@ -35,6 +35,7 @@ enum RedisHighlighter {
         nsAttr.addAttribute(.foregroundColor, value: NSColor.labelColor, range: fullRange)
         
         let nsString = text as NSString
+        let cmds = commands ?? redisCommands  // fall back to built-in list
         
         // 1. Highlight Comments (# or //)
         let commentRegex = try! NSRegularExpression(pattern: "(?m)^\\s*(#|//).*$", options: [])
@@ -68,7 +69,7 @@ enum RedisHighlighter {
         wordRegex.enumerateMatches(in: text, options: [], range: fullRange) { match, _, _ in
             if let range = match?.range {
                 let word = nsString.substring(with: range).lowercased()
-                if redisCommands.contains(word) {
+                if cmds.contains(word) {
                     let color = nsAttr.attribute(.foregroundColor, at: range.location, effectiveRange: nil) as? NSColor
                     if color != commentColor && color != stringColor {
                         nsAttr.addAttribute(.foregroundColor, value: commandColor, range: range)
@@ -90,7 +91,11 @@ struct CommandQueryView: View {
             // ── Left: Editor + Console ──────────────────────────────────
             VSplitView {
                 VStack(alignment: .leading, spacing: 0) {
-                    CommandQueryTextEditor(text: $viewModel.queryText, selectedCommand: $viewModel.selectedCommand) { cmd in
+                    CommandQueryTextEditor(
+                        text: $viewModel.queryText,
+                        selectedCommand: $viewModel.selectedCommand,
+                        commandNames: viewModel.commandNames
+                    ) { cmd in
                         viewModel.executeCommand(cmd)
                     }
                     .background(Color(NSColor.textBackgroundColor))
@@ -211,6 +216,7 @@ struct CommandQueryView: View {
             viewModel.fetchCommandDocs(newCmd)
         }
         .onAppear {
+            viewModel.fetchCommandList()
             if !viewModel.currentDocCommand.isEmpty {
                 viewModel.fetchCommandDocs(viewModel.currentDocCommand)
             }
@@ -327,11 +333,12 @@ struct CommandDocContentView: View {
     
     var body: some View {
         ScrollView {
-            VStack(alignment: .leading, spacing: 16) {
+            VStack(alignment: .leading, spacing: 12) {
                 
                 // Command name
                 Text(doc.name.uppercased())
                     .font(.system(.title2, design: .monospaced, weight: .bold))
+                    .textSelection(.enabled)
                 
                 // Deprecated badge
                 if doc.docFlags.contains("deprecated") {
@@ -349,6 +356,7 @@ struct CommandDocContentView: View {
                         .font(.system(.body))
                         .foregroundStyle(.secondary)
                         .fixedSize(horizontal: false, vertical: true)
+                        .textSelection(.enabled)
                 }
                 
                 // Group + Since badges
@@ -373,15 +381,16 @@ struct CommandDocContentView: View {
                 
                 // Complexity
                 if !doc.complexity.isEmpty {
-                    VStack(alignment: .leading, spacing: 5) {
+                    VStack(alignment: .leading, spacing: 4) {
                         Label("Complexity", systemImage: "clock")
                             .font(.system(.caption, weight: .semibold))
                             .foregroundStyle(.secondary)
                         Text(doc.complexity)
                             .font(.system(.caption, design: .monospaced))
                             .fixedSize(horizontal: false, vertical: true)
+                            .textSelection(.enabled)
                     }
-                    .padding(10)
+                    .padding(8)
                     .frame(maxWidth: .infinity, alignment: .leading)
                     .background(Color(NSColor.controlBackgroundColor))
                     .clipShape(RoundedRectangle(cornerRadius: 7))
@@ -389,11 +398,12 @@ struct CommandDocContentView: View {
                 
                 // Arguments
                 if !doc.arguments.isEmpty {
-                    VStack(alignment: .leading, spacing: 6) {
+                    VStack(alignment: .leading, spacing: 3) {
                         Text("ARGUMENTS")
                             .font(.system(.caption2, weight: .bold))
                             .foregroundStyle(.secondary)
                             .kerning(1)
+                            .padding(.bottom, 2)
                         ForEach(doc.arguments) { arg in
                             CommandArgRow(arg: arg, indent: 0)
                         }
@@ -423,15 +433,17 @@ struct CommandArgRow: View {
     }
     
     var body: some View {
-        VStack(alignment: .leading, spacing: 4) {
-            HStack(spacing: 6) {
+        VStack(alignment: .leading, spacing: 3) {
+            HStack(spacing: 4) {
                 if let tok = arg.token {
                     Text(tok)
                         .font(.system(.caption, design: .monospaced, weight: .bold))
                         .foregroundStyle(Color.accentColor)
+                        .textSelection(.enabled)
                 }
                 Text(arg.displayText.isEmpty ? arg.name : arg.displayText)
                     .font(.system(.caption, design: .monospaced))
+                    .textSelection(.enabled)
                 Spacer()
                 Text(arg.type)
                     .font(.system(.caption2))
@@ -469,13 +481,14 @@ struct CommandArgRow: View {
                         }
                     }
                 }
+                .padding(.top, 2)
                 .padding(.leading, 4)
             }
         }
-        .padding(.horizontal, 10).padding(.vertical, 7)
+        .padding(.horizontal, 8).padding(.vertical, 5)
         .frame(maxWidth: .infinity, alignment: .leading)
         .background(Color(NSColor.controlBackgroundColor).opacity(indent == 0 ? 0.6 : 0.35))
-        .clipShape(RoundedRectangle(cornerRadius: 6))
+        .clipShape(RoundedRectangle(cornerRadius: 5))
     }
 }
 
@@ -483,6 +496,8 @@ struct CommandArgRow: View {
 struct CommandQueryTextEditor: NSViewRepresentable {
     @Binding var text: String
     @Binding var selectedCommand: String
+    /// Live command list from the server; empty until COMMAND LIST resolves.
+    var commandNames: [String]
     var onExecute: (String) -> Void
     
     func makeNSView(context: Context) -> NSScrollView {
@@ -535,10 +550,24 @@ struct CommandQueryTextEditor: NSViewRepresentable {
         let textView = nsView.documentView as! NSTextView
         let coordinator = context.coordinator
         
+        // Sync dynamic command set when COMMAND LIST arrives; re-highlight immediately
+        let newSet: Set<String>? = commandNames.isEmpty ? nil : Set(commandNames)
+        if newSet != coordinator.dynamicCommandSet {
+            coordinator.dynamicCommandSet = newSet
+            if !coordinator.isUpdating {
+                coordinator.isUpdating = true
+                let sel = textView.selectedRange()
+                let highlighted = RedisHighlighter.highlight(textView.string, commands: newSet)
+                textView.textStorage?.setAttributedString(highlighted)
+                if sel.location <= highlighted.length { textView.setSelectedRange(sel) }
+                coordinator.isUpdating = false
+            }
+        }
+        
         if textView.string != text {
             coordinator.isUpdating = true
             let selectedRange = textView.selectedRange()
-            let highlighted = RedisHighlighter.highlight(text)
+            let highlighted = RedisHighlighter.highlight(text, commands: coordinator.dynamicCommandSet)
             textView.textStorage?.setAttributedString(highlighted)
             if selectedRange.location <= highlighted.length {
                 textView.setSelectedRange(selectedRange)
@@ -560,6 +589,8 @@ struct CommandQueryTextEditor: NSViewRepresentable {
         var parent: CommandQueryTextEditor
         var isUpdating = false
         var isDeleting = false
+        /// Live command set from the server; nil until COMMAND LIST completes (falls back to static list).
+        var dynamicCommandSet: Set<String>? = nil
         
         init(_ parent: CommandQueryTextEditor) {
             self.parent = parent
@@ -580,7 +611,7 @@ struct CommandQueryTextEditor: NSViewRepresentable {
             
             isUpdating = true
             let selectedRange = textView.selectedRange()
-            let highlighted = RedisHighlighter.highlight(textView.string)
+            let highlighted = RedisHighlighter.highlight(textView.string, commands: dynamicCommandSet)
             textView.textStorage?.setAttributedString(highlighted)
             if selectedRange.location <= highlighted.length {
                 textView.setSelectedRange(selectedRange)
@@ -638,7 +669,8 @@ struct CommandQueryTextEditor: NSViewRepresentable {
             // If there's already a word with a space before partial word, user is typing an argument
             if trimmedPrefix.contains(" ") || trimmedPrefix.contains("\t") { return [] }
             
-            let matches = RedisHighlighter.redisCommands.filter { $0.hasPrefix(partialWord) }.sorted()
+            let commandSet = dynamicCommandSet ?? RedisHighlighter.redisCommands
+            let matches = commandSet.filter { $0.hasPrefix(partialWord) }.sorted()
             if !matches.isEmpty {
                 // Do not pre-select any item — let user manually pick
                 index?.pointee = -1
