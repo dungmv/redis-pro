@@ -26,7 +26,7 @@ final class CommandQueryViewModel {
     private var lastFetchedDocCommand: String = ""
     /// Command names fetched from COMMAND LIST — drives autocomplete + highlighting.
     var commandNames: [String] = []
-    private var commandDocsCache: [String: CommandDoc] = [:]
+    var commandDocsCache: [String: CommandDoc] = [:]
     private var isCommandListLoaded: Bool = false
     
     /// The Redis command name currently under cursor/selection, used to load docs.
@@ -126,6 +126,29 @@ final class CommandQueryViewModel {
     }
     
     // MARK: - Command Docs
+    
+    /// Fetch all command names from COMMAND LIST (once per session) for autocomplete.
+    /// Returns all keyword tokens (pure-token arguments) for a command, derived from cached COMMAND DOCS.
+    /// These are the completable argument keywords like EX, NX, GT, LIMIT, WITHSCORES, etc.
+    func argCompletions(for command: String) -> [String] {
+        let cmd = command.lowercased().trimmingCharacters(in: .whitespaces)
+        guard let doc = commandDocsCache[cmd], !doc.arguments.isEmpty else { return [] }
+        var tokens: [String] = []
+        collectTokens(from: doc.arguments, into: &tokens)
+        return tokens
+    }
+    
+    private func collectTokens(from args: [CommandArgDoc], into result: inout [String]) {
+        for arg in args {
+            if arg.type == "pure-token", let tok = arg.token {
+                result.append(tok.uppercased())
+            }
+            // Recurse into oneof / block nested arguments
+            if !arg.arguments.isEmpty {
+                collectTokens(from: arg.arguments, into: &result)
+            }
+        }
+    }
     
     /// Fetch all command names from COMMAND LIST (once per session) for autocomplete.
     func fetchCommandList() {

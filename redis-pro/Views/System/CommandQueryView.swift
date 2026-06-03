@@ -86,6 +86,28 @@ enum RedisHighlighter {
 struct CommandQueryView: View {
     @State var viewModel: CommandQueryViewModel
     
+    /// Number of non-empty whitespace-separated tokens on the current editor line.
+    private var typedTokenCount: Int {
+        let line = viewModel.selectedCommand
+            .trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !line.isEmpty,
+              !line.hasPrefix("#"),
+              !line.hasPrefix("//") else { return 0 }
+        return line.components(separatedBy: .whitespaces)
+            .filter { !$0.isEmpty }
+            .count
+    }
+    
+    /// True when the current line ends with whitespace, meaning the user has finished
+    /// typing the last token and is ready to start the next argument.
+    private var hasTrailingSpace: Bool {
+        // Use selectedCommand before trimming newlines only — preserve trailing spaces
+        let line = viewModel.selectedCommand
+            .trimmingCharacters(in: .newlines)
+        guard !line.isEmpty else { return false }
+        return line.last?.isWhitespace == true
+    }
+    
     var body: some View {
         HSplitView {
             // ── Left: Editor + Console ──────────────────────────────────
@@ -94,11 +116,22 @@ struct CommandQueryView: View {
                     CommandQueryTextEditor(
                         text: $viewModel.queryText,
                         selectedCommand: $viewModel.selectedCommand,
-                        commandNames: viewModel.commandNames
+                        commandNames: viewModel.commandNames,
+                        argCompletions: { cmd in viewModel.argCompletions(for: cmd) }
                     ) { cmd in
                         viewModel.executeCommand(cmd)
                     }
                     .background(Color(NSColor.textBackgroundColor))
+                    
+                    // ── Syntax Hint Bar ─────────────────────────────────
+                    if let doc = viewModel.commandDoc, !doc.arguments.isEmpty {
+                        CommandSyntaxHintBar(
+                            doc: doc,
+                            typedTokenCount: typedTokenCount,
+                            hasTrailingSpace: hasTrailingSpace
+                        )
+                        .transition(.opacity.combined(with: .move(edge: .top)))
+                    }
                 }
                 .frame(minHeight: 120, maxHeight: .infinity)
                 
@@ -492,12 +525,136 @@ struct CommandArgRow: View {
     }
 }
 
+// MARK: - Command Syntax Hint Bar
+struct CommandSyntaxHintBar: View {
+    let doc: CommandDoc
+    /// Total tokens typed on the current line including the command name itself.
+    let typedTokenCount: Int
+    /// Whether the current line ends with whitespace (user finished typing the last token).
+    let hasTrailingSpace: Bool
+    
+    /// The index of the argument the user is currently on (0 = command name).
+    /// - No trailing space: the last typed token is still being typed → currentArgIndex = typedTokenCount - 1
+    /// - Trailing space: user finished the last token and is about to type the next → currentArgIndex = typedTokenCount
+    private var currentArgIndex: Int {
+        hasTrailingSpace ? typedTokenCount : max(0, typedTokenCount - 1)
+    }
+    
+    // MARK: Segment model
+    private struct HintSegment: Identifiable {
+        let id: Int
+        let text: String
+    }
+    
+    private var segments: [HintSegment] {
+        doc.arguments.enumerated().map { i, arg in
+            HintSegment(id: i, text: formatArgText(arg))
+        }
+    }
+    
+    // MARK: Body
+    var body: some View {
+        ScrollView(.horizontal, showsIndicators: false) {
+            HStack(spacing: 0) {
+                // Tiny chevron icon
+                Image(systemName: "chevron.right")
+                    .font(.system(size: 9, weight: .bold))
+                    .foregroundStyle(.tertiary)
+                    .padding(.trailing, 7)
+                
+                // Command name — highlight based on currentArgIndex
+                syntaxToken(doc.name.uppercased(),
+                            bold: true,
+                            style: currentArgIndex > 0 ? .covered : (typedTokenCount >= 1 ? .current : .future))
+                
+                // Argument segments — light up progressively
+                ForEach(segments) { seg in
+                    // token index: command = 0, seg.id 0 = token 1, etc.
+                    let tokenIdx = seg.id + 1
+                    let style = segmentStyle(for: tokenIdx)
+                    
+                    Text(" ")
+                        .font(.system(size: 11, design: .monospaced))
+                    
+                    syntaxToken(seg.text, bold: style == .current, style: style)
+                }
+            }
+            .padding(.horizontal, 12)
+            .padding(.vertical, 6)
+        }
+        .background(Color(NSColor.windowBackgroundColor).opacity(0.95))
+        .overlay(alignment: .top) {
+            Rectangle()
+                .fill(Color(NSColor.separatorColor))
+                .frame(height: 0.5)
+        }
+        .overlay(alignment: .bottom) {
+            Rectangle()
+                .fill(Color(NSColor.separatorColor))
+                .frame(height: 0.5)
+        }
+        .animation(.easeInOut(duration: 0.15), value: typedTokenCount)
+    }
+    
+    // MARK: Helpers
+    private enum SegStyle { case covered, current, future }
+    
+    private func segmentStyle(for tokenIndex: Int) -> SegStyle {
+        if tokenIndex < currentArgIndex { return .covered }
+        if tokenIndex == currentArgIndex { return .current }
+        return .future
+    }
+    
+    @ViewBuilder
+    private func syntaxToken(_ text: String, bold: Bool, style: SegStyle) -> some View {
+        let color: Color = {
+            switch style {
+            case .covered: return Color.primary.opacity(0.82)
+            case .current: return Color.accentColor
+            case .future:  return Color.secondary.opacity(0.35)
+            }
+        }()
+        Text(text)
+            .font(.system(size: 11, weight: bold ? .bold : (style == .current ? .semibold : .regular), design: .monospaced))
+            .foregroundStyle(color)
+    }
+    
+    // MARK: Recursive arg → display text
+    private func formatArgText(_ arg: CommandArgDoc) -> String {
+        let isOptional = arg.flags.contains("optional")
+        let isMultiple = arg.flags.contains("multiple") || arg.flags.contains("variadic")
+        
+        var inner: String
+        switch arg.type {
+        case "pure-token":
+            inner = arg.token ?? arg.name.uppercased()
+        case "oneof":
+            // Join nested options with " | "
+            let parts = arg.arguments.map { formatArgText($0) }
+            inner = parts.joined(separator: " | ")
+        case "block":
+            // Space-join nested args (e.g. "EX seconds")
+            let parts = arg.arguments.map { formatArgText($0) }
+            inner = parts.joined(separator: " ")
+        default:
+            // key, string, integer, double, pattern, unix-time, posix-time, etc.
+            inner = arg.displayText.isEmpty ? arg.name : arg.displayText
+        }
+        
+        var result = isOptional ? "[\(inner)]" : inner
+        if isMultiple { result += " ..." }
+        return result
+    }
+}
+
 // MARK: - Command Query Text Editor (NSViewRepresentable)
 struct CommandQueryTextEditor: NSViewRepresentable {
     @Binding var text: String
     @Binding var selectedCommand: String
     /// Live command list from the server; empty until COMMAND LIST resolves.
     var commandNames: [String]
+    /// Returns argument token completions for a given command name (from COMMAND DOCS cache).
+    var argCompletions: (String) -> [String]
     var onExecute: (String) -> Void
     
     func makeNSView(context: Context) -> NSScrollView {
@@ -640,14 +797,9 @@ struct CommandQueryTextEditor: NSViewRepresentable {
             // Only trigger autocomplete when typing letters
             guard CharacterSet.letters.contains(UnicodeScalar(char) ?? UnicodeScalar(0)) else { return }
             
-            // Only trigger if the current word (up to cursor) has no spaces before it on the same line
-            // i.e., we are typing the first word (command) on the line
-            let lineRange = nsString.lineRange(for: NSRange(location: selectedRange.location, length: 0))
-            let lineUpToCursor = nsString.substring(with: NSRange(location: lineRange.location, length: selectedRange.location - lineRange.location))
-            let wordPart = lineUpToCursor.trimmingCharacters(in: .init(charactersIn: "# "))
-            // If there is a space in the trimmed prefix, the user is typing an argument — skip autocomplete
-            if wordPart.contains(" ") || wordPart.contains("\t") { return }
-            
+            // Trigger for both command-name position AND argument position.
+            // We used to skip if there was a space before the partial word — now we allow it
+            // so argument token completions (EX, NX, GT, …) pop up too.
             DispatchQueue.main.async {
                 if textView.window?.firstResponder == textView {
                     textView.complete(nil)
@@ -661,14 +813,39 @@ struct CommandQueryTextEditor: NSViewRepresentable {
             let partialWord = nsString.substring(with: charRange).lowercased()
             guard !partialWord.isEmpty else { return [] }
             
-            // Only offer completions when partial word is at the start of a command line (no preceding content on line)
+            // Determine the position context: are we at the command-name position or an argument position?
             let cursorLocation = charRange.location
             let lineRange = nsString.lineRange(for: NSRange(location: cursorLocation, length: 0))
             let linePrefix = nsString.substring(with: NSRange(location: lineRange.location, length: cursorLocation - lineRange.location))
             let trimmedPrefix = linePrefix.trimmingCharacters(in: .whitespaces)
-            // If there's already a word with a space before partial word, user is typing an argument
-            if trimmedPrefix.contains(" ") || trimmedPrefix.contains("\t") { return [] }
             
+            // ── Argument mode: there is content (command + at least one space) before the partial word ──
+            if trimmedPrefix.contains(" ") || trimmedPrefix.contains("\t") {
+                // Extract the command name (first token on the line)
+                let lineTokens = trimmedPrefix
+                    .trimmingCharacters(in: .init(charactersIn: "# \t"))
+                    .components(separatedBy: .whitespaces)
+                    .filter { !$0.isEmpty }
+                guard let commandName = lineTokens.first else { return [] }
+                
+                // Already-typed arguments on this line (excluding partial word)
+                let typedArgs = Set(lineTokens.dropFirst().map { $0.uppercased() })
+                
+                // Get argument token completions from COMMAND DOCS cache
+                let tokens = parent.argCompletions(commandName.lowercased())
+                let matches = tokens
+                    .filter { $0.lowercased().hasPrefix(partialWord) }
+                    .filter { !typedArgs.contains($0) }  // don't re-suggest already-typed tokens
+                    .sorted()
+                
+                if !matches.isEmpty {
+                    index?.pointee = -1  // no pre-selection
+                    return matches
+                }
+                return []
+            }
+            
+            // ── Command-name mode: partial word is the first token on the line ──
             let commandSet = dynamicCommandSet ?? RedisHighlighter.redisCommands
             let matches = commandSet.filter { $0.hasPrefix(partialWord) }.sorted()
             if !matches.isEmpty {
