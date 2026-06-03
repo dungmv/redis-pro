@@ -11,9 +11,10 @@ import AppKit
 // MARK: - Redis Syntax Highlighter
 enum RedisHighlighter {
     private static let commandColor = NSColor(red: 0.15, green: 0.45, blue: 0.82, alpha: 1.0) // Bold blue
-    private static let stringColor = NSColor(red: 0.13, green: 0.60, blue: 0.35, alpha: 1.0) // Green
-    private static let numberColor = NSColor(red: 0.82, green: 0.45, blue: 0.13, alpha: 1.0) // Orange/Brown
+    private static let stringColor  = NSColor(red: 0.13, green: 0.60, blue: 0.35, alpha: 1.0) // Green
+    private static let numberColor  = NSColor(red: 0.82, green: 0.45, blue: 0.13, alpha: 1.0) // Orange/Brown
     private static let commentColor = NSColor.secondaryLabelColor // Grey
+    private static let constColor   = NSColor(red: 0.58, green: 0.22, blue: 0.80, alpha: 1.0) // Purple — for keyword args
     
     // Set of common Redis/Valkey commands for syntax highlighting and autocomplete
     static let redisCommands: Set<String> = [
@@ -25,6 +26,44 @@ enum RedisHighlighter {
         "publish", "subscribe", "psubscribe", "config", "info", "client", "slowlog", "eval", "evalsha",
         "script", "flushdb", "flushall", "dbsize", "select", "auth", "quit"
     ]
+
+    /// Pure-token keyword arguments — highlighted in purple when they appear in argument position.
+    static let redisConstants: Set<String> = [
+        // SET options
+        "ex", "px", "exat", "pxat", "keepttl", "nx", "xx",
+        // EXPIRE / GETEX options
+        "gt", "lt", "persist",
+        // COPY
+        "replace",
+        // ZADD options
+        "ch", "incr",
+        // ZRANGE / ZRANGEBYSCORE / ZRANGEBYLEX options
+        "withscores", "byscore", "bylex", "rev", "limit",
+        // GEORADIUS / GEOSEARCH options
+        "withcoord", "withdist", "any", "full", "storedist", "asc", "desc",
+        // SORT options
+        "alpha", "by", "store",
+        // SCAN options
+        "match", "count", "type",
+        // LINSERT
+        "before", "after",
+        // LMOVE / LMPOP
+        "left", "right",
+        // ZUNIONSTORE / ZINTERSTORE aggregate
+        "weights", "aggregate", "sum", "min", "max",
+        // OBJECT subcommands / INFO sections
+        "encoding", "idletime", "refcount", "freq", "help",
+        // CONFIG options
+        "resetstat", "rewrite",
+        // XADD / XTRIM
+        "maxlen", "minid", "nomkstream",
+        // CLIENT
+        "no-evict", "no-touch", "id", "addr", "laddr", "skipme",
+        // WAIT / OBJECT
+        "timeout",
+        // Generic
+        "async", "sync",
+    ]
     
     static func highlight(_ text: String, commands: Set<String>? = nil) -> NSAttributedString {
         let nsAttr = NSMutableAttributedString(string: text)
@@ -34,7 +73,6 @@ enum RedisHighlighter {
         nsAttr.addAttribute(.font, value: NSFont.monospacedSystemFont(ofSize: 13, weight: .regular), range: fullRange)
         nsAttr.addAttribute(.foregroundColor, value: NSColor.labelColor, range: fullRange)
         
-        let nsString = text as NSString
         let cmds = commands ?? redisCommands  // fall back to built-in list
         
         // 1. Highlight Comments (# or //)
@@ -64,18 +102,46 @@ enum RedisHighlighter {
             }
         }
         
-        // 4. Highlight Redis Commands
-        let wordRegex = try! NSRegularExpression(pattern: "\\b\\w+\\b", options: [])
-        wordRegex.enumerateMatches(in: text, options: [], range: fullRange) { match, _, _ in
-            if let range = match?.range {
-                let word = nsString.substring(with: range).lowercased()
-                if cmds.contains(word) {
-                    let color = nsAttr.attribute(.foregroundColor, at: range.location, effectiveRange: nil) as? NSColor
-                    if color != commentColor && color != stringColor {
-                        nsAttr.addAttribute(.foregroundColor, value: commandColor, range: range)
+        // 4. Highlight Redis Commands & 5. Highlight Redis constant keyword arguments
+        // Process line-by-line so we can distinguish position-0 (command) from argument positions.
+        let lines = text.components(separatedBy: "\n")
+        var lineStart = 0
+        for line in lines {
+            let lineLen = line.utf16.count
+            let trimmed = line.trimmingCharacters(in: .whitespacesAndNewlines)
+
+            // Skip comment lines
+            if !trimmed.hasPrefix("#") && !trimmed.hasPrefix("//") {
+                let wordRegex = try! NSRegularExpression(pattern: "\\b\\w+\\b", options: [])
+                var tokenIndex = 0  // 0 = command position, 1+ = argument positions
+
+                wordRegex.enumerateMatches(in: line, options: [], range: NSRange(location: 0, length: lineLen)) { match, _, _ in
+                    guard let matchRange = match?.range else { return }
+                    // Translate local range to full-string range
+                    let globalRange = NSRange(location: lineStart + matchRange.location, length: matchRange.length)
+                    let word = (line as NSString).substring(with: matchRange).lowercased()
+                    let currentColor = nsAttr.attribute(.foregroundColor, at: globalRange.location, effectiveRange: nil) as? NSColor
+                    let isProtected = currentColor == commentColor || currentColor == stringColor
+
+                    if !isProtected {
+                        if tokenIndex == 0 {
+                            // Command position — highlight if known command
+                            if cmds.contains(word) {
+                                nsAttr.addAttribute(.foregroundColor, value: commandColor, range: globalRange)
+                                nsAttr.addAttribute(.font, value: NSFont.monospacedSystemFont(ofSize: 13, weight: .semibold), range: globalRange)
+                            }
+                        } else {
+                            // Argument position — highlight if known constant
+                            if redisConstants.contains(word) {
+                                nsAttr.addAttribute(.foregroundColor, value: constColor, range: globalRange)
+                            }
+                        }
                     }
+                    tokenIndex += 1
                 }
             }
+
+            lineStart += lineLen + 1  // +1 for the "\n" separator
         }
         
         return nsAttr
