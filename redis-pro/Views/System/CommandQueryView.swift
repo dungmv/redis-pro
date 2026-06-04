@@ -629,32 +629,44 @@ struct CommandSyntaxHintBar: View {
     
     // MARK: Body
     var body: some View {
-        ScrollView(.horizontal, showsIndicators: false) {
-            HStack(spacing: 0) {
-                // Tiny chevron icon
-                Image(systemName: "chevron.right")
-                    .font(.system(size: 9, weight: .bold))
-                    .foregroundStyle(.tertiary)
-                    .padding(.trailing, 7)
-                
-                // Command name — highlight based on currentArgIndex
-                syntaxToken(doc.name.uppercased(),
-                            bold: true,
-                            style: currentArgTokenIndex >= 0 ? .covered : (typedTokenCount >= 1 ? .current : .future))
-                
-                // Argument segments — light up progressively
-                ForEach(segments) { seg in
-                    let style = segmentStyle(for: seg.id)
-                    let position = segmentStartPosition(for: seg.id)
+        ScrollViewReader { proxy in
+            ScrollView(.horizontal, showsIndicators: false) {
+                HStack(spacing: 0) {
+                    // Tiny chevron icon
+                    Image(systemName: "chevron.right")
+                        .font(.system(size: 9, weight: .bold))
+                        .foregroundStyle(.tertiary)
+                        .padding(.trailing, 7)
                     
-                    Text(" ")
-                        .font(.system(size: 11, design: .monospaced))
+                    // Command name — highlight based on currentArgIndex
+                    syntaxToken(doc.name.uppercased(),
+                                bold: true,
+                                style: currentArgTokenIndex >= 0 ? .covered : (typedTokenCount >= 1 ? .current : .future))
+                    .id(commandScrollID)
                     
-                    syntaxSegment(doc.arguments[seg.id], text: seg.text, style: style, position: position)
+                    // Argument segments — light up progressively
+                    ForEach(segments) { seg in
+                        let style = segmentStyle(for: seg.id)
+                        let position = segmentStartPosition(for: seg.id)
+                        
+                        HStack(spacing: 0) {
+                            Text(" ")
+                                .font(.system(size: 11, design: .monospaced))
+                            
+                            syntaxSegment(doc.arguments[seg.id], text: seg.text, style: style, position: position)
+                        }
+                        .id(segmentScrollID(seg.id))
+                    }
                 }
+                .padding(.horizontal, 12)
+                .padding(.vertical, 6)
             }
-            .padding(.horizontal, 12)
-            .padding(.vertical, 6)
+            .onAppear {
+                scrollToCurrentTarget(proxy, targetID: scrollTargetID)
+            }
+            .onChange(of: scrollTargetID) { _, targetID in
+                scrollToCurrentTarget(proxy, targetID: targetID)
+            }
         }
         .background(Color(NSColor.windowBackgroundColor).opacity(0.95))
         .overlay(alignment: .top) {
@@ -672,6 +684,34 @@ struct CommandSyntaxHintBar: View {
     
     // MARK: Helpers
     private enum SegStyle { case covered, current, future }
+    
+    private var commandScrollID: String { "command" }
+    
+    private func segmentScrollID(_ segmentIndex: Int) -> String {
+        "arg-\(segmentIndex)"
+    }
+    
+    private var scrollTargetID: String {
+        guard currentArgTokenIndex >= 0 else { return commandScrollID }
+        
+        if let current = segments.first(where: { segmentStyle(for: $0.id) == .current }) {
+            return segmentScrollID(current.id)
+        }
+        
+        if let covered = segments.last(where: { segmentStyle(for: $0.id) == .covered }) {
+            return segmentScrollID(covered.id)
+        }
+        
+        return commandScrollID
+    }
+    
+    private func scrollToCurrentTarget(_ proxy: ScrollViewProxy, targetID: String) {
+        DispatchQueue.main.async {
+            withAnimation(.easeInOut(duration: 0.18)) {
+                proxy.scrollTo(targetID, anchor: .center)
+            }
+        }
+    }
     
     private struct ArgSpan {
         let matches: Bool
