@@ -678,6 +678,11 @@ struct CommandSyntaxHintBar: View {
         let tokenCount: Int
     }
 
+    private struct OptionPiece {
+        let text: String
+        let tokenOffset: Int?
+    }
+
     private func segmentStyle(for segmentIndex: Int) -> SegStyle {
         guard currentArgTokenIndex >= 0 else { return .future }
 
@@ -767,12 +772,14 @@ struct CommandSyntaxHintBar: View {
 
                 let optionIsSelected = selectedOption == optionIndex
                 let optionIsAvailable = selectedOption == nil
-                let pieces = optionTextPieces(option)
+                let pieces = optionDisplayPieces(option)
 
                 ForEach(Array(pieces.enumerated()), id: \.offset) { pieceIndex, piece in
-                    let pieceTokenIndex = position + pieceIndex
+                    let pieceTokenIndex = piece.tokenOffset.map { position + $0 }
                     let pieceStyle = oneOfPieceStyle(
                         pieceTokenIndex: pieceTokenIndex,
+                        segmentStyle: style,
+                        pieceKeyword: keywordCandidate(piece.text),
                         optionIsSelected: optionIsSelected,
                         optionIsAvailable: optionIsAvailable
                     )
@@ -784,9 +791,9 @@ struct CommandSyntaxHintBar: View {
                     }
 
                     if pieceIndex == 0 {
-                        syntaxToken(piece, bold: pieceStyle == .current, style: pieceStyle)
+                        syntaxToken(piece.text, bold: pieceStyle == .current, style: pieceStyle)
                     } else {
-                        Text(piece)
+                        Text(piece.text)
                             .font(.system(size: 11, weight: pieceStyle == .current ? .semibold : .regular, design: .monospaced))
                             .foregroundStyle(color(for: pieceStyle))
                     }
@@ -807,12 +814,31 @@ struct CommandSyntaxHintBar: View {
         }
     }
 
-    private func oneOfPieceStyle(pieceTokenIndex: Int, optionIsSelected: Bool, optionIsAvailable: Bool) -> SegStyle {
+    private func oneOfPieceStyle(
+        pieceTokenIndex: Int?,
+        segmentStyle: SegStyle,
+        pieceKeyword: String?,
+        optionIsSelected: Bool,
+        optionIsAvailable: Bool
+    ) -> SegStyle {
+        guard segmentStyle != .future else { return .future }
+        guard let pieceTokenIndex else { return optionIsSelected ? segmentStyle : .future }
+
         if optionIsAvailable {
-            return pieceTokenIndex == currentArgTokenIndex ? .current : .future
+            guard segmentStyle == .current && pieceTokenIndex == currentArgTokenIndex else { return .future }
+
+            if hasToken(at: pieceTokenIndex), let pieceKeyword {
+                return keywordMatchRank(at: pieceTokenIndex, keyword: pieceKeyword) > 0 ? .current : .future
+            }
+
+            return .current
         }
 
         guard optionIsSelected else { return .future }
+
+        if hasToken(at: pieceTokenIndex), let pieceKeyword {
+            guard keywordMatchRank(at: pieceTokenIndex, keyword: pieceKeyword) > 0 else { return .future }
+        }
 
         if pieceTokenIndex < currentArgTokenIndex { return .covered }
         if pieceTokenIndex == currentArgTokenIndex { return .current }
@@ -835,10 +861,8 @@ struct CommandSyntaxHintBar: View {
         }
 
         if arg.type == "oneof" {
-            if let matched = arg.arguments
-                .map({ argumentSpan($0, from: position) })
-                .first(where: { $0.matches }) {
-                return matched
+            if let matched = matchingOneOfOption(arg, from: position) {
+                return matched.span
             }
             return ArgSpan(matches: false, tokenCount: max(1, expectedTokenCount))
         }
@@ -862,9 +886,8 @@ struct CommandSyntaxHintBar: View {
         }
 
         if arg.type == "oneof" {
-            let matchingChild = arg.arguments.first { argumentSpan($0, from: position).matches }
-            if let matchingChild {
-                return tokenCountEstimate(matchingChild, from: position)
+            if let matchingChild = matchingOneOfOption(arg, from: position) {
+                return tokenCountEstimate(arg.arguments[matchingChild.index], from: position)
             }
             return arg.arguments.map { tokenCountEstimate($0, from: position) }.min() ?? 1
         }
@@ -921,15 +944,117 @@ struct CommandSyntaxHintBar: View {
     }
 
     private func selectedOneOfOptionIndex(_ arg: CommandArgDoc, from position: Int) -> Int? {
-        arg.arguments.firstIndex { option in
-            argumentSpan(option, from: position).matches
-        }
+        matchingOneOfOption(arg, from: position)?.index
     }
 
-    private func optionTextPieces(_ arg: CommandArgDoc) -> [String] {
-        formatArgText(arg)
+    private func matchingOneOfOption(_ arg: CommandArgDoc, from position: Int) -> (index: Int, span: ArgSpan)? {
+        var hasKeywordOptions = false
+        var bestKeywordMatch: (index: Int, rank: Int)?
+
+        for (index, option) in arg.arguments.enumerated() {
+            guard let keyword = optionKeyword(for: option) else { continue }
+
+            hasKeywordOptions = true
+            let rank = keywordMatchRank(at: position, keyword: keyword)
+            guard rank > 0 else { continue }
+
+            if bestKeywordMatch == nil || rank > bestKeywordMatch!.rank {
+                bestKeywordMatch = (index, rank)
+            }
+        }
+
+        if let bestKeywordMatch {
+            return (bestKeywordMatch.index, argumentSpan(arg.arguments[bestKeywordMatch.index], from: position))
+        }
+
+        if hasKeywordOptions {
+            return nil
+        }
+
+        for (index, option) in arg.arguments.enumerated() {
+            let span = argumentSpan(option, from: position)
+            if span.matches {
+                return (index, span)
+            }
+        }
+
+        return nil
+    }
+
+    private func keywordMatchRank(at index: Int, keyword: String) -> Int {
+        guard hasToken(at: index) else { return 0 }
+
+        let typed = argumentTokens[index].lowercased()
+        let expected = keyword.lowercased()
+
+        if typed == expected { return 2 }
+
+        if index == currentArgTokenIndex && !hasTrailingSpace && expected.hasPrefix(typed) {
+            return 1
+        }
+
+        return 0
+    }
+
+    private func optionKeyword(for arg: CommandArgDoc) -> String? {
+        var candidates: [String] = []
+
+        if let token = arg.token, !token.isEmpty {
+            candidates.append(token)
+        }
+
+        candidates.append(arg.name)
+
+        if !arg.displayText.isEmpty {
+            candidates.append(arg.displayText)
+        }
+
+        if let firstPiece = optionDisplayPieces(arg).first {
+            candidates.append(firstPiece.text)
+        }
+
+        for candidate in candidates {
+            if let keyword = keywordCandidate(candidate) {
+                return keyword
+            }
+        }
+
+        return nil
+    }
+
+    private func keywordCandidate(_ text: String) -> String? {
+        let keyword = text.trimmingCharacters(in: CharacterSet(charactersIn: "[]"))
+        return RedisHighlighter.redisConstants.contains(keyword.lowercased()) ? keyword : nil
+    }
+
+    private func optionDisplayPieces(_ arg: CommandArgDoc) -> [OptionPiece] {
+        let rawPieces = formatArgText(arg)
             .split(separator: " ")
             .map(String.init)
+
+        var pieces: [OptionPiece] = []
+        var nextTokenOffset = 0
+        var alternativeTokenOffset: Int? = nil
+
+        for rawPiece in rawPieces {
+            if rawPiece == "|" {
+                if alternativeTokenOffset == nil {
+                    alternativeTokenOffset = pieces.last?.tokenOffset
+                }
+
+                pieces.append(OptionPiece(text: rawPiece, tokenOffset: nil))
+                continue
+            }
+
+            if let alternativeTokenOffset {
+                pieces.append(OptionPiece(text: rawPiece, tokenOffset: alternativeTokenOffset))
+            } else {
+                pieces.append(OptionPiece(text: rawPiece, tokenOffset: nextTokenOffset))
+                nextTokenOffset += 1
+            }
+        }
+
+        return pieces
     }
 
     private func formatArgText(_ arg: CommandArgDoc) -> String {
