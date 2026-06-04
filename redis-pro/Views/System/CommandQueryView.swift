@@ -645,11 +645,12 @@ struct CommandSyntaxHintBar: View {
                 // Argument segments — light up progressively
                 ForEach(segments) { seg in
                     let style = segmentStyle(for: seg.id)
+                    let position = segmentStartPosition(for: seg.id)
                     
                     Text(" ")
                         .font(.system(size: 11, design: .monospaced))
                     
-                    syntaxToken(seg.text, bold: style == .current, style: style)
+                    syntaxSegment(doc.arguments[seg.id], text: seg.text, style: style, position: position)
                 }
             }
             .padding(.horizontal, 12)
@@ -715,19 +716,107 @@ struct CommandSyntaxHintBar: View {
 
         return segmentIndex < styles.count ? styles[segmentIndex] : .future
     }
+
+    private func segmentStartPosition(for segmentIndex: Int) -> Int {
+        var position = 0
+
+        for index in 0..<min(segmentIndex, doc.arguments.count) {
+            let arg = doc.arguments[index]
+            let span = argumentSpan(arg, from: position)
+
+            if span.matches {
+                position += span.tokenCount
+            } else if !isOptional(arg) {
+                break
+            }
+        }
+
+        return position
+    }
     
     @ViewBuilder
     private func syntaxToken(_ text: String, bold: Bool, style: SegStyle) -> some View {
-        let color: Color = {
-            switch style {
-            case .covered: return Color.primary.opacity(0.82)
-            case .current: return Color.accentColor
-            case .future:  return Color.secondary.opacity(0.35)
-            }
-        }()
         Text(text)
             .font(.system(size: 11, weight: bold ? .bold : (style == .current ? .semibold : .regular), design: .monospaced))
-            .foregroundStyle(color)
+            .foregroundStyle(color(for: style))
+    }
+
+    @ViewBuilder
+    private func syntaxSegment(_ arg: CommandArgDoc, text: String, style: SegStyle, position: Int) -> some View {
+        if arg.type == "oneof" {
+            oneOfSegment(arg, style: style, position: position)
+        } else {
+            syntaxToken(text, bold: style == .current, style: style)
+        }
+    }
+
+    @ViewBuilder
+    private func oneOfSegment(_ arg: CommandArgDoc, style: SegStyle, position: Int) -> some View {
+        let selectedOption = selectedOneOfOptionIndex(arg, from: position)
+        let shouldWrap = isOptional(arg)
+
+        HStack(spacing: 0) {
+            if shouldWrap {
+                syntaxToken("[", bold: false, style: style)
+            }
+
+            ForEach(Array(arg.arguments.enumerated()), id: \.offset) { optionIndex, option in
+                if optionIndex > 0 {
+                    syntaxToken(" | ", bold: false, style: selectedOption == nil ? style : .future)
+                }
+
+                let optionIsSelected = selectedOption == optionIndex
+                let optionIsAvailable = selectedOption == nil
+                let pieces = optionTextPieces(option)
+
+                ForEach(Array(pieces.enumerated()), id: \.offset) { pieceIndex, piece in
+                    let pieceTokenIndex = position + pieceIndex
+                    let pieceStyle = oneOfPieceStyle(
+                        pieceTokenIndex: pieceTokenIndex,
+                        optionIsSelected: optionIsSelected,
+                        optionIsAvailable: optionIsAvailable
+                    )
+
+                    if pieceIndex > 0 {
+                        Text(" ")
+                            .font(.system(size: 11, design: .monospaced))
+                            .foregroundStyle(color(for: pieceStyle))
+                    }
+
+                    if pieceIndex == 0 {
+                        syntaxToken(piece, bold: pieceStyle == .current, style: pieceStyle)
+                    } else {
+                        Text(piece)
+                            .font(.system(size: 11, weight: pieceStyle == .current ? .semibold : .regular, design: .monospaced))
+                            .foregroundStyle(color(for: pieceStyle))
+                    }
+                }
+            }
+
+            if shouldWrap {
+                syntaxToken("]", bold: false, style: style)
+            }
+        }
+    }
+
+    private func color(for style: SegStyle) -> Color {
+        switch style {
+        case .covered: return Color.primary.opacity(0.82)
+        case .current: return Color.accentColor
+        case .future:  return Color.secondary.opacity(0.35)
+        }
+    }
+
+    private func oneOfPieceStyle(pieceTokenIndex: Int, optionIsSelected: Bool, optionIsAvailable: Bool) -> SegStyle {
+        if optionIsAvailable {
+            return pieceTokenIndex == currentArgTokenIndex ? .current : .future
+        }
+
+        guard optionIsSelected else { return .future }
+
+        if pieceTokenIndex < currentArgTokenIndex { return .covered }
+        if pieceTokenIndex == currentArgTokenIndex { return .current }
+        return .future
     }
     
     // MARK: Recursive arg → display text
@@ -829,6 +918,18 @@ struct CommandSyntaxHintBar: View {
         }
 
         return typed == expected
+    }
+
+    private func selectedOneOfOptionIndex(_ arg: CommandArgDoc, from position: Int) -> Int? {
+        arg.arguments.firstIndex { option in
+            argumentSpan(option, from: position).matches
+        }
+    }
+
+    private func optionTextPieces(_ arg: CommandArgDoc) -> [String] {
+        formatArgText(arg)
+            .split(separator: " ")
+            .map(String.init)
     }
 
     private func formatArgText(_ arg: CommandArgDoc) -> String {
