@@ -140,10 +140,19 @@ final class CommandQueryViewModel {
     
     private func collectTokens(from args: [CommandArgDoc], into result: inout [String]) {
         for arg in args {
-            if arg.type == "pure-token", let tok = arg.token {
+            // Collect keyword tokens for autocomplete.
+            // Rule: any arg that has a non-empty `token` field is a keyword the user types,
+            // EXCEPT `oneof` which is just a grouping container with no own keyword.
+            // This covers:
+            //   pure-token      → NX, XX, GET, WITHCOORD, KEEPTTL …
+            //   block + token   → FROMLONLAT, BYBOX, EX (as block), IFEQ …
+            //   integer + token → EX seconds, RANK n, COUNT n, MAXLEN n …
+            //   unix-time+token → EXAT, PXAT …
+            //   string + token  → IFEQ ifeq-value …
+            if arg.type != "oneof", let tok = arg.token, !tok.isEmpty {
                 result.append(tok.uppercased())
             }
-            // Recurse into oneof / block nested arguments
+            // Always recurse into children (oneof / block contain their own keyword args)
             if !arg.arguments.isEmpty {
                 collectTokens(from: arg.arguments, into: &result)
             }

@@ -40,6 +40,7 @@ enum RedisHighlighter {
         // ZRANGE / ZRANGEBYSCORE / ZRANGEBYLEX options
         "withscores", "byscore", "bylex", "rev", "limit",
         // GEORADIUS / GEOSEARCH options
+        "frommember", "fromlonlat", "byradius", "bybox", "m", "km", "ft", "mi",
         "withcoord", "withdist", "any", "full", "storedist", "asc", "desc",
         // SORT options
         "alpha", "by", "store",
@@ -193,6 +194,7 @@ struct CommandQueryView: View {
                     if let doc = viewModel.commandDoc, !doc.arguments.isEmpty {
                         CommandSyntaxHintBar(
                             doc: doc,
+                            selectedCommand: viewModel.selectedCommand,
                             typedTokenCount: typedTokenCount,
                             hasTrailingSpace: hasTrailingSpace
                         )
@@ -594,16 +596,23 @@ struct CommandArgRow: View {
 // MARK: - Command Syntax Hint Bar
 struct CommandSyntaxHintBar: View {
     let doc: CommandDoc
+    let selectedCommand: String
     /// Total tokens typed on the current line including the command name itself.
     let typedTokenCount: Int
     /// Whether the current line ends with whitespace (user finished typing the last token).
     let hasTrailingSpace: Bool
-    
-    /// The index of the argument the user is currently on (0 = command name).
-    /// - No trailing space: the last typed token is still being typed → currentArgIndex = typedTokenCount - 1
-    /// - Trailing space: user finished the last token and is about to type the next → currentArgIndex = typedTokenCount
-    private var currentArgIndex: Int {
-        hasTrailingSpace ? typedTokenCount : max(0, typedTokenCount - 1)
+
+    /// The index of the argument token the user is currently typing, excluding the command name.
+    /// A trailing space moves the cursor to the next argument slot.
+    private var currentArgTokenIndex: Int {
+        guard typedTokenCount > 0 else { return -1 }
+        let argCount = argumentTokens.count
+        guard argCount > 0 || hasTrailingSpace else { return -1 }
+        return hasTrailingSpace ? argCount : max(0, argCount - 1)
+    }
+
+    private var argumentTokens: [String] {
+        RedisCommandParser.parse(selectedCommand)?.args ?? []
     }
     
     // MARK: Segment model
@@ -631,13 +640,11 @@ struct CommandSyntaxHintBar: View {
                 // Command name — highlight based on currentArgIndex
                 syntaxToken(doc.name.uppercased(),
                             bold: true,
-                            style: currentArgIndex > 0 ? .covered : (typedTokenCount >= 1 ? .current : .future))
+                            style: currentArgTokenIndex >= 0 ? .covered : (typedTokenCount >= 1 ? .current : .future))
                 
                 // Argument segments — light up progressively
                 ForEach(segments) { seg in
-                    // token index: command = 0, seg.id 0 = token 1, etc.
-                    let tokenIdx = seg.id + 1
-                    let style = segmentStyle(for: tokenIdx)
+                    let style = segmentStyle(for: seg.id)
                     
                     Text(" ")
                         .font(.system(size: 11, design: .monospaced))
@@ -665,10 +672,48 @@ struct CommandSyntaxHintBar: View {
     // MARK: Helpers
     private enum SegStyle { case covered, current, future }
     
-    private func segmentStyle(for tokenIndex: Int) -> SegStyle {
-        if tokenIndex < currentArgIndex { return .covered }
-        if tokenIndex == currentArgIndex { return .current }
-        return .future
+    private struct ArgSpan {
+        let matches: Bool
+        let tokenCount: Int
+    }
+
+    private func segmentStyle(for segmentIndex: Int) -> SegStyle {
+        guard currentArgTokenIndex >= 0 else { return .future }
+
+        var styles = Array(repeating: SegStyle.future, count: doc.arguments.count)
+        var position = 0
+
+        for (index, arg) in doc.arguments.enumerated() {
+            if position > currentArgTokenIndex { break }
+
+            let span = argumentSpan(arg, from: position)
+            if span.matches {
+                let end = position + span.tokenCount
+                if currentArgTokenIndex < end {
+                    styles[index] = .current
+                    break
+                }
+
+                styles[index] = .covered
+                position = end
+                continue
+            }
+
+            if isOptional(arg) {
+                // With no token typed for this slot yet, show the next optional segment as current.
+                if position == currentArgTokenIndex && currentArgTokenIndex >= argumentTokens.count {
+                    styles[index] = .current
+                    break
+                }
+
+                continue
+            }
+
+            styles[index] = .current
+            break
+        }
+
+        return segmentIndex < styles.count ? styles[segmentIndex] : .future
     }
     
     @ViewBuilder
@@ -686,6 +731,106 @@ struct CommandSyntaxHintBar: View {
     }
     
     // MARK: Recursive arg → display text
+    private func isOptional(_ arg: CommandArgDoc) -> Bool {
+        arg.flags.contains("optional")
+    }
+
+    private func argumentSpan(_ arg: CommandArgDoc, from position: Int) -> ArgSpan {
+        let expectedTokenCount = tokenCountEstimate(arg, from: position)
+
+        if let keyword = keywordToken(for: arg) {
+            return ArgSpan(
+                matches: token(at: position, matchesKeyword: keyword),
+                tokenCount: max(1, expectedTokenCount)
+            )
+        }
+
+        if arg.type == "oneof" {
+            if let matched = arg.arguments
+                .map({ argumentSpan($0, from: position) })
+                .first(where: { $0.matches }) {
+                return matched
+            }
+            return ArgSpan(matches: false, tokenCount: max(1, expectedTokenCount))
+        }
+
+        if arg.type == "block" {
+            return ArgSpan(
+                matches: hasToken(at: position),
+                tokenCount: max(1, childTokenCount(arg.arguments, from: position))
+            )
+        }
+
+        return ArgSpan(matches: hasToken(at: position), tokenCount: max(1, expectedTokenCount))
+    }
+
+    private func tokenCountEstimate(_ arg: CommandArgDoc, from position: Int) -> Int {
+        if arg.type == "pure-token" { return 1 }
+
+        if keywordToken(for: arg) != nil {
+            if arg.arguments.isEmpty { return 2 }
+            return 1 + childTokenCount(arg.arguments, from: position + 1)
+        }
+
+        if arg.type == "oneof" {
+            let matchingChild = arg.arguments.first { argumentSpan($0, from: position).matches }
+            if let matchingChild {
+                return tokenCountEstimate(matchingChild, from: position)
+            }
+            return arg.arguments.map { tokenCountEstimate($0, from: position) }.min() ?? 1
+        }
+
+        if arg.type == "block" {
+            return childTokenCount(arg.arguments, from: position)
+        }
+
+        return 1
+    }
+
+    private func childTokenCount(_ args: [CommandArgDoc], from position: Int) -> Int {
+        var total = 0
+        var childPosition = position
+
+        for child in args {
+            let span = argumentSpan(child, from: childPosition)
+            if span.matches || !isOptional(child) {
+                total += span.tokenCount
+                childPosition += span.tokenCount
+            }
+        }
+
+        return total
+    }
+
+    private func keywordToken(for arg: CommandArgDoc) -> String? {
+        if let token = arg.token, !token.isEmpty {
+            return token
+        }
+
+        if arg.type == "pure-token" {
+            return arg.name
+        }
+
+        return nil
+    }
+
+    private func hasToken(at index: Int) -> Bool {
+        index >= 0 && index < argumentTokens.count
+    }
+
+    private func token(at index: Int, matchesKeyword keyword: String) -> Bool {
+        guard hasToken(at: index) else { return false }
+
+        let typed = argumentTokens[index].lowercased()
+        let expected = keyword.lowercased()
+
+        if index == currentArgTokenIndex && !hasTrailingSpace {
+            return expected.hasPrefix(typed)
+        }
+
+        return typed == expected
+    }
+
     private func formatArgText(_ arg: CommandArgDoc) -> String {
         let isOptional = arg.flags.contains("optional")
         let isMultiple = arg.flags.contains("multiple") || arg.flags.contains("variadic")
@@ -699,12 +844,25 @@ struct CommandSyntaxHintBar: View {
             let parts = arg.arguments.map { formatArgText($0) }
             inner = parts.joined(separator: " | ")
         case "block":
-            // Space-join nested args (e.g. "EX seconds")
-            let parts = arg.arguments.map { formatArgText($0) }
+            // Block carries its keyword token at the block level (e.g. token: "EX")
+            // plus the value args nested inside (e.g. seconds).
+            // Prepend the block token if present, then space-join nested args.
+            var parts: [String] = []
+            if let tok = arg.token, !tok.isEmpty {
+                parts.append(tok.uppercased())
+            }
+            parts += arg.arguments.map { formatArgText($0) }
             inner = parts.joined(separator: " ")
         default:
-            // key, string, integer, double, pattern, unix-time, posix-time, etc.
-            inner = arg.displayText.isEmpty ? arg.name : arg.displayText
+            // key, string, integer, double, unix-time, posix-time, etc.
+            // Many of these carry a keyword token (e.g. token: "EX" on an integer arg).
+            // Prepend it so "EX seconds" renders correctly instead of just "seconds".
+            let display = arg.displayText.isEmpty ? arg.name : arg.displayText
+            if let tok = arg.token, !tok.isEmpty {
+                inner = "\(tok.uppercased()) \(display)"
+            } else {
+                inner = display
+            }
         }
         
         var result = isOptional ? "[\(inner)]" : inner
